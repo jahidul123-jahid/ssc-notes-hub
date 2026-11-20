@@ -1,0 +1,202 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { Subject, Chapter, Note } from '../types';
+import { dataService } from '../services/dataService';
+import { NoteCard } from '../components/NoteCard';
+import {
+  ChevronRight,
+  Upload,
+  Search,
+  BookOpen,
+  Filter
+} from 'lucide-react';
+
+interface ChapterDetailsPageProps {
+  onOpenUpload: (subjectId?: string, chapterId?: string) => void;
+  onViewNote: (note: Note) => void;
+  onDownloadNote: (note: Note) => void;
+  onReportNote: (note: Note) => void;
+}
+
+export const ChapterDetailsPage: React.FC<ChapterDetailsPageProps> = ({
+  onOpenUpload,
+  onViewNote,
+  onDownloadNote,
+  onReportNote
+}) => {
+  const { subjectId, chapterId } = useParams<{ subjectId: string; chapterId: string }>();
+
+  const [subject, setSubject] = useState<Subject | null>(null);
+  const [chapter, setChapter] = useState<Chapter | null>(null);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFileType, setSelectedFileType] = useState<string>('all');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!subjectId || !chapterId) return;
+      try {
+        const [subs, chaps, noteList] = await Promise.all([
+          dataService.getSubjects(),
+          dataService.getChapters(subjectId),
+          dataService.getNotes('approved', subjectId, chapterId)
+        ]);
+
+        setSubject(subs.find(s => s.subjectId === subjectId) || null);
+        setChapter(chaps.find(c => c.chapterId === chapterId) || null);
+        setNotes(noteList);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [subjectId, chapterId]);
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-16 text-center animate-pulse space-y-4">
+        <div className="h-36 bg-slate-100 rounded-3xl" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-48 bg-slate-100 rounded-2xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!chapter || !subject) {
+    return (
+      <div className="max-w-md mx-auto my-20 p-8 bg-white rounded-2xl border border-cardBorder text-center shadow-soft">
+        <h2 className="text-xl font-bold text-primaryText">অধ্যায়টি পাওয়া যায়নি</h2>
+        <Link
+          to={`/subject/${subjectId || ''}`}
+          className="inline-block mt-4 px-5 py-2.5 rounded-xl bg-brand-600 text-white font-semibold text-sm"
+        >
+          অধ্যায়ের তালিকায় ফিরুন
+        </Link>
+      </div>
+    );
+  }
+
+  // Filter
+  const filteredNotes = notes.filter(n => {
+    const matchesSearch =
+      n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      n.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      n.schoolName.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesType = selectedFileType === 'all' || n.fileType.toLowerCase() === selectedFileType.toLowerCase();
+
+    return matchesSearch && matchesType;
+  });
+
+  return (
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
+      {/* Breadcrumb Hierarchy Navigation */}
+      <nav className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-secondaryText font-medium">
+        <Link to="/" className="hover:text-brand-600 transition-colors py-1">হোম</Link>
+        <ChevronRight className="w-3.5 h-3.5" />
+        <Link to="/subjects" className="hover:text-brand-600 transition-colors py-1">সকল বিষয়</Link>
+        <ChevronRight className="w-3.5 h-3.5" />
+        <Link to={`/subject/${subject.subjectId}`} className="hover:text-brand-600 transition-colors py-1">
+          {subject.name}
+        </Link>
+        <ChevronRight className="w-3.5 h-3.5" />
+        <span className="text-primaryText font-semibold py-1">{chapter.chapterName}</span>
+      </nav>
+
+      {/* Chapter Header Card - Minimal & Clean */}
+      <div className="bg-white rounded-2xl sm:rounded-3xl border border-cardBorder p-5 sm:p-8 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-5 sm:gap-6">
+        <div>
+          <span className="text-xs font-bold text-brand-600 uppercase tracking-wider block mb-1">
+            {subject.name}
+          </span>
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-primaryText leading-snug">
+            {chapter.chapterName}
+          </h1>
+        </div>
+
+        {/* Upload Notes CTA */}
+        <div className="shrink-0">
+          <button
+            onClick={() => onOpenUpload(subject.subjectId, chapter.chapterId)}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-500 to-violetAccent hover:from-brand-600 hover:to-indigo-600 text-white font-bold px-6 py-3.5 rounded-xl shadow-soft hover:shadow-soft-hover transition-all text-sm sm:text-base min-h-[48px] active:scale-95"
+          >
+            <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span>নোট শেয়ার করুন</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Filter and Search Bar */}
+      <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-cardBorder shadow-soft flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-sm">
+        <div className="relative w-full sm:w-80">
+          <Search className="w-4 h-4 text-secondaryText absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="নোট বা শিক্ষার্থীর নাম দিয়ে খুঁজুন..."
+            className="w-full pl-9 pr-3 py-2.5 text-base sm:text-sm bg-slate-50 border border-cardBorder rounded-xl focus:outline-none focus:border-brand-500 min-h-[44px]"
+          />
+        </div>
+
+        {/* File Type Filter */}
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end text-xs">
+          <span className="text-secondaryText font-medium sm:hidden">ফরম্যাট:</span>
+          <div className="flex items-center gap-2">
+            <Filter className="w-3.5 h-3.5 text-secondaryText hidden sm:inline" />
+            <select
+              value={selectedFileType}
+              onChange={(e) => setSelectedFileType(e.target.value)}
+              className="bg-slate-50 border border-cardBorder rounded-lg px-3 py-2 text-base sm:text-xs font-semibold text-primaryText focus:outline-none focus:border-brand-500 min-h-[44px]"
+            >
+              <option value="all">সকল ফরম্যাট</option>
+              <option value="pdf">PDF</option>
+              <option value="jpg">ছবি (JPG/PNG)</option>
+              <option value="docx">Word (DOCX)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Notes Grid */}
+      {filteredNotes.length === 0 ? (
+        <div className="bg-white rounded-3xl border border-cardBorder p-12 text-center shadow-soft space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mx-auto">
+            <BookOpen className="w-7 h-7" />
+          </div>
+          <h3 className="text-xl font-bold text-primaryText">
+            এই অধ্যায়ে এখনও কোনো নোট নেই
+          </h3>
+          <p className="text-sm text-secondaryText max-w-md mx-auto">
+            আপনার খাতার সুন্দর নোটটি সহপাঠীদের সাথে শেয়ার করে প্রথম অবদানকারী হোন।
+          </p>
+          <div className="pt-2">
+            <button
+              onClick={() => onOpenUpload(subject.subjectId, chapter.chapterId)}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-500 to-violetAccent text-white font-bold px-6 py-2.5 rounded-xl shadow-soft hover:shadow-soft-hover transition-all"
+            >
+              <Upload className="w-4 h-4" />
+              <span>নোট আপলোড করুন</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredNotes.map((note) => (
+            <NoteCard
+              key={note.noteId}
+              note={note}
+              onView={onViewNote}
+              onDownload={onDownloadNote}
+              onReport={onReportNote}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};

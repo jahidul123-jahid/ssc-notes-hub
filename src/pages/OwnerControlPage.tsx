@@ -1,0 +1,1308 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { dataService } from '../services/dataService';
+import { Subject, Chapter, Note, Report, WebsiteStats } from '../types';
+import { isFirebaseConfigured, OWNER_CONFIG } from '../firebase/config';
+import { FIRESTORE_RULES, STORAGE_RULES } from '../firebase/securityRules';
+import {
+  getSupabaseCredentials,
+  SUPABASE_STORAGE_KEYS,
+  SUPABASE_SQL_SETUP,
+  getSupabaseClient
+} from '../supabase/config';
+import {
+  ShieldAlert,
+  Lock,
+  LogOut,
+  CheckCircle,
+  XCircle,
+  Trash2,
+  Edit3,
+  Plus,
+  BookOpen,
+  FileText,
+  AlertTriangle,
+  Database,
+  Users,
+  Download,
+  Search,
+  ExternalLink,
+  Copy,
+  Check,
+  RefreshCw,
+  Eye,
+  Sparkles,
+  Save
+} from 'lucide-react';
+
+export const OwnerControlPage: React.FC = () => {
+  const { isOwner, currentUser, ownerName, loginAsOwner, logout } = useAuth();
+
+  // Login form state
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [loggingIn, setLoggingIn] = useState(false);
+
+  // Active dashboard tab
+  const [activeTab, setActiveTab] = useState<'pending' | 'activeNotes' | 'curriculum' | 'reports' | 'system'>('pending');
+
+  // Dashboard data
+  const [stats, setStats] = useState<WebsiteStats | null>(null);
+  const [pendingNotes, setPendingNotes] = useState<Note[]>([]);
+  const [activeNotes, setActiveNotes] = useState<Note[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Modals & form states
+  const [searchNotesText, setSearchNotesText] = useState('');
+  const [copiedRules, setCopiedRules] = useState<'firestore' | 'storage' | null>(null);
+  const [systemMessage, setSystemMessage] = useState('');
+
+  // Supabase live configuration state
+  const initialSupabaseCreds = getSupabaseCredentials();
+  const [supabaseUrl, setSupabaseUrl] = useState(initialSupabaseCreds.url);
+  const [supabaseAnonKey, setSupabaseAnonKey] = useState(initialSupabaseCreds.anonKey);
+  const [supabaseSaveStatus, setSupabaseSaveStatus] = useState<'idle' | 'saving' | 'connected' | 'error'>('idle');
+  const [copiedSql, setCopiedSql] = useState(false);
+
+  // Add / Edit Subject State
+  const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
+  const [newSubName, setNewSubName] = useState('');
+  const [newSubEngName, setNewSubEngName] = useState('');
+  const [newSubBadge, setNewSubBadge] = useState('NCTB সিলেবাস');
+  const [newSubDesc, setNewSubDesc] = useState('');
+  const [newSubGradient, setNewSubGradient] = useState('from-indigo-950 via-purple-900 to-slate-900');
+
+  // Add Chapter State
+  const [selectedSubForChapter, setSelectedSubForChapter] = useState('');
+  const [newChapName, setNewChapName] = useState('');
+  const [newChapAuthor, setNewChapAuthor] = useState('');
+  const [newChapType, setNewChapType] = useState<'chapter' | 'prose' | 'poem'>('chapter');
+  const [newChapNum, setNewChapNum] = useState(1);
+
+  // Note edit modal
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+
+  // Load all dashboard data
+  const loadDashboardData = async () => {
+    setLoading(true);
+    try {
+      const [allNotes, allSubs, allChaps, allReps, statData] = await Promise.all([
+        dataService.getNotes('all'),
+        dataService.getSubjects(),
+        dataService.getChapters(),
+        dataService.getReports(),
+        dataService.getStats()
+      ]);
+
+      setPendingNotes(allNotes.filter(n => n.status === 'pending'));
+      setActiveNotes(allNotes.filter(n => n.status === 'approved'));
+      setSubjects(allSubs);
+      setChapters(allChaps);
+      setReports(allReps);
+      setStats(statData);
+
+      if (!selectedSubForChapter && allSubs.length > 0) {
+        setSelectedSubForChapter(allSubs[0].subjectId);
+      }
+    } catch (err) {
+      console.error("Dashboard data load error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOwner) {
+      loadDashboardData();
+    }
+  }, [isOwner]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+    setLoggingIn(true);
+    const res = await loginAsOwner(email, password);
+    setLoggingIn(false);
+    if (!res.success) {
+      setLoginError(res.error || 'লগইন ব্যর্থ হয়েছে।');
+    }
+  };
+
+  // Note actions
+  const handleApproveNote = async (noteId: string) => {
+    await dataService.updateNoteStatus(noteId, 'approved');
+    setSystemMessage('নোটটি সফলভাবে অনুমোদিত হয়েছে এবং সবার জন্য উন্মুক্ত করা হয়েছে।');
+    setTimeout(() => setSystemMessage(''), 3000);
+    loadDashboardData();
+  };
+
+  const handleRejectNote = async (noteId: string) => {
+    await dataService.updateNoteStatus(noteId, 'rejected');
+    setSystemMessage('নোটটি বাতিল করা হয়েছে।');
+    setTimeout(() => setSystemMessage(''), 3000);
+    loadDashboardData();
+  };
+
+  const handleDeleteNote = async (noteId: string) => {
+    if (window.confirm('আপনি কি নিশ্চিত যে এই নোটটি স্থায়ীভাবে মুছে ফেলতে চান?')) {
+      await dataService.deleteNote(noteId);
+      setSystemMessage('নোটটি সফলভাবে মুছে ফেলা হয়েছে।');
+      setTimeout(() => setSystemMessage(''), 3000);
+      loadDashboardData();
+    }
+  };
+
+  const handleSaveNoteEdit = async () => {
+    if (!editingNote) return;
+    await dataService.updateNote(editingNote.noteId, {
+      title: editingNote.title,
+      description: editingNote.description,
+      studentName: editingNote.studentName,
+      schoolName: editingNote.schoolName
+    });
+    setEditingNote(null);
+    setSystemMessage('নোটের তথ্য সফলভাবে হালনাগাদ করা হয়েছে।');
+    setTimeout(() => setSystemMessage(''), 3000);
+    loadDashboardData();
+  };
+
+  // Subject actions
+  const handleAddSubject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSubName.trim() || !newSubEngName.trim()) return;
+
+    const subId = newSubEngName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now().toString().slice(-4);
+    const newSub: Subject = {
+      subjectId: subId,
+      name: newSubName.trim(),
+      englishName: newSubEngName.trim(),
+      textbookName: `${newSubName.trim()} (নবম-দশম শ্রেণি, NCTB)`,
+      group: 'compulsory',
+      subjectType: 'compulsory',
+      curriculumYear: 'পরিমার্জিত জাতীয় শিক্ষাক্রম ২০১২ (SSC 2027 প্রযোজ্য)',
+      sourceURL: 'https://nctb.gov.bd/pages/static-pages/695b99afc4774958d7b70612',
+      verificationStatus: 'verified_nctb',
+      badgeText: newSubBadge.trim() || 'NCTB সিলেবাস',
+      description: newSubDesc.trim() || 'শ্রেণি ১০ পাঠ্যবই সংক্রান্ত নোটস',
+      bannerGradient: newSubGradient,
+      accentColor: '#8B5CF6',
+      createdAt: new Date().toISOString()
+    };
+
+    await dataService.addSubject(newSub);
+    setNewSubName('');
+    setNewSubEngName('');
+    setNewSubDesc('');
+    setSystemMessage('নতুন বিষয় সফলভাবে যুক্ত হয়েছে।');
+    setTimeout(() => setSystemMessage(''), 3000);
+    loadDashboardData();
+  };
+
+  const handleDeleteSubject = async (subjectId: string) => {
+    if (window.confirm('এই বিষয়টি এবং এর সাথে সংশ্লিষ্ট অধ্যায়গুলো মুছে ফেলতে চান?')) {
+      await dataService.deleteSubject(subjectId);
+      loadDashboardData();
+    }
+  };
+
+  // Chapter actions
+  const handleAddChapter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSubForChapter || !newChapName.trim()) return;
+
+    const chapId = `chap-${Date.now().toString().slice(-6)}`;
+    const newChap: Chapter = {
+      chapterId: chapId,
+      subjectId: selectedSubForChapter,
+      chapterName: newChapName.trim(),
+      author: newChapAuthor.trim() || undefined,
+      chapterType: newChapType,
+      chapterNumber: Number(newChapNum) || 1,
+      sourceURL: 'https://nctb.gov.bd/pages/static-pages/695b99afc4774958d7b70612',
+      verificationStatus: 'verified_nctb',
+      createdAt: new Date().toISOString()
+    };
+
+    await dataService.addChapter(newChap);
+    setNewChapName('');
+    setNewChapAuthor('');
+    setNewChapNum(prev => prev + 1);
+    setSystemMessage('নতুন অধ্যায়/পাঠ সফলভাবে সংযুক্ত হয়েছে।');
+    setTimeout(() => setSystemMessage(''), 3000);
+    loadDashboardData();
+  };
+
+  const handleDeleteChapter = async (chapId: string) => {
+    if (window.confirm('এই অধ্যায়টি মুছে ফেলতে চান?')) {
+      await dataService.deleteChapter(chapId);
+      loadDashboardData();
+    }
+  };
+
+  // Report actions
+  const handleResolveReport = async (reportId: string, action: 'resolved' | 'dismissed') => {
+    await dataService.resolveReport(reportId, action);
+    loadDashboardData();
+  };
+
+  const handleCopyRules = (type: 'firestore' | 'storage') => {
+    navigator.clipboard.writeText(type === 'firestore' ? FIRESTORE_RULES : STORAGE_RULES);
+    setCopiedRules(type);
+    setTimeout(() => setCopiedRules(null), 2500);
+  };
+
+  const handleSaveSupabaseConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSupabaseSaveStatus('saving');
+    try {
+      localStorage.setItem(SUPABASE_STORAGE_KEYS.URL, supabaseUrl.trim());
+      localStorage.setItem(SUPABASE_STORAGE_KEYS.ANON_KEY, supabaseAnonKey.trim());
+
+      const client = getSupabaseClient();
+      if (client) {
+        setSupabaseSaveStatus('connected');
+        setSystemMessage('সুপাবেস (Supabase) সফলভাবে সংরক্ষিত ও সক্রিয় হয়েছে! এখন যেকোনো ডিভাইসের ফাইল আপলোড সবাই দেখতে পারবে।');
+      } else {
+        setSupabaseSaveStatus('error');
+        setSystemMessage('অনুগ্রহ করে সঠিক Supabase URL ও Anon Key প্রদান করুন।');
+      }
+    } catch {
+      setSupabaseSaveStatus('error');
+      setSystemMessage('সুপাবেস সংযোগে ত্রুটি দেখা দিয়েছে।');
+    }
+    setTimeout(() => setSystemMessage(''), 4000);
+  };
+
+  const handleCopySupabaseSql = () => {
+    navigator.clipboard.writeText(SUPABASE_SQL_SETUP);
+    setCopiedSql(true);
+    setTimeout(() => setCopiedSql(false), 2500);
+  };
+
+  const handleResetDatabase = async () => {
+    if (window.confirm('সতর্কতা: এটি সম্পূর্ণ ডাটাবেজ NCTB অনুমোদিত কারিকুলাম ও খালি নোট তালিকায় রিসেট করবে। আপনি কি এগিয়ে যেতে চান?')) {
+      await dataService.resetToNctbCurriculum();
+      setSystemMessage('ডাটাবেজ সফলভাবে রিসেট ও রি-সিড হয়েছে।');
+      setTimeout(() => setSystemMessage(''), 3000);
+      loadDashboardData();
+    }
+  };
+
+  // ================= 1. UNAUTHENTICATED / OWNER LOGIN VIEW =================
+  if (!isOwner) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 bg-gradient-to-b from-brand-50/50 via-white to-brand-50/30">
+        <div className="bg-white max-w-md w-full rounded-3xl border border-cardBorder shadow-2xl p-8 space-y-6">
+          <div className="text-center space-y-2">
+            <div className="w-16 h-16 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 flex items-center justify-center mx-auto shadow-soft">
+              <Lock className="w-8 h-8" />
+            </div>
+            <h1 className="text-2xl font-black text-primaryText">
+              মালিক কন্ট্রোল প্যানেল
+            </h1>
+            <p className="text-xs text-secondaryText leading-relaxed">
+              সংরক্ষিত এলাকা • শুধুমাত্র অনুমোদিত ওয়েবসাইট মালিক <strong>({OWNER_CONFIG.name})</strong> এর জন্য প্রযোজ্য।
+            </p>
+          </div>
+
+          {loginError && (
+            <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>{loginError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-primaryText mb-1">
+                মালিকের ইমেইল অ্যাড্রেস
+              </label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="jahidulislamg.b.123@gmail.com"
+                className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-primaryText mb-1">
+                নিরাপদ অ্যাডমিন পাসওয়ার্ড
+              </label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••••••"
+                className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loggingIn}
+              className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-violetAccent hover:from-brand-700 hover:to-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-soft hover:shadow-soft-hover transition-all text-sm disabled:opacity-50"
+            >
+              <Lock className="w-4 h-4" />
+              <span>{loggingIn ? 'যাচাই করা হচ্ছে...' : 'লগইন করুন'}</span>
+            </button>
+          </form>
+
+          <div className="pt-2 text-center border-t border-cardBorder/60">
+            <span className="text-[11px] text-secondaryText">
+              নিরাপত্তা নীতি: সাধারণ দর্শনার্থীদের জন্য অ্যাডমিন লিংক দৃশ্যমান নয়।
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ================= 2. AUTHENTICATED OWNER DASHBOARD VIEW =================
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* Top Header Bar */}
+      <div className="bg-white rounded-3xl border border-cardBorder p-6 sm:p-8 shadow-soft flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800 uppercase tracking-wide">
+              মালিক সেশন সক্রিয়
+            </span>
+            <span className="text-xs text-secondaryText">
+              {isFirebaseConfigured ? '🔥 লাইভ ফায়ারবেস সংযুক্ত' : '💾 লোকাল ডেভ সিমুলেশন'}
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-primaryText">
+            মালিক ড্যাশবোর্ড — {ownerName}
+          </h1>
+          <p className="text-xs sm:text-sm text-secondaryText">
+            নোট অনুমোদন, বিষয় ও অধ্যায় ব্যবস্থাপনা, রিপোর্ট পর্যালোচনা ও ওয়েবসাইট পরিচালনা
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={loadDashboardData}
+            className="p-2.5 text-secondaryText hover:text-brand-600 bg-slate-50 hover:bg-brand-50 rounded-xl transition-colors border border-cardBorder"
+            title="তথ্য রিফ্রেশ করুন"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={logout}
+            className="inline-flex items-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold px-4 py-2.5 rounded-xl border border-rose-200 transition-colors text-xs sm:text-sm"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>লগআউট</span>
+          </button>
+        </div>
+      </div>
+
+      {/* System Toast Notification */}
+      {systemMessage && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-sm font-semibold flex items-center justify-between shadow-soft animate-fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-emerald-600" />
+            <span>{systemMessage}</span>
+          </div>
+          <button onClick={() => setSystemMessage('')} className="text-emerald-700 hover:text-emerald-900">
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Real-time Statistics Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+        {/* Pending Notes */}
+        <div
+          onClick={() => setActiveTab('pending')}
+          className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+            activeTab === 'pending'
+              ? 'bg-amber-50 border-amber-300 shadow-soft ring-2 ring-amber-400/40'
+              : 'bg-white border-cardBorder hover:shadow'
+          }`}
+        >
+          <span className="text-xs font-bold text-amber-700 uppercase block mb-1">
+            পেন্ডিং নোট
+          </span>
+          <div className="text-2xl font-black text-amber-700">
+            {pendingNotes.length}
+          </div>
+          <span className="text-[10px] text-secondaryText">অনুমোদনের অপেক্ষায়</span>
+        </div>
+
+        {/* Active Approved Notes */}
+        <div
+          onClick={() => setActiveTab('activeNotes')}
+          className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+            activeTab === 'activeNotes'
+              ? 'bg-brand-50 border-brand-300 shadow-soft ring-2 ring-brand-400/40'
+              : 'bg-white border-cardBorder hover:shadow'
+          }`}
+        >
+          <span className="text-xs font-bold text-brand-700 uppercase block mb-1">
+            অনুমোদিত নোট
+          </span>
+          <div className="text-2xl font-black text-brand-700">
+            {activeNotes.length}
+          </div>
+          <span className="text-[10px] text-secondaryText">পাবলিকলি দৃশ্যমান</span>
+        </div>
+
+        {/* Total Subjects */}
+        <div
+          onClick={() => setActiveTab('curriculum')}
+          className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+            activeTab === 'curriculum'
+              ? 'bg-violet-50 border-violet-300 shadow-soft ring-2 ring-violet-400/40'
+              : 'bg-white border-cardBorder hover:shadow'
+          }`}
+        >
+          <span className="text-xs font-bold text-violet-700 uppercase block mb-1">
+            মোট বিষয়
+          </span>
+          <div className="text-2xl font-black text-violet-700">
+            {subjects.length}
+          </div>
+          <span className="text-[10px] text-secondaryText">{chapters.length} টি অধ্যায়</span>
+        </div>
+
+        {/* Contributors */}
+        <div className="bg-white p-4 rounded-2xl border border-cardBorder">
+          <span className="text-xs font-bold text-secondaryText uppercase block mb-1">
+            অবদানকারী
+          </span>
+          <div className="text-2xl font-black text-primaryText">
+            {stats ? stats.totalContributors : '০'}
+          </div>
+          <span className="text-[10px] text-secondaryText">শিক্ষার্থী সংখ্যা</span>
+        </div>
+
+        {/* Total Downloads */}
+        <div className="bg-white p-4 rounded-2xl border border-cardBorder">
+          <span className="text-xs font-bold text-secondaryText uppercase block mb-1">
+            মোট ডাউনলোড
+          </span>
+          <div className="text-2xl font-black text-primaryText">
+            {stats ? stats.totalDownloads.toLocaleString() : '০'}
+          </div>
+          <span className="text-[10px] text-secondaryText">সর্বমোট নোট সংগ্রহ</span>
+        </div>
+
+        {/* Reports */}
+        <div
+          onClick={() => setActiveTab('reports')}
+          className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+            activeTab === 'reports'
+              ? 'bg-rose-50 border-rose-300 shadow-soft ring-2 ring-rose-400/40'
+              : 'bg-white border-cardBorder hover:shadow'
+          }`}
+        >
+          <span className="text-xs font-bold text-rose-700 uppercase block mb-1">
+            রিপোর্ট
+          </span>
+          <div className="text-2xl font-black text-rose-700">
+            {reports.filter(r => r.status === 'pending').length}
+          </div>
+          <span className="text-[10px] text-secondaryText">অপেক্ষমাণ অভিযোগ</span>
+        </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-cardBorder pb-2">
+        <button
+          onClick={() => setActiveTab('pending')}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
+            activeTab === 'pending'
+              ? 'bg-brand-600 text-white shadow-soft'
+              : 'bg-white text-secondaryText hover:text-primaryText border border-cardBorder'
+          }`}
+        >
+          <AlertTriangle className="w-4 h-4" />
+          <span>পেন্ডিং নোট কিউ ({pendingNotes.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('activeNotes')}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
+            activeTab === 'activeNotes'
+              ? 'bg-brand-600 text-white shadow-soft'
+              : 'bg-white text-secondaryText hover:text-primaryText border border-cardBorder'
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          <span>সক্রিয় নোটসমূহ ({activeNotes.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('curriculum')}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
+            activeTab === 'curriculum'
+              ? 'bg-brand-600 text-white shadow-soft'
+              : 'bg-white text-secondaryText hover:text-primaryText border border-cardBorder'
+          }`}
+        >
+          <BookOpen className="w-4 h-4" />
+          <span>বিষয় ও অধ্যায় সিলেবাস</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('reports')}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
+            activeTab === 'reports'
+              ? 'bg-brand-600 text-white shadow-soft'
+              : 'bg-white text-secondaryText hover:text-primaryText border border-cardBorder'
+          }`}
+        >
+          <ShieldAlert className="w-4 h-4" />
+          <span>শিক্ষার্থী রিপোর্ট ({reports.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('system')}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
+            activeTab === 'system'
+              ? 'bg-brand-600 text-white shadow-soft'
+              : 'bg-white text-secondaryText hover:text-primaryText border border-cardBorder'
+          }`}
+        >
+          <Database className="w-4 h-4" />
+          <span>ফায়ারবেস ও ব্যাকএন্ড রুলস</span>
+        </button>
+      </div>
+
+      {/* ================= TAB 1: PENDING NOTES QUEUE ================= */}
+      {activeTab === 'pending' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-primaryText">
+              অনুমোদনের জন্য অপেক্ষমাণ নোট ({pendingNotes.length} টি)
+            </h2>
+            <span className="text-xs text-secondaryText">
+              অনুমোদনের পর নোটগুলো তাৎক্ষণিকভাবে পাবলিক সাইটে দৃশ্যমান হবে।
+            </span>
+          </div>
+
+          {pendingNotes.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-cardBorder p-12 text-center shadow-soft">
+              <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
+              <h3 className="text-lg font-bold text-primaryText">কোনো পেন্ডিং নোট নেই</h3>
+              <p className="text-xs sm:text-sm text-secondaryText mt-1">
+                সকল নতুন আপলোড যথাযথভাবে পর্যালোচনা ও অনুমোদন করা হয়েছে।
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {pendingNotes.map((note) => {
+                const sub = subjects.find(s => s.subjectId === note.subjectId);
+                const chap = chapters.find(c => c.chapterId === note.chapterId);
+
+                return (
+                  <div
+                    key={note.noteId}
+                    className="bg-white rounded-2xl border-2 border-amber-200/80 p-5 shadow-soft space-y-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-100 text-amber-800">
+                          পেন্ডিং • {note.fileType.toUpperCase()}
+                        </span>
+                        <h3 className="text-base font-bold text-primaryText mt-1.5">
+                          {note.title}
+                        </h3>
+                      </div>
+                      <span className="text-xs font-semibold text-secondaryText">
+                        {note.fileSize}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-secondaryText leading-relaxed">
+                      {note.description}
+                    </p>
+
+                    <div className="p-3 bg-slate-50 rounded-xl space-y-1 text-xs text-secondaryText">
+                      <div>
+                        শিক্ষার্থী: <strong className="text-primaryText">{note.studentName}</strong> (রোল: {note.rollNumber}, শাখা: {note.section})
+                      </div>
+                      <div>
+                        স্কুল: <strong className="text-primaryText">{note.schoolName}</strong>
+                      </div>
+                      <div className="pt-1 text-[11px] text-brand-700 font-semibold">
+                        বিষয়: {sub?.name || note.subjectId} • অধ্যায়: {chap?.chapterName || note.chapterId}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-cardBorder">
+                      <a
+                        href={note.fileURL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-secondaryText hover:text-brand-600 p-2"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>ফাইল পরীক্ষা</span>
+                      </a>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleRejectNote(note.noteId)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors"
+                        >
+                          বাতিল করুন
+                        </button>
+
+                        <button
+                          onClick={() => handleApproveNote(note.noteId)}
+                          className="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-all flex items-center gap-1"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          <span>অনুমোদন করুন</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ================= TAB 2: ACTIVE APPROVED NOTES ================= */}
+      {activeTab === 'activeNotes' && (
+        <div className="space-y-4">
+          <div className="bg-white p-4 rounded-2xl border border-cardBorder flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="relative w-full sm:w-80">
+              <Search className="w-4 h-4 text-secondaryText absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchNotesText}
+                onChange={(e) => setSearchNotesText(e.target.value)}
+                placeholder="সক্রিয় নোট খুঁজুন..."
+                className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-cardBorder rounded-xl focus:outline-none"
+              />
+            </div>
+            <span className="text-xs text-secondaryText font-medium">
+              মোট সক্রিয় নোট: {activeNotes.length} টি
+            </span>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-cardBorder shadow-soft overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 border-b border-cardBorder text-secondaryText uppercase text-[11px] font-bold">
+                <tr>
+                  <th className="p-3.5">শিরোনাম ও বিবরণ</th>
+                  <th className="p-3.5">বিষয় ও অধ্যায়</th>
+                  <th className="p-3.5">শিক্ষার্থী ও স্কুল</th>
+                  <th className="p-3.5">ডাউনলোড</th>
+                  <th className="p-3.5 text-right">পদক্ষেপ</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-cardBorder">
+                {activeNotes
+                  .filter(n =>
+                    n.title.toLowerCase().includes(searchNotesText.toLowerCase()) ||
+                    n.studentName.toLowerCase().includes(searchNotesText.toLowerCase()) ||
+                    n.schoolName.toLowerCase().includes(searchNotesText.toLowerCase())
+                  )
+                  .map((note) => {
+                    const sub = subjects.find(s => s.subjectId === note.subjectId);
+                    const chap = chapters.find(c => c.chapterId === note.chapterId);
+
+                    return (
+                      <tr key={note.noteId} className="hover:bg-slate-50/60">
+                        <td className="p-3.5 max-w-xs">
+                          <span className="font-bold text-primaryText block line-clamp-1">{note.title}</span>
+                          <span className="text-[11px] text-secondaryText block line-clamp-1 mt-0.5">{note.description}</span>
+                          <span className="text-[10px] text-brand-700 font-semibold">{note.fileType.toUpperCase()} • {note.fileSize}</span>
+                        </td>
+                        <td className="p-3.5 text-secondaryText">
+                          <span className="font-semibold text-primaryText block">{sub?.name || note.subjectId}</span>
+                          <span className="text-[11px]">{chap?.chapterName || note.chapterId}</span>
+                        </td>
+                        <td className="p-3.5 text-secondaryText">
+                          <span className="font-semibold text-primaryText block">{note.studentName}</span>
+                          <span className="text-[11px] line-clamp-1">{note.schoolName}</span>
+                        </td>
+                        <td className="p-3.5 font-bold text-primaryText">
+                          {note.downloadCount}
+                        </td>
+                        <td className="p-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => setEditingNote(note)}
+                              className="p-1.5 text-brand-600 hover:bg-brand-50 rounded-lg"
+                              title="সম্পাদনা করুন"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteNote(note.noteId)}
+                              className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg"
+                              title="মুছে ফেলুন"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ================= TAB 3: SUBJECTS & CHAPTERS MANAGEMENT ================= */}
+      {activeTab === 'curriculum' && (
+        <div className="space-y-6">
+          {/* Top Curriculum Banner */}
+          <div className="bg-gradient-to-r from-brand-900 to-indigo-950 text-white p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-soft">
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 mb-2">
+                <CheckCircle className="w-3.5 h-3.5" />
+                <span>NCTB অফিসিয়াল ডাটাবেজ • SSC 2027 প্রস্তুত</span>
+              </div>
+              <h2 className="text-xl font-bold">পাঠ্যক্রম ও বিষয়ভিত্তিক কারিকুলাম ব্যবস্থাপনা</h2>
+              <p className="text-xs text-white/80 mt-0.5">
+                পরিমার্জিত জাতীয় শিক্ষাক্রম ২০১২ • বিজ্ঞান, মানবিক, ব্যবসায় শিক্ষা ও ঐচ্ছিক বিষয়সমূহ
+              </p>
+            </div>
+            <button
+              onClick={async () => {
+                if (window.confirm('আপনি কি নিশ্চিত যে NCTB অনুমোদিত ফ্রেশ কারিকুলামে ডাটাবেজ রিসেট করতে চান?')) {
+                  await dataService.resetToNctbCurriculum();
+                  setSystemMessage('NCTB অফিশিয়াল সিলেবাস অনুযায়ী ডাটাবেজ সফলভাবে রিসেট হয়েছে!');
+                  setTimeout(() => setSystemMessage(''), 3000);
+                  loadDashboardData();
+                }
+              }}
+              className="inline-flex items-center gap-2 bg-white text-brand-900 hover:bg-slate-100 text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>NCTB ফ্রেশ কারিকুলাম রি-সিড</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Add Subject Form */}
+            <div className="bg-white p-6 rounded-2xl border border-cardBorder shadow-soft space-y-4">
+              <h3 className="text-base font-bold text-primaryText flex items-center gap-2">
+                <Plus className="w-4 h-4 text-brand-600" />
+                <span>নতুন বিষয় সংযুক্ত করুন</span>
+              </h3>
+
+              <form onSubmit={handleAddSubject} className="space-y-3 text-xs">
+                <div>
+                  <label className="block font-semibold text-primaryText mb-1">বাংলা বিষয়ের নাম *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newSubName}
+                    onChange={(e) => setNewSubName(e.target.value)}
+                    placeholder="যেমন: পৌরনীতি ও নাগরিকতা"
+                    className="w-full p-2.5 rounded-lg border border-cardBorder bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-primaryText mb-1">ইংরেজি নাম *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newSubEngName}
+                    onChange={(e) => setNewSubEngName(e.target.value)}
+                    placeholder="যেমন: Civics & Citizenship"
+                    className="w-full p-2.5 rounded-lg border border-cardBorder bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-primaryText mb-1">ব্যানার ব্যাজ টেক্সট</label>
+                  <input
+                    type="text"
+                    value={newSubBadge}
+                    onChange={(e) => setNewSubBadge(e.target.value)}
+                    placeholder="যেমন: NCTB সিলেবাস নোটস"
+                    className="w-full p-2.5 rounded-lg border border-cardBorder bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-primaryText mb-1">সংক্ষিপ্ত বিবরণ</label>
+                  <textarea
+                    rows={2}
+                    value={newSubDesc}
+                    onChange={(e) => setNewSubDesc(e.target.value)}
+                    placeholder="বিষয়ের সংক্ষিপ্ত বিবরণ..."
+                    className="w-full p-2.5 rounded-lg border border-cardBorder bg-white"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-brand-600 text-white font-bold py-2.5 rounded-xl shadow-soft"
+                >
+                  বিষয় যুক্ত করুন
+                </button>
+              </form>
+
+              {/* List of existing subjects */}
+              <div className="pt-4 border-t border-cardBorder space-y-2">
+                <h4 className="text-xs font-bold text-secondaryText uppercase">বর্তমান বিষয়সমূহ ({subjects.length})</h4>
+                <div className="max-h-72 overflow-y-auto divide-y divide-cardBorder">
+                  {subjects.map(s => (
+                    <div key={s.subjectId} className="py-2 flex items-center justify-between text-xs">
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-primaryText">{s.name}</span>
+                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-brand-50 text-brand-700">
+                            {s.group}
+                          </span>
+                        </div>
+                        <span className="text-secondaryText text-[11px] block">{s.textbookName || s.englishName}</span>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteSubject(s.subjectId)}
+                        className="p-1 text-rose-500 hover:text-rose-700"
+                        title="মুছুন"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Add Chapter Form */}
+            <div className="bg-white p-6 rounded-2xl border border-cardBorder shadow-soft space-y-4">
+              <h3 className="text-base font-bold text-primaryText flex items-center gap-2">
+                <Plus className="w-4 h-4 text-brand-600" />
+                <span>নতুন অধ্যায় / গদ্য / পদ্য সংযুক্ত করুন</span>
+              </h3>
+
+              <form onSubmit={handleAddChapter} className="space-y-3 text-xs">
+                <div>
+                  <label className="block font-semibold text-primaryText mb-1">বিষয় নির্বাচন করুন *</label>
+                  <select
+                    value={selectedSubForChapter}
+                    onChange={(e) => setSelectedSubForChapter(e.target.value)}
+                    className="w-full p-2.5 rounded-lg border border-cardBorder bg-white"
+                  >
+                    {subjects.map(s => (
+                      <option key={s.subjectId} value={s.subjectId}>{s.name} ({s.englishName})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-primaryText mb-1">ক্যাটাগরি টাইপ *</label>
+                    <select
+                      value={newChapType}
+                      onChange={(e) => setNewChapType(e.target.value as any)}
+                      className="w-full p-2.5 rounded-lg border border-cardBorder bg-white"
+                    >
+                      <option value="chapter">অধ্যায় (Chapter)</option>
+                      <option value="prose">গদ্য (Prose)</option>
+                      <option value="poem">পদ্য (Poem)</option>
+                      <option value="grammar">ব্যাকরণ (Grammar)</option>
+                      <option value="unit">ইউনিট (Unit)</option>
+                      <option value="writing">নির্মিতি / রাইটিং</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-primaryText mb-1">অধ্যায় ক্রম নম্বর</label>
+                    <input
+                      type="number"
+                      value={newChapNum}
+                      onChange={(e) => setNewChapNum(Number(e.target.value))}
+                      className="w-full p-2.5 rounded-lg border border-cardBorder bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-primaryText mb-1">অধ্যায় বা কবিতা/গদ্যের নাম *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newChapName}
+                    onChange={(e) => setNewChapName(e.target.value)}
+                    placeholder="যেমন: ৩য় অধ্যায়: পদার্থের গঠন"
+                    className="w-full p-2.5 rounded-lg border border-cardBorder bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-primaryText mb-1">রচয়িতা / কবি (যদি থাকে)</label>
+                  <input
+                    type="text"
+                    value={newChapAuthor}
+                    onChange={(e) => setNewChapAuthor(e.target.value)}
+                    placeholder="যেমন: রবীন্দ্রনাথ ঠাকুর"
+                    className="w-full p-2.5 rounded-lg border border-cardBorder bg-white"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-brand-600 text-white font-bold py-2.5 rounded-xl shadow-soft"
+                >
+                  অধ্যায় সংরক্ষণ করুন
+                </button>
+              </form>
+
+              {/* List of chapters under selected subject */}
+              <div className="pt-4 border-t border-cardBorder space-y-2">
+                <h4 className="text-xs font-bold text-secondaryText uppercase">
+                  নির্বাচিত বিষয়ের অধ্যায়সমূহ ({chapters.filter(c => c.subjectId === selectedSubForChapter).length})
+                </h4>
+                <div className="max-h-72 overflow-y-auto divide-y divide-cardBorder">
+                  {chapters
+                    .filter(c => c.subjectId === selectedSubForChapter)
+                    .map(c => (
+                      <div key={c.chapterId} className="py-2 flex items-center justify-between text-xs">
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-semibold text-primaryText">{c.chapterName}</span>
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-700">
+                              {c.chapterType}
+                            </span>
+                          </div>
+                          {c.author && <span className="text-secondaryText text-[11px] block">লেখক/কবি: {c.author}</span>}
+                        </div>
+                        <button
+                          onClick={() => handleDeleteChapter(c.chapterId)}
+                          className="p-1 text-rose-500 hover:text-rose-700"
+                          title="মুছুন"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* ================= TAB 4: STUDENT REPORTS ================= */}
+      {activeTab === 'reports' && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-bold text-primaryText">
+            শিক্ষার্থীদের জমাকৃত অভিযোগ ও রিপোর্টসমূহ ({reports.length} টি)
+          </h2>
+
+          {reports.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-cardBorder p-12 text-center shadow-soft">
+              <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
+              <h3 className="text-lg font-bold text-primaryText">কোনো অমীমাংসিত রিপোর্ট নেই</h3>
+              <p className="text-xs text-secondaryText mt-1">সবকিছু স্বাভাবিকভাবে পরিচালিত হচ্ছে।</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {reports.map((rep) => (
+                <div key={rep.reportId} className="bg-white p-5 rounded-2xl border border-rose-200 shadow-soft space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-rose-100 text-rose-700">
+                        {rep.reasonText}
+                      </span>
+                      <h4 className="font-bold text-primaryText text-sm mt-1">
+                        নোট: {rep.noteTitle}
+                      </h4>
+                    </div>
+                    <span className="text-[10px] font-semibold text-secondaryText">
+                      {new Date(rep.reportedAt).toLocaleDateString('bn-BD')}
+                    </span>
+                  </div>
+
+                  {rep.details && (
+                    <p className="text-xs text-secondaryText bg-slate-50 p-3 rounded-xl border border-cardBorder">
+                      "{rep.details}"
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-between pt-2 border-t border-cardBorder text-xs">
+                    <span className="font-semibold text-secondaryText">
+                      স্ট্যাটাস: <strong>{rep.status}</strong>
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleResolveReport(rep.reportId, 'dismissed')}
+                        className="px-3 py-1 rounded-lg text-secondaryText hover:bg-slate-100"
+                      >
+                        খারিজ করুন
+                      </button>
+                      <button
+                        onClick={() => handleResolveReport(rep.reportId, 'resolved')}
+                        className="px-3 py-1 rounded-lg bg-emerald-600 text-white font-bold"
+                      >
+                        সমাধান চিহ্নিত করুন
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ================= TAB 5: SUPABASE & FIREBASE CLOUD SETUP ================= */}
+      {activeTab === 'system' && (
+        <div className="space-y-8">
+          {/* SUPABASE LIVE CLOUD INTEGRATION CARD */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-cardBorder shadow-soft space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-cardBorder">
+              <div>
+                <h2 className="text-xl font-bold text-primaryText flex items-center gap-2">
+                  <Database className="w-5 h-5 text-emerald-600" />
+                  <span>সুপাবেস (Supabase) লাইভ ক্লাউড ডাটাবেজ ও ফাইল স্টোরেজ</span>
+                </h2>
+                <p className="text-xs sm:text-sm text-secondaryText mt-1">
+                  সুপাবেস সক্রিয় থাকলে যেকোনো ডিভাইস (মোবাইল বা কম্পিউটার) থেকে আপলোড করা ফাইল সরাসরি ক্লাউডে জমা হবে এবং সাথে সাথে সব ভিজিটর তা দেখতে পারবে।
+                </p>
+              </div>
+
+              <div className="shrink-0">
+                {supabaseUrl && supabaseAnonKey ? (
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>সুপাবেস কনফিগার করা হয়েছে</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    <span>সুপাবেস কী যুক্ত করুন</span>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Supabase Configuration Form */}
+            <form onSubmit={handleSaveSupabaseConfig} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-primaryText mb-1.5">
+                    Supabase Project URL *
+                  </label>
+                  <input
+                    type="url"
+                    required
+                    value={supabaseUrl}
+                    onChange={(e) => setSupabaseUrl(e.target.value)}
+                    placeholder="https://xyzcompany.supabase.co"
+                    className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder bg-slate-50 focus:bg-white focus:outline-none focus:border-brand-500 font-mono"
+                  />
+                  <span className="text-[11px] text-secondaryText mt-1 block">
+                    Supabase Dashboard ➔ Project Settings ➔ API ➔ Project URL
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-primaryText mb-1.5">
+                    Supabase Anon Public Key *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={supabaseAnonKey}
+                    onChange={(e) => setSupabaseAnonKey(e.target.value)}
+                    placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder bg-slate-50 focus:bg-white focus:outline-none focus:border-brand-500 font-mono"
+                  />
+                  <span className="text-[11px] text-secondaryText mt-1 block">
+                    Supabase Dashboard ➔ Project Settings ➔ API ➔ anon public key
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleCopySupabaseSql}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100 text-xs font-bold transition-colors"
+                >
+                  {copiedSql ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-brand-600" />}
+                  <span>{copiedSql ? 'SQL স্ক্রিপ্ট কপি হয়েছে!' : '১-ক্লিকে SQL টেবিল স্ক্রিপ্ট কপি করুন'}</span>
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={supabaseSaveStatus === 'saving'}
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-soft transition-all disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{supabaseSaveStatus === 'saving' ? 'সংরক্ষণ হচ্ছে...' : 'সুপাবেস সংরক্ষণ ও কানেক্ট করুন'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* FIREBASE INTEGRATION CARD */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-cardBorder shadow-soft space-y-8">
+            <div>
+              <h2 className="text-xl font-bold text-primaryText flex items-center gap-2">
+                <Database className="w-5 h-5 text-brand-600" />
+                <span>ফায়ারবেস ব্যাকএন্ড ইন্টিগ্রেশন ও সিকিউরিটি রুলস</span>
+              </h2>
+              <p className="text-xs sm:text-sm text-secondaryText mt-1">
+                প্রোডাকশনে সম্পূর্ণ ডাটাবেজ সুরক্ষার জন্য নিচের কনফিগারেশন এবং সিকিউরিটি রুলস সরাসরি Firebase Console এ পেস্ট করুন।
+              </p>
+            </div>
+
+            {/* Connection Status Box */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-cardBorder flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <span className="text-xs font-bold text-secondaryText uppercase tracking-wider block">
+                  বর্তমান সংযোগ স্ট্যাটাস:
+                </span>
+                <span className="text-base font-bold text-primaryText flex items-center gap-2 mt-0.5">
+                  {isFirebaseConfigured ? (
+                    <>
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>ফায়ারবেস ক্লাউড সক্রিয় (Firestore & Storage Connected)</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                      <span>হাইব্রিড মোড (লোকাল স্টোরেজ সক্রিয় • .env ফাইলে কী কনফিগার করুন)</span>
+                    </>
+                  )}
+                </span>
+              </div>
+
+              <button
+                onClick={handleResetDatabase}
+                className="inline-flex items-center gap-2 bg-slate-200 hover:bg-slate-300 text-primaryText text-xs font-bold px-4 py-2.5 rounded-xl transition-colors"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>ডাটাবেজ রি-সিড করুন</span>
+              </button>
+            </div>
+
+          {/* Copyable Firestore Rules */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-primaryText">
+                ১. Cloud Firestore Security Rules (কপি করে পেস্ট করুন)
+              </h3>
+              <button
+                onClick={() => handleCopyRules('firestore')}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-800 bg-brand-50 px-3 py-1.5 rounded-lg border border-brand-200"
+              >
+                {copiedRules === 'firestore' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedRules === 'firestore' ? 'কপি হয়েছে!' : 'রুলস কপি করুন'}</span>
+              </button>
+            </div>
+            <pre className="p-4 rounded-xl bg-slate-900 text-slate-100 text-xs font-mono overflow-x-auto max-h-56">
+              {FIRESTORE_RULES}
+            </pre>
+          </div>
+
+          {/* Copyable Storage Rules */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-primaryText">
+                ২. Firebase Storage Security Rules (কপি করে পেস্ট করুন)
+              </h3>
+              <button
+                onClick={() => handleCopyRules('storage')}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-800 bg-brand-50 px-3 py-1.5 rounded-lg border border-brand-200"
+              >
+                {copiedRules === 'storage' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedRules === 'storage' ? 'কপি হয়েছে!' : 'রুলস কপি করুন'}</span>
+              </button>
+            </div>
+            <pre className="p-4 rounded-xl bg-slate-900 text-slate-100 text-xs font-mono overflow-x-auto max-h-56">
+              {STORAGE_RULES}
+            </pre>
+          </div>
+        </div>
+      </div>
+      )}
+
+      {/* Edit Note Modal */}
+      {editingNote && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl space-y-4">
+            <h3 className="text-lg font-bold text-primaryText">নোট সম্পাদনা করুন</h3>
+
+            <div>
+              <label className="block text-xs font-semibold text-primaryText mb-1">শিরোনাম</label>
+              <input
+                type="text"
+                value={editingNote.title}
+                onChange={(e) => setEditingNote({ ...editingNote, title: e.target.value })}
+                className="w-full p-2.5 text-xs rounded-lg border border-cardBorder bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-primaryText mb-1">বিবরণ</label>
+              <textarea
+                rows={3}
+                value={editingNote.description}
+                onChange={(e) => setEditingNote({ ...editingNote, description: e.target.value })}
+                className="w-full p-2.5 text-xs rounded-lg border border-cardBorder bg-white"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-primaryText mb-1">শিক্ষার্থীর নাম</label>
+                <input
+                  type="text"
+                  value={editingNote.studentName}
+                  onChange={(e) => setEditingNote({ ...editingNote, studentName: e.target.value })}
+                  className="w-full p-2.5 text-xs rounded-lg border border-cardBorder bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-primaryText mb-1">স্কুলের নাম</label>
+                <input
+                  type="text"
+                  value={editingNote.schoolName}
+                  onChange={(e) => setEditingNote({ ...editingNote, schoolName: e.target.value })}
+                  className="w-full p-2.5 text-xs rounded-lg border border-cardBorder bg-white"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                onClick={() => setEditingNote(null)}
+                className="px-4 py-2 text-xs font-semibold text-secondaryText"
+              >
+                বাতিল
+              </button>
+              <button
+                onClick={handleSaveNoteEdit}
+                className="inline-flex items-center gap-1.5 bg-brand-600 text-white font-bold px-4 py-2 rounded-xl text-xs"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>সংরক্ষণ করুন</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

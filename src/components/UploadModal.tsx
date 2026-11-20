@@ -1,0 +1,492 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Upload, FileText, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon } from 'lucide-react';
+import confetti from 'canvas-confetti';
+import { Subject, Chapter, FileType } from '../types';
+import { dataService } from '../services/dataService';
+
+interface UploadModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  subjects: Subject[];
+  initialSubjectId?: string;
+  initialChapterId?: string;
+  onUploadSuccess?: () => void;
+}
+
+export const UploadModal: React.FC<UploadModalProps> = ({
+  isOpen,
+  onClose,
+  subjects,
+  initialSubjectId,
+  initialChapterId,
+  onUploadSuccess
+}) => {
+  const [studentName, setStudentName] = useState('');
+  const [rollNumber, setRollNumber] = useState('');
+  const [section, setSection] = useState('');
+  const [schoolName, setSchoolName] = useState('');
+  const [subjectId, setSubjectId] = useState(initialSubjectId || '');
+  const [chapterId, setChapterId] = useState(initialChapterId || '');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [fileType, setFileType] = useState<FileType>('pdf');
+  const [fileSizeStr, setFileSizeStr] = useState('');
+
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync initial selections
+  useEffect(() => {
+    if (initialSubjectId) setSubjectId(initialSubjectId);
+    if (initialChapterId) setChapterId(initialChapterId);
+  }, [initialSubjectId, initialChapterId, isOpen]);
+
+  // Load chapters for selected subject
+  useEffect(() => {
+    const fetchChapters = async () => {
+      if (subjectId) {
+        const list = await dataService.getChapters(subjectId);
+        setChapters(list);
+        if (!initialChapterId || list.every(c => c.chapterId !== initialChapterId)) {
+          setChapterId(list[0]?.chapterId || '');
+        }
+      } else {
+        setChapters([]);
+        setChapterId('');
+      }
+    };
+    fetchChapters();
+  }, [subjectId]);
+
+  if (!isOpen) return null;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setErrorMessage('');
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check size (Max 15MB)
+    const maxSizeBytes = 15 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      setErrorMessage('ফাইলের সাইজ ১৫ মেগাবাইট (15MB) এর বেশি হতে পারবে না।');
+      return;
+    }
+
+    // Format file size
+    const sizeInMb = (file.size / (1024 * 1024)).toFixed(1);
+    setFileSizeStr(`${sizeInMb} MB`);
+
+    // Check extension
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    const validExtensions: FileType[] = ['pdf', 'jpg', 'jpeg', 'png', 'docx'];
+    if (!ext || !validExtensions.includes(ext as FileType)) {
+      setErrorMessage('শুধুমাত্র PDF, JPG, JPEG, PNG অথবা DOCX ফাইল আপলোড করা যাবে।');
+      return;
+    }
+
+    setFileType(ext as FileType);
+    setSelectedFile(file);
+
+    // If image, create preview
+    if (['jpg', 'jpeg', 'png'].includes(ext)) {
+      const reader = new FileReader();
+      reader.onload = () => setFilePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setFilePreview(null);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage('');
+
+    if (!studentName.trim()) {
+      setErrorMessage('দয়া করে আপনার নাম লিখুন।');
+      return;
+    }
+    if (!schoolName.trim()) {
+      setErrorMessage('দয়া করে আপনার স্কুলের নাম লিখুন।');
+      return;
+    }
+    if (!subjectId) {
+      setErrorMessage('দয়া করে বিষয় নির্বাচন করুন।');
+      return;
+    }
+    if (!chapterId) {
+      setErrorMessage('দয়া করে অধ্যায় বা কবিতা/গদ্য নির্বাচন করুন।');
+      return;
+    }
+    if (!title.trim()) {
+      setErrorMessage('নোটের শিরোনাম লিখুন।');
+      return;
+    }
+    if (!selectedFile) {
+      setErrorMessage('দয়া করে নোটের ফাইল (PDF/Image) যুক্ত করুন।');
+      return;
+    }
+
+    setLoading(true);
+    setProgress(10);
+
+    try {
+      await dataService.uploadNote(
+        {
+          studentName: studentName.trim(),
+          rollNumber: rollNumber.trim() || 'প্রযোজ্য নয়',
+          section: section.trim() || 'সাধারণ',
+          schoolName: schoolName.trim(),
+          subjectId,
+          chapterId,
+          title: title.trim(),
+          description: description.trim() || 'শিক্ষার্থী কর্তৃক সরাসরি আপলোডকৃত ক্লাস ১০ হ্যান্ডনোট।',
+          fileType,
+          fileSize: fileSizeStr || '২.০ MB',
+          pageCount: fileType === 'pdf' ? 5 : 1
+        },
+        selectedFile,
+        (p) => setProgress(p)
+      );
+
+      setIsSuccess(true);
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+
+      if (onUploadSuccess) onUploadSuccess();
+    } catch (err: any) {
+      setErrorMessage('নোট আপলোডে ত্রুটি দেখা দিয়েছে। আবার চেষ্টা করুন।');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetAndClose = () => {
+    setIsSuccess(false);
+    setStudentName('');
+    setRollNumber('');
+    setSection('');
+    setSchoolName('');
+    setTitle('');
+    setDescription('');
+    setSelectedFile(null);
+    setFilePreview(null);
+    setProgress(0);
+    setErrorMessage('');
+    onClose();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-6 pb-safe animate-fade-in"
+      onClick={handleResetAndClose}
+    >
+      <div
+        className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-cardBorder overflow-hidden my-auto max-h-[92vh] max-h-[92dvh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="p-3.5 sm:p-5 border-b border-cardBorder flex items-center justify-between bg-white shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
+              <Upload className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-primaryText">নোট আপলোড</h2>
+            </div>
+          </div>
+
+          <button
+            onClick={handleResetAndClose}
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-secondaryText hover:text-primaryText hover:bg-slate-100 rounded-xl transition-colors active:scale-95"
+            aria-label="Close modal"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Form or Success State */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/50">
+          {isSuccess ? (
+            <div className="py-8 text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-soft">
+                <CheckCircle2 className="w-10 h-10" />
+              </div>
+              <h3 className="text-2xl font-bold text-primaryText">নোট সফলভাবে জমা দেওয়া হয়েছে</h3>
+              <p className="text-sm text-secondaryText max-w-md mx-auto leading-relaxed">
+                আপনার নোটটি সফলভাবে সংরক্ষিত হয়েছে। অনুমোদনের পর এটি ওয়েবসাইটে প্রকাশিত হবে।
+              </p>
+              <div className="pt-4 flex justify-center">
+                <button
+                  onClick={handleResetAndClose}
+                  className="bg-brand-600 hover:bg-brand-700 text-white font-bold px-6 py-2.5 rounded-xl shadow-soft"
+                >
+                  ঠিক আছে
+                </button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+              {errorMessage && (
+                <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs sm:text-sm flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+
+              {/* Student Information */}
+              <div className="bg-white p-4 rounded-xl border border-cardBorder space-y-3">
+                <h4 className="text-xs font-bold text-brand-700 uppercase tracking-wider">
+                  শিক্ষার্থীর তথ্য
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-primaryText mb-1">
+                      শিক্ষার্থীর পূর্ণ নাম *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={studentName}
+                      onChange={(e) => setStudentName(e.target.value)}
+                      placeholder="যেমন: রাফসান আহমেদ"
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-primaryText mb-1">
+                      রোল নম্বর
+                    </label>
+                    <input
+                      type="text"
+                      value={rollNumber}
+                      onChange={(e) => setRollNumber(e.target.value)}
+                      placeholder="যেমন: ১০১"
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-primaryText mb-1">
+                      শাখা / বিভাগ
+                    </label>
+                    <input
+                      type="text"
+                      value={section}
+                      onChange={(e) => setSection(e.target.value)}
+                      placeholder="যেমন: বিজ্ঞান-ক"
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-primaryText mb-1">
+                      স্কুল / শিক্ষা প্রতিষ্ঠানের নাম *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={schoolName}
+                      onChange={(e) => setSchoolName(e.target.value)}
+                      placeholder="যেমন: ঢাকা রেসিডেনসিয়াল মডেল কলেজ"
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Subject & Chapter Selection */}
+              <div className="bg-white p-4 rounded-xl border border-cardBorder space-y-3">
+                <h4 className="text-xs font-bold text-brand-700 uppercase tracking-wider">
+                  বিষয় ও অধ্যায় নির্বাচন
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-primaryText mb-1">
+                      বিষয় *
+                    </label>
+                    <select
+                      required
+                      value={subjectId}
+                      onChange={(e) => setSubjectId(e.target.value)}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
+                    >
+                      <option value="">বিষয় নির্বাচন করুন</option>
+                      {subjects.map((sub) => (
+                        <option key={sub.subjectId} value={sub.subjectId}>
+                          {sub.name} ({sub.englishName})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-primaryText mb-1">
+                      অধ্যায় / কবিতা / গদ্য *
+                    </label>
+                    <select
+                      required
+                      value={chapterId}
+                      onChange={(e) => setChapterId(e.target.value)}
+                      disabled={!subjectId || chapters.length === 0}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white disabled:bg-slate-100"
+                    >
+                      <option value="">
+                        {subjectId ? 'অধ্যায় বা পাঠ নির্বাচন করুন' : 'আগে বিষয় নির্বাচন করুন'}
+                      </option>
+                      {chapters.map((chap) => (
+                        <option key={chap.chapterId} value={chap.chapterId}>
+                          {chap.chapterType === 'poem' ? 'পদ্য: ' : chap.chapterType === 'prose' ? 'গদ্য: ' : ''}
+                          {chap.chapterName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Note Details & File Upload */}
+              <div className="bg-white p-4 rounded-xl border border-cardBorder space-y-3">
+                <h4 className="text-xs font-bold text-brand-700 uppercase tracking-wider">
+                  নোটের তথ্য ও ফাইল
+                </h4>
+
+                <div>
+                  <label className="block text-xs font-semibold text-primaryText mb-1">
+                    নোটের শিরোনাম *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="যেমন: গতির সকল গাণিতিক সূত্র ও শর্টকাট টেকনিক"
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-primaryText mb-1">
+                    সংক্ষিপ্ত বিবরণ
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="নোটটিতে কী কী অন্তর্ভুক্ত রয়েছে সংক্ষেপে লিখুন..."
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
+                  />
+                </div>
+
+                {/* File Upload Area */}
+                <div>
+                  <label className="block text-xs font-semibold text-primaryText mb-1">
+                    নোটের ফাইল যুক্ত করুন (PDF, JPG, PNG, DOCX - সর্বোচ্চ 15MB) *
+                  </label>
+
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-brand-200 hover:border-brand-500 rounded-xl p-5 text-center cursor-pointer transition-colors bg-brand-50/20 hover:bg-brand-50/50"
+                  >
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      accept=".pdf,.jpg,.jpeg,.png,.docx"
+                      className="hidden"
+                    />
+
+                    {selectedFile ? (
+                      <div className="flex flex-col items-center gap-2">
+                        {filePreview ? (
+                          <img
+                            src={filePreview}
+                            alt="Preview"
+                            className="w-24 h-24 object-cover rounded-lg shadow-sm border border-cardBorder"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl bg-brand-100 text-brand-600 flex items-center justify-center">
+                            <FileText className="w-6 h-6" />
+                          </div>
+                        )}
+                        <span className="font-bold text-sm text-primaryText truncate max-w-xs">
+                          {selectedFile.name}
+                        </span>
+                        <span className="text-xs text-secondaryText">
+                          সাইজ: {fileSizeStr} • পরিবর্তন করতে ক্লিক করুন
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-10 h-10 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center">
+                          <Upload className="w-5 h-5" />
+                        </div>
+                        <span className="text-sm font-semibold text-primaryText">
+                          ফাইল বেছে নিন অথবা টেনে আনুন
+                        </span>
+                        <span className="text-xs text-secondaryText">
+                          সমর্থিত ফরম্যাট: PDF, JPG, PNG, DOCX
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Upload Progress Indicator */}
+                {loading && (
+                  <div className="space-y-1.5 pt-2">
+                    <div className="flex justify-between text-xs text-secondaryText font-medium">
+                      <span>আপলোড হচ্ছে...</span>
+                      <span>{progress}%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                      <div
+                        className="bg-brand-600 h-full transition-all duration-300"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Submit Button */}
+              <div className="pt-2 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleResetAndClose}
+                  className="min-h-[44px] px-4 py-2.5 text-sm font-semibold text-secondaryText hover:text-primaryText active:scale-95 transition-all"
+                >
+                  বাতিল
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="min-h-[44px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-500 to-violetAccent hover:from-brand-600 hover:to-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-soft hover:shadow-soft-hover transition-all disabled:opacity-50 active:scale-95"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>{loading ? 'আপলোড হচ্ছে...' : 'নোট জমা দিন'}</span>
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
