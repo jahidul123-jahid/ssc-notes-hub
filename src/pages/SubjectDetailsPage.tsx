@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Subject, Chapter, Note } from '../types';
+import { Subject, Chapter } from '../types';
 import { dataService } from '../services/dataService';
 import { dataEvents } from '../services/dataEvents';
-import { EmptyNotesState } from '../components/EmptyNotesState';
 import { useAudioReader } from '../context/AudioReaderContext';
 import { useLanguage } from '../context/LanguageContext';
 import {
@@ -26,7 +25,6 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
 
   const [subject, setSubject] = useState<Subject | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [subjectNotes, setSubjectNotes] = useState<Note[]>([]);
   const [activeTab, setActiveTab] = useState<'all' | 'prose' | 'poem'>('all');
   const [searchChapter, setSearchChapter] = useState('');
   const [loading, setLoading] = useState(true);
@@ -39,16 +37,14 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
       if (!subjectId) return;
       if (showLoading) setLoading(true);
       try {
-        const [allSubs, allChaps, notesList] = await Promise.all([
+        const [allSubs, allChaps] = await Promise.all([
           dataService.getSubjects(),
-          dataService.getChapters(subjectId),
-          dataService.getNotes('approved', subjectId)
+          dataService.getChapters(subjectId)
         ]);
         if (!isMounted) return;
         const currentSub = allSubs.find(s => s.subjectId === subjectId) || null;
         setSubject(currentSub);
         setChapters(allChaps);
-        setSubjectNotes(notesList);
 
         // If bangla-1st, default to prose tab
         if (subjectId === 'bangla-1st') {
@@ -196,21 +192,10 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
         </div>
       </div>
 
-      {/* If this subject has no published notes yet, show the beautiful EmptyNotesState */}
-      {subjectNotes.length === 0 && (
-        <EmptyNotesState
-          subjectName={displaySubjectName}
-          onOpenUpload={() => onOpenUpload(subject.subjectId)}
-          backLink="/subjects"
-          backLinkText="অন্যান্য বিষয় দেখুন"
-        />
-      )}
-
       {/* Chapters / Poems / Prose Grid: Displaying chapter name prominently */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
         {filteredChapters.map((chap) => {
           const isPlaying = isItemPlaying(chap.chapterName);
-          const chapterNotesCount = subjectNotes.filter(n => n.chapterId === chap.chapterId).length;
 
           return (
             <div
@@ -224,19 +209,6 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
                 <h3 className="text-xl sm:text-2xl font-bold text-primaryText group-hover:text-brand-600 transition-colors leading-snug">
                   {chap.chapterName}
                 </h3>
-                <div className="mt-1.5 flex items-center gap-2">
-                  {chapterNotesCount > 0 ? (
-                    <span className="text-[11px] font-bold text-brand-700 bg-brand-50 px-2.5 py-0.5 rounded-lg border border-brand-200/60 inline-flex items-center gap-1 shadow-2xs">
-                      <span>📄</span>
-                      <span>{chapterNotesCount}টি নোট</span>
-                    </span>
-                  ) : (
-                    <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-200/60 inline-flex items-center gap-1 shadow-2xs">
-                      <span>📭</span>
-                      <span>নোট নেই • আপলোড করুন</span>
-                    </span>
-                  )}
-                </div>
               </Link>
 
               <div className="flex items-center gap-2 shrink-0">
