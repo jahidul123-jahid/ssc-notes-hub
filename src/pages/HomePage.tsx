@@ -76,15 +76,15 @@ export const HomePage: React.FC<HomePageProps> = ({
           </Link>
         </div>
 
-        {/* Responsive Grid of Subject Cards */}
+        {/* Responsive Grid of Subject Cards - 2 per row on mobile */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 animate-pulse">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-64 bg-slate-100 rounded-2xl" />
+              <div key={i} className="h-40 sm:h-64 bg-slate-100 rounded-xl sm:rounded-2xl" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
             {subjects.map((sub) => (
               <SubjectCard
                 key={sub.subjectId}
