@@ -116,6 +116,18 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       setErrorMessage('দয়া করে আপনার নাম লিখুন।');
       return;
     }
+    if (/\d|[০-৯]/.test(studentName.trim())) {
+      setErrorMessage('শিক্ষার্থীর নামে কোনো সংখ্যা গ্রহণযোগ্য নয়। শুধুমাত্র অক্ষর লিখুন।');
+      return;
+    }
+    if (studentName.trim().length < 2) {
+      setErrorMessage('দয়া করে সঠিক পূর্ণ নাম লিখুন।');
+      return;
+    }
+    if (rollNumber.trim() && !/^[0-9০-৯]+$/.test(rollNumber.trim())) {
+      setErrorMessage('রোল নম্বরে কোনো টেক্সট বা অক্ষর গ্রহণযোগ্য নয়। শুধুমাত্র সংখ্যা (যেমন: ১০১ বা 101) লিখুন।');
+      return;
+    }
     if (!schoolName.trim()) {
       setErrorMessage('দয়া করে আপনার স্কুলের নাম লিখুন।');
       return;
@@ -292,10 +304,17 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                       type="text"
                       required
                       value={studentName}
-                      onChange={(e) => setStudentName(e.target.value)}
+                      onChange={(e) => {
+                        // Prevent numbers from being entered in the name field
+                        const onlyLetters = e.target.value.replace(/[0-9০-৯]/g, '');
+                        setStudentName(onlyLetters);
+                      }}
                       placeholder="যেমন: রাফসান আহমেদ"
                       className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
                     />
+                    <span className="text-[11px] text-secondaryText mt-0.5 block">
+                      নামে শুধু অক্ষর গ্রহণযোগ্য (কোনো সংখ্যা নয়)
+                    </span>
                   </div>
 
                   <div>
@@ -304,11 +323,19 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                     </label>
                     <input
                       type="text"
+                      inputMode="numeric"
                       value={rollNumber}
-                      onChange={(e) => setRollNumber(e.target.value)}
+                      onChange={(e) => {
+                        // Prevent text/letters from being entered in roll number (only numbers allowed)
+                        const onlyDigits = e.target.value.replace(/[^0-9০-৯]/g, '');
+                        setRollNumber(onlyDigits);
+                      }}
                       placeholder="যেমন: ১০১"
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white font-mono"
                     />
+                    <span className="text-[11px] text-secondaryText mt-0.5 block">
+                      শুধুমাত্র সংখ্যা (কোনো টেক্সট নয়)
+                    </span>
                   </div>
                 </div>
 
