@@ -171,10 +171,12 @@ export const OwnerControlPage: React.FC = () => {
   };
 
   const handleRejectNote = async (noteId: string) => {
-    await dataService.updateNoteStatus(noteId, 'rejected');
-    setSystemMessage('নোটটি বাতিল করা হয়েছে।');
-    setTimeout(() => setSystemMessage(''), 3000);
-    loadDashboardData();
+    if (window.confirm('আপনি কি এই পেন্ডিং নোটটি বাতিল ও ডাটাবেজ থেকে মুছে ফেলতে চান?')) {
+      await dataService.deleteNote(noteId);
+      setSystemMessage('নোটটি সফলভাবে বাতিল ও মুছে ফেলা হয়েছে।');
+      setTimeout(() => setSystemMessage(''), 3000);
+      loadDashboardData();
+    }
   };
 
   const handleDeleteNote = async (noteId: string) => {
@@ -651,66 +653,93 @@ export const OwnerControlPage: React.FC = () => {
               {pendingNotes.map((note) => {
                 const sub = subjects.find(s => s.subjectId === note.subjectId);
                 const chap = chapters.find(c => c.chapterId === note.chapterId);
+                const uploadDate = new Date(note.createdAt).toLocaleString('bn-BD', {
+                  dateStyle: 'medium',
+                  timeStyle: 'short'
+                });
 
                 return (
                   <div
                     key={note.noteId}
-                    className="bg-white rounded-2xl border-2 border-amber-200/80 p-5 shadow-soft space-y-4"
+                    className="bg-white rounded-2xl border-2 border-amber-300 p-5 shadow-soft space-y-4 hover:border-amber-400 transition-colors"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-100 text-amber-800">
-                          পেন্ডিং • {note.fileType.toUpperCase()}
-                        </span>
-                        <h3 className="text-base font-bold text-primaryText mt-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
+                            ⏳ অনুমোদনের অপেক্ষায়
+                          </span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                            {note.fileType.toUpperCase()}
+                          </span>
+                        </div>
+                        <h3 className="text-base font-bold text-primaryText mt-2">
                           {note.title}
                         </h3>
                       </div>
-                      <span className="text-xs font-semibold text-secondaryText">
+                      <span className="text-xs font-semibold text-secondaryText shrink-0">
                         {note.fileSize}
                       </span>
                     </div>
 
-                    <p className="text-xs text-secondaryText leading-relaxed">
-                      {note.description}
+                    <p className="text-xs text-secondaryText leading-relaxed bg-amber-50/50 p-2.5 rounded-xl border border-amber-100">
+                      <strong>নোটের বিবরণ:</strong> {note.description || 'শিক্ষার্থী কোনো অতিরিক্ত বিবরণ দেয়নি।'}
                     </p>
 
-                    <div className="p-3 bg-slate-50 rounded-xl space-y-1 text-xs text-secondaryText">
-                      <div>
-                        শিক্ষার্থী: <strong className="text-primaryText">{note.studentName}</strong> (রোল: {note.rollNumber}, শাখা: {note.section})
+                    <div className="p-3.5 bg-slate-50 rounded-xl space-y-1.5 text-xs text-secondaryText border border-cardBorder">
+                      <div className="flex items-center justify-between pb-1 border-b border-slate-200/60">
+                        <span className="font-semibold text-slate-500">শিক্ষার্থী:</span>
+                        <strong className="text-primaryText font-bold text-sm">{note.studentName}</strong>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 pt-1">
+                        <div>
+                          <span className="text-slate-500">রোল নম্বর: </span>
+                          <strong className="text-primaryText">{note.rollNumber || 'দেওয়া হয়নি'}</strong>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">বিভাগ / শাখা: </span>
+                          <strong className="text-brand-700">{note.section || 'সাধারণ'}</strong>
+                        </div>
                       </div>
                       <div>
-                        স্কুল: <strong className="text-primaryText">{note.schoolName}</strong>
+                        <span className="text-slate-500">বিদ্যালয়: </span>
+                        <strong className="text-primaryText">{note.schoolName || 'দেওয়া হয়নি'}</strong>
                       </div>
-                      <div className="pt-1 text-[11px] text-brand-700 font-semibold">
-                        বিষয়: {sub?.name || note.subjectId} • অধ্যায়: {chap?.chapterName || note.chapterId}
+                      <div className="pt-1.5 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
+                        <span className="text-brand-800 font-bold">
+                          {sub?.name || note.subjectId} • {chap?.chapterName || note.chapterId}
+                        </span>
+                        <span className="text-slate-400">{uploadDate}</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-cardBorder">
+                    <div className="flex items-center justify-between gap-2 pt-3 border-t border-cardBorder">
                       <a
                         href={note.fileURL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-secondaryText hover:text-brand-600 p-2"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-3 py-2 rounded-xl border border-brand-200 transition-colors"
+                        title="নতুন ট্যাবে সম্পূর্ণ নোটের ফাইলটি খুলে পরীক্ষা করুন"
                       >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>ফাইল পরীক্ষা</span>
+                        <Eye className="w-4 h-4" />
+                        <span>নোট পরীক্ষা করুন (PDF)</span>
                       </a>
 
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleRejectNote(note.noteId)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors"
+                          className="px-3 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors"
+                          title="এই নোটটি বাতিল ও ডাটাবেজ থেকে মুছে ফেলুন"
                         >
                           বাতিল করুন
                         </button>
 
                         <button
                           onClick={() => handleApproveNote(note.noteId)}
-                          className="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-all flex items-center gap-1"
+                          className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-all flex items-center gap-1.5 active:scale-95"
+                          title="অনুমোদন করুন, এর সাথে সাথেই নোটটি সবার জন্য ওয়েবসাইটে লাইভ হয়ে যাবে"
                         >
-                          <CheckCircle className="w-3.5 h-3.5" />
+                          <CheckCircle className="w-4 h-4" />
                           <span>অনুমোদন করুন</span>
                         </button>
                       </div>

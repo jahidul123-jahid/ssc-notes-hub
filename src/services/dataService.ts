@@ -347,11 +347,11 @@ export const dataService = {
       fileURL,
       fileType: actualFileType,
       createdAt: new Date().toISOString(),
-      status: 'approved',
+      status: 'pending',
       downloadCount: 0
     };
 
-    // Save to Supabase 'notes' table so anyone on any phone/PC sees it
+    // Save to Supabase 'notes' table with pending status for Admin moderation
     if (supabase) {
       try {
         await supabase.from('notes').insert({
@@ -369,7 +369,7 @@ export const dataService = {
           file_size: noteData.fileSize || '',
           page_count: noteData.pageCount || 1,
           download_count: 0,
-          status: 'approved',
+          status: 'pending',
           created_at: newNote.createdAt
         });
       } catch (err) {
