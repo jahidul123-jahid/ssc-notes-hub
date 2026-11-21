@@ -12,9 +12,13 @@ import {
   FileText,
   ExternalLink,
   ZoomIn,
-  BookOpen
+  BookOpen,
+  Volume2,
+  Sparkles,
+  Pause
 } from 'lucide-react';
 import { Note, Subject, Chapter } from '../types';
+import { useAudioReader } from '../context/AudioReaderContext';
 
 interface NoteViewerModalProps {
   note: Note | null;
@@ -35,8 +39,22 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
+  const { play, pause, isItemPlaying } = useAudioReader();
 
   if (!note) return null;
+
+  const isCurrentNotePlaying = isItemPlaying(note.title);
+
+  const handleToggleAudio = () => {
+    if (isCurrentNotePlaying) {
+      pause();
+    } else {
+      const subjectPart = subject ? `বিষয়: ${subject.name}।` : '';
+      const chapterPart = chapter ? `অধ্যায়: ${chapter.chapterName}।` : '';
+      const fullText = `${note.title}। ${subjectPart} ${chapterPart} নোটের বিস্তারিত: ${note.description}`;
+      play(fullText, note.title, subject?.name || 'এসএসসি নোট');
+    }
+  };
 
   const handleCopyLink = () => {
     const shareUrl = `${window.location.origin}/?noteId=${note.noteId}`;
@@ -109,6 +127,30 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
           </div>
 
           <div className="flex items-center gap-0.5 sm:gap-1.5 shrink-0">
+            {/* AI Audio Reader Button */}
+            <button
+              onClick={handleToggleAudio}
+              className={`min-h-[44px] px-3 flex items-center gap-1.5 rounded-xl font-bold text-xs transition-all active:scale-95 ${
+                isCurrentNotePlaying
+                  ? 'bg-brand-600 text-white shadow-soft animate-pulse'
+                  : 'bg-brand-50 text-brand-700 hover:bg-brand-100 border border-brand-200/80'
+              }`}
+              title="এআই দিয়ে নোটটি শুনুন"
+              aria-label="Listen with AI Voice"
+            >
+              {isCurrentNotePlaying ? (
+                <>
+                  <Pause className="w-4 h-4 fill-current" />
+                  <span className="hidden sm:inline">বিরতি</span>
+                </>
+              ) : (
+                <>
+                  <Volume2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">শুনুন</span>
+                </>
+              )}
+            </button>
+
             <button
               onClick={handleCopyLink}
               className="min-h-[44px] min-w-[44px] flex items-center justify-center text-secondaryText hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-colors relative active:scale-95"
@@ -196,6 +238,18 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
                 </div>
 
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    onClick={handleToggleAudio}
+                    className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl font-bold shadow-soft transition-all text-sm active:scale-95 ${
+                      isCurrentNotePlaying
+                        ? 'bg-brand-600 text-white animate-pulse'
+                        : 'bg-white text-brand-700 hover:bg-brand-50 border-2 border-brand-300'
+                    }`}
+                  >
+                    <Volume2 className="w-4 h-4" />
+                    <span>{isCurrentNotePlaying ? 'অডিও থামান' : 'এআই দিয়ে শুনুন'}</span>
+                  </button>
+
                   <button
                     onClick={() => onDownload(note)}
                     className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-500 to-violetAccent text-white px-6 py-3 rounded-xl font-bold shadow-soft hover:shadow-soft-hover hover:scale-105 transition-all text-sm"

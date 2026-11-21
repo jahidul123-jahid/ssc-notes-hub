@@ -1,6 +1,7 @@
 import React from 'react';
-import { Eye, Download, FileText, User, School, Flag } from 'lucide-react';
+import { Eye, Download, FileText, User, School, Flag, Volume2, Pause } from 'lucide-react';
 import { Note } from '../types';
+import { useAudioReader } from '../context/AudioReaderContext';
 
 interface NoteCardProps {
   note: Note;
@@ -15,6 +16,18 @@ export const NoteCard: React.FC<NoteCardProps> = ({
   onDownload,
   onReport
 }) => {
+  const { play, pause, isItemPlaying } = useAudioReader();
+  const isPlaying = isItemPlaying(note.title);
+
+  const handleAudioClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isPlaying) {
+      pause();
+    } else {
+      const fullText = `${note.title}। নোটের বিবরণ: ${note.description}`;
+      play(fullText, note.title);
+    }
+  };
   const getFileTypeLabel = (type: string) => {
     switch (type.toLowerCase()) {
       case 'pdf':
@@ -40,16 +53,32 @@ export const NoteCard: React.FC<NoteCardProps> = ({
             <span>{getFileTypeLabel(note.fileType)}</span>
           </span>
 
-          {onReport && (
+          <div className="flex items-center gap-1">
             <button
-              onClick={() => onReport(note)}
-              className="text-secondaryText/60 hover:text-rose-500 p-1 rounded-lg hover:bg-rose-50 transition-colors"
-              title="রিপোর্ট করুন"
-              aria-label="Report note"
+              onClick={handleAudioClick}
+              className={`p-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 ${
+                isPlaying
+                  ? 'bg-brand-600 text-white'
+                  : 'text-secondaryText hover:text-brand-600 hover:bg-brand-50'
+              }`}
+              title="এআই দিয়ে শুনুন"
+              aria-label="Listen with AI"
             >
-              <Flag className="w-3.5 h-3.5" />
+              {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Volume2 className="w-3.5 h-3.5" />}
+              <span className="text-[11px] font-medium hidden sm:inline">শুনুন</span>
             </button>
-          )}
+
+            {onReport && (
+              <button
+                onClick={() => onReport(note)}
+                className="text-secondaryText/60 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
+                title="রিপোর্ট করুন"
+                aria-label="Report note"
+              >
+                <Flag className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
 
         <h3 className="text-lg font-bold text-primaryText group-hover:text-brand-600 transition-colors line-clamp-2 leading-snug">

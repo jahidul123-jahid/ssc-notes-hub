@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Subject, Chapter, Note } from '../types';
 import { dataService } from '../services/dataService';
+import { useAudioReader } from '../context/AudioReaderContext';
 import {
   BookOpen,
   Upload,
   Search,
   ChevronRight,
-  ArrowRight
+  ArrowRight,
+  Volume2,
+  Pause
 } from 'lucide-react';
 
 interface SubjectDetailsPageProps {
@@ -22,6 +25,8 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
   const [activeTab, setActiveTab] = useState<'all' | 'prose' | 'poem'>('all');
   const [searchChapter, setSearchChapter] = useState('');
   const [loading, setLoading] = useState(true);
+
+  const { play, pause, isItemPlaying } = useAudioReader();
 
   useEffect(() => {
     const load = async () => {
@@ -172,22 +177,60 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
 
       {/* Chapters / Poems / Prose Grid: Displaying ONLY the actual chapter/poem/prose name prominently in large bold Bengali text */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-        {filteredChapters.map((chap) => (
-          <Link
-            key={chap.chapterId}
-            to={`/subject/${subject.subjectId}/chapter/${chap.chapterId}`}
-            className="group block bg-white hover:bg-brand-50/40 p-6 sm:p-7 rounded-2xl border border-cardBorder hover:border-brand-300 shadow-soft hover:shadow-soft-hover transition-all duration-200 hover:-translate-y-0.5"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-xl sm:text-2xl font-bold text-primaryText group-hover:text-brand-600 transition-colors leading-snug">
-                {chap.chapterName}
-              </h3>
-              <div className="w-8 h-8 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center shrink-0 group-hover:bg-brand-600 group-hover:text-white transition-all">
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+        {filteredChapters.map((chap) => {
+          const isPlaying = isItemPlaying(chap.chapterName);
+          return (
+            <div
+              key={chap.chapterId}
+              className="group bg-white hover:bg-brand-50/40 p-5 sm:p-7 rounded-2xl border border-cardBorder hover:border-brand-300 shadow-soft hover:shadow-soft-hover transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-between gap-3"
+            >
+              <Link
+                to={`/subject/${subject.subjectId}/chapter/${chap.chapterId}`}
+                className="flex-1 min-w-0"
+              >
+                <h3 className="text-xl sm:text-2xl font-bold text-primaryText group-hover:text-brand-600 transition-colors leading-snug">
+                  {chap.chapterName}
+                </h3>
+              </Link>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (isPlaying) {
+                      pause();
+                    } else {
+                      const typeLabel = chap.chapterType === 'poem' ? 'কবিতা' : chap.chapterType === 'prose' ? 'গদ্য' : 'অধ্যায়';
+                      play(`${subject.name} এর ${typeLabel}: ${chap.chapterName}।`, chap.chapterName, subject.name);
+                    }
+                  }}
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+                    isPlaying
+                      ? 'bg-brand-600 text-white shadow-soft animate-pulse'
+                      : 'bg-brand-50 hover:bg-brand-100 text-brand-600 border border-brand-200/60'
+                  }`}
+                  title={`${chap.chapterName} শুনুন`}
+                  aria-label={`Listen to ${chap.chapterName}`}
+                >
+                  {isPlaying ? (
+                    <Pause className="w-4 h-4 fill-current" />
+                  ) : (
+                    <Volume2 className="w-4 h-4" />
+                  )}
+                </button>
+
+                <Link
+                  to={`/subject/${subject.subjectId}/chapter/${chap.chapterId}`}
+                  className="w-9 h-9 rounded-xl bg-slate-50 text-secondaryText flex items-center justify-center group-hover:bg-brand-600 group-hover:text-white transition-all"
+                  aria-label={`Open ${chap.chapterName}`}
+                >
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
               </div>
             </div>
-          </Link>
-        ))}
+          );
+        })}
       </div>
 
       {filteredChapters.length === 0 && (

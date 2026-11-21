@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useSearchParams } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { AudioReaderProvider } from './context/AudioReaderContext';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { ScrollRestorationManager } from './components/ScrollRestorationManager';
+import { AIAudioPlayer } from './components/AIAudioPlayer';
 import { NoteViewerModal } from './components/NoteViewerModal';
 import { UploadModal } from './components/UploadModal';
 import { ReportModal } from './components/ReportModal';
@@ -159,6 +161,9 @@ const AppContent: React.FC = () => {
       {/* Global Footer */}
       <Footer />
 
+      {/* Floating Global AI Audio Player */}
+      <AIAudioPlayer />
+
       {/* Interactive Note Viewer Modal */}
       <NoteViewerModal
         note={activeNoteForView}
@@ -193,9 +198,11 @@ const AppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <AppContent />
-      </BrowserRouter>
+      <AudioReaderProvider>
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+      </AudioReaderProvider>
     </AuthProvider>
   );
 };
