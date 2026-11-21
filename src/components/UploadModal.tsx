@@ -25,7 +25,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const { t, isBn } = useLanguage();
   const [studentName, setStudentName] = useState('');
   const [rollNumber, setRollNumber] = useState('');
-  const [section, setSection] = useState('');
+  const [group, setGroup] = useState('বিজ্ঞান');
+  const [sectionName, setSectionName] = useState('');
   const [schoolName, setSchoolName] = useState('');
   const [subjectId, setSubjectId] = useState(initialSubjectId || '');
   const [chapterId, setChapterId] = useState(initialChapterId || '');
@@ -181,11 +182,15 @@ export const UploadModal: React.FC<UploadModalProps> = ({
         }
       }
 
+      const formattedSection = sectionName.trim()
+        ? `${group} (${sectionName.trim()})`
+        : group;
+
       await dataService.uploadNote(
         {
           studentName: studentName.trim(),
           rollNumber: rollNumber.trim() || 'প্রযোজ্য নয়',
-          section: section.trim() || 'সাধারণ',
+          section: formattedSection,
           schoolName: schoolName.trim(),
           subjectId,
           chapterId: finalChapterId,
@@ -219,7 +224,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     setIsSuccess(false);
     setStudentName('');
     setRollNumber('');
-    setSection('');
+    setGroup('বিজ্ঞান');
+    setSectionName('');
     setSchoolName('');
     setTitle('');
     setDescription('');
@@ -342,18 +348,34 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-primaryText mb-1">
-                      শাখা / বিভাগ
+                      বিভাগ (Group) *
+                    </label>
+                    <select
+                      required
+                      value={group}
+                      onChange={(e) => setGroup(e.target.value)}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white font-medium"
+                    >
+                      <option value="বিজ্ঞান">বিজ্ঞান বিভাগ (Science)</option>
+                      <option value="মানবিক">মানবিক বিভাগ (Humanities)</option>
+                      <option value="ব্যবসায় শিক্ষা">ব্যবসায় শিক্ষা বিভাগ (Business Studies)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-primaryText mb-1">
+                      শাখা (ঐচ্ছিক)
                     </label>
                     <input
                       type="text"
-                      value={section}
-                      onChange={(e) => setSection(e.target.value)}
-                      placeholder="যেমন: বিজ্ঞান-ক"
+                      value={sectionName}
+                      onChange={(e) => setSectionName(e.target.value)}
+                      placeholder="যেমন: ক / খ / A"
                       className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
                     />
                   </div>
 
-                  <div className="sm:col-span-2">
+                  <div>
                     <label className="block text-xs font-semibold text-primaryText mb-1">
                       স্কুল / শিক্ষা প্রতিষ্ঠানের নাম *
                     </label>
@@ -362,7 +384,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                       required
                       value={schoolName}
                       onChange={(e) => setSchoolName(e.target.value)}
-                      placeholder="যেমন: ঢাকা রেসিডেনসিয়াল মডেল কলেজ"
+                      placeholder="যেমন: নবীনগর সরকারি পাইলট উচ্চ বিদ্যালয়"
                       className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
                     />
                   </div>
