@@ -123,20 +123,18 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
                 <span>{t('nav_upload')}</span>
               </button>
 
-              {/* Owner Admin Access Button */}
-              <button
-                type="button"
-                onClick={handleAdminClick}
-                className={`p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer shadow-sm hover:scale-105 active:scale-95 ${
-                  isOwner
-                    ? 'bg-purple-100/80 text-brand-700 border-brand-300 ring-2 ring-brand-400/20'
-                    : 'bg-purple-50 text-brand-600 border-brand-200 hover:bg-brand-100'
-                }`}
-                title={isOwner ? "অ্যাডমিন ড্যাশবোর্ড (লগইন করা আছে)" : "মালিক / অ্যাডমিন প্যানেল"}
-                aria-label="Owner Control Panel"
-              >
-                <ShieldAlert className="w-5 h-5" />
-              </button>
+              {/* Owner Admin Access Button - ONLY visible to logged-in Owner */}
+              {isOwner && (
+                <button
+                  type="button"
+                  onClick={handleAdminClick}
+                  className="p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer shadow-sm hover:scale-105 active:scale-95 bg-purple-100/90 text-brand-700 border-brand-300 ring-2 ring-brand-400/20"
+                  title="মালিক / অ্যাডমিন ড্যাশবোর্ড"
+                  aria-label="Owner Control Panel"
+                >
+                  <ShieldAlert className="w-5 h-5" />
+                </button>
+              )}
             </div>
 
             {/* Mobile Actions (Guaranteed 44x44px minimum touch targets) */}
@@ -151,20 +149,18 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
                 <span>{language === 'en' ? 'EN' : 'বাং'}</span>
               </button>
 
-              {/* Mobile Admin Panel Quick Shield Button */}
-              <button
-                type="button"
-                onClick={handleAdminClick}
-                className={`min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl border transition-colors active:scale-95 cursor-pointer ${
-                  isOwner
-                    ? 'bg-purple-100 text-brand-700 border-brand-300'
-                    : 'bg-purple-50 text-brand-600 border-brand-200'
-                }`}
-                title={isOwner ? "অ্যাডমিন ড্যাশবোর্ড" : "মালিক প্যানেল"}
-                aria-label="Owner Control Panel"
-              >
-                <ShieldAlert className="w-5 h-5" />
-              </button>
+              {/* Mobile Admin Panel Quick Shield Button - ONLY visible to logged-in Owner */}
+              {isOwner && (
+                <button
+                  type="button"
+                  onClick={handleAdminClick}
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl border transition-colors active:scale-95 cursor-pointer bg-purple-100 text-brand-700 border-brand-300"
+                  title="অ্যাডমিন ড্যাশবোর্ড"
+                  aria-label="Owner Control Panel"
+                >
+                  <ShieldAlert className="w-5 h-5" />
+                </button>
+              )}
 
               <button
                 onClick={onOpenUpload}
@@ -257,19 +253,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
                 );
               })}
 
-              {/* Owner panel navigation */}
-              <button
-                type="button"
-                onClick={handleAdminClick}
-                className={`w-full flex items-center gap-3 min-h-[48px] py-3 px-3.5 rounded-xl text-base font-bold mt-3 border transition-colors text-left cursor-pointer ${
-                  isOwner
-                    ? 'text-brand-800 bg-brand-50 border-brand-200'
-                    : 'text-secondaryText bg-slate-50 border-cardBorder hover:text-brand-600'
-                }`}
-              >
-                <ShieldAlert className="w-5 h-5 text-brand-600 shrink-0" />
-                <span>{t('owner_panel')}</span>
-              </button>
+              {/* Owner panel navigation - ONLY visible to logged-in Owner */}
+              {isOwner && (
+                <button
+                  type="button"
+                  onClick={handleAdminClick}
+                  className="w-full flex items-center gap-3 min-h-[48px] py-3 px-3.5 rounded-xl text-base font-bold mt-3 border transition-colors text-left cursor-pointer text-brand-800 bg-brand-50 border-brand-200"
+                >
+                  <ShieldAlert className="w-5 h-5 text-brand-600 shrink-0" />
+                  <span>{t('owner_panel')}</span>
+                </button>
+              )}
             </nav>
           </div>
         </div>

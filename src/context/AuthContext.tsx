@@ -21,7 +21,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const LOCAL_AUTH_KEY = 'ssc_hub_owner_session_v1';
 
 const getInitialOwnerState = (): { isOwner: boolean; user: FirebaseUser | null } => {
-  if (!isFirebaseConfigured && typeof window !== 'undefined') {
+  if (typeof window !== 'undefined') {
     try {
       const savedSession = localStorage.getItem(LOCAL_AUTH_KEY);
       if (savedSession) {
