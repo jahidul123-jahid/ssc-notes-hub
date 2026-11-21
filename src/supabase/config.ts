@@ -6,7 +6,11 @@ export const SUPABASE_STORAGE_KEYS = {
   ANON_KEY: 'ssc_hub_supabase_anon_key'
 };
 
-// Retrieve configuration from Vite environment variables or dynamic admin settings
+// Default project credentials (configured for live SSC Notes Hub)
+const DEFAULT_SUPABASE_URL = 'https://dwgbjgetvzbplmqesnzd.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_KBJuwv05q761VfOhjWHj8w_DOq2b-nb';
+
+// Retrieve configuration from Vite environment variables, localStorage, or defaults
 export function getSupabaseCredentials(): { url: string; anonKey: string } {
   const envUrl = import.meta.env.VITE_SUPABASE_URL || '';
   const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -14,8 +18,8 @@ export function getSupabaseCredentials(): { url: string; anonKey: string } {
   const localUrl = typeof window !== 'undefined' ? localStorage.getItem(SUPABASE_STORAGE_KEYS.URL) || '' : '';
   const localKey = typeof window !== 'undefined' ? localStorage.getItem(SUPABASE_STORAGE_KEYS.ANON_KEY) || '' : '';
 
-  const url = localUrl.trim() || envUrl.trim();
-  const anonKey = localKey.trim() || envKey.trim();
+  const url = localUrl.trim() || envUrl.trim() || DEFAULT_SUPABASE_URL;
+  const anonKey = localKey.trim() || envKey.trim() || DEFAULT_SUPABASE_ANON_KEY;
 
   return { url, anonKey };
 }
