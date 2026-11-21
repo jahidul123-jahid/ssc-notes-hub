@@ -368,7 +368,7 @@ export const OwnerControlPage: React.FC = () => {
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>মূল ওয়েবসাইটে ফিরে যান</span>
             </button>
-            <span className="text-xs font-extrabold text-brand-600">SSC Notes Hub</span>
+            <span className="text-xs font-extrabold text-brand-600">SSC Note Box</span>
           </div>
 
           <div className="text-center space-y-2">

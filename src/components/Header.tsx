@@ -83,7 +83,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
                 <BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <span className="text-lg sm:text-2xl font-bold tracking-tight text-primaryText group-hover:text-brand-600 transition-colors truncate">
-                SSC Notes Hub
+                SSC Note Box
               </span>
             </Link>
 

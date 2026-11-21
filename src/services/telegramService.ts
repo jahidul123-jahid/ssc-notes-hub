@@ -1,5 +1,5 @@
 // ==========================================================
-// SSC Notes Hub — Telegram Real-time Notification Service
+// SSC Note Box — Telegram Real-time Notification Service
 // Sends rich alerts to Owner (Jahidul) for:
 // 1. New website visitors with comprehensive device & location data
 // 2. Students uploading notes (with download/view link)
@@ -195,7 +195,7 @@ export const telegramService = {
   // Test bot connectivity
   async sendTestMessage(): Promise<{ ok: boolean; message: string }> {
     const time = getFormattedTime();
-    const html = `✅ <b>SSC Notes Hub — টেস্ট নোটিফিকেশন</b>\n\n` +
+    const html = `✅ <b>SSC Note Box — টেস্ট নোটিফিকেশন</b>\n\n` +
       `জাহিদুল ইসলাম, আপনার টেলিগ্রাম বট সফলভাবে কানেক্ট হয়েছে!\n` +
       `⏰ <b>সময়:</b> ${time}\n` +
       `🌐 <b>স্ট্যাটাস:</b> সক্রিয় (Active)`;

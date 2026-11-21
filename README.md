@@ -1,4 +1,4 @@
-# SSC Notes Hub (একসাথে শিখি, একসাথে এগিয়ে যাই)
+# SSC Note Box (একসাথে শিখি, একসাথে এগিয়ে যাই)
 
 A modern, responsive, fully functional educational notes-sharing platform built specifically for Class 10 (SSC) students in Bangladesh.
 

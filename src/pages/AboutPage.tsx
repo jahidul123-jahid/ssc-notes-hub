@@ -27,7 +27,7 @@ export const AboutPage: React.FC = () => {
                 />
               </div>
               <div className="absolute -bottom-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-brand-600 to-violetAccent text-white font-bold text-xs px-4 py-1.5 rounded-full shadow-md whitespace-nowrap">
-                {isBn ? 'প্রতিষ্ঠাতা • SSC Notes Hub' : 'Founder • SSC Notes Hub'}
+                {isBn ? 'প্রতিষ্ঠাতা • SSC Note Box' : 'Founder • SSC Note Box'}
               </div>
             </div>
 
@@ -60,7 +60,7 @@ export const AboutPage: React.FC = () => {
                 {isBn ? 'জাহিদুল ইসলাম' : 'Jahidul Islam'}
               </h1>
               <p className="text-base sm:text-lg font-semibold text-brand-600 mt-1">
-                {isBn ? 'প্রতিষ্ঠাতা, এসএসসি নোটস হাব' : 'Founder, SSC Notes Hub'}
+                {isBn ? 'প্রতিষ্ঠাতা, এসএসসি নোট বক্স' : 'Founder, SSC Note Box'}
               </p>
             </div>
 
@@ -72,7 +72,7 @@ export const AboutPage: React.FC = () => {
                     আমি জাহিদুল ইসলাম। ব্রাহ্মণবাড়িয়ার নবীনগর সরকারি পাইলট উচ্চ বিদ্যালয়ের দশম শ্রেণির বিজ্ঞান বিভাগের একজন শিক্ষার্থী।
                   </p>
                   <p>
-                    শিক্ষার্থীদের পড়াশোনা সহজ ও সুন্দর করতে তৈরি করেছি <strong className="text-primaryText font-semibold">SSC Notes Hub</strong>—একটি বিনামূল্যের শিক্ষামূলক ওয়েবসাইট, যেখানে সবাই নোট পড়তে ও নিজের নোট শেয়ার করতে পারে।
+                    শিক্ষার্থীদের পড়াশোনা সহজ ও সুন্দর করতে তৈরি করেছি <strong className="text-primaryText font-semibold">SSC Note Box</strong>—একটি বিনামূল্যের শিক্ষামূলক ওয়েবসাইট, যেখানে সবাই নোট পড়তে ও নিজের নোট শেয়ার করতে পারে।
                   </p>
                   <p>
                     ওয়েবসাইট ব্যবহার করতে কোনো সমস্যা হলে বা কোনো পরামর্শ থাকলে নির্দ্বিধায় আমাকে মেসেজ দিতে পারেন।
@@ -84,7 +84,7 @@ export const AboutPage: React.FC = () => {
                     I am Jahidul Islam, a Class 10 Science student at Nabinagar Govt. Pilot High School, Brahmanbaria.
                   </p>
                   <p>
-                    To make studying easier and more rewarding for SSC students, I built <strong className="text-primaryText font-semibold">SSC Notes Hub</strong>—a free educational platform where students can read quality study notes and share their own handwritten notes.
+                    To make studying easier and more rewarding for SSC students, I built <strong className="text-primaryText font-semibold">SSC Note Box</strong>—a free educational platform where students can read quality study notes and share their own handwritten notes.
                   </p>
                   <p>
                     If you face any issues using this website or have any suggestions, feel free to send me a message directly.

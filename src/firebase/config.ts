@@ -31,12 +31,12 @@ if (isFirebaseConfigured) {
     auth = getAuth(app);
     db = getFirestore(app);
     storage = getStorage(app);
-    console.log("🔥 Firebase backend successfully initialized for SSC Notes Hub.");
+    console.log("🔥 Firebase backend successfully initialized for SSC Note Box.");
   } catch (error) {
     console.warn("⚠️ Firebase initialization error. Falling back to local dynamic store:", error);
   }
 } else {
-  console.log("ℹ️ SSC Notes Hub running in local simulation & offline-ready mode. Configure .env to connect live Firebase.");
+  console.log("ℹ️ SSC Note Box running in local simulation & offline-ready mode. Configure .env to connect live Firebase.");
 }
 
 // Authorized Owner Configuration

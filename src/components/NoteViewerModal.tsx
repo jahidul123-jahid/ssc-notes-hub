@@ -100,7 +100,7 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
       try {
         await navigator.share({
           title: note.title,
-          text: `${note.title} — SSC Notes Hub`,
+          text: `${note.title} — SSC Note Box`,
           url: shareUrl,
         });
       } catch {

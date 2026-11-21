@@ -1,5 +1,5 @@
 // ============================================================================
-// SSC Notes Hub - High-Quality Bengali AI Voice Reader Service
+// SSC Note Box - High-Quality Bengali AI Voice Reader Service
 // Supported Engines:
 // 1. Google Neural Bengali TTS (100% natural native Bangla speaker, zero-config)
 // 2. Cartesia Multilingual Sonic-3.6 (Dedicated high-speed AI voice)

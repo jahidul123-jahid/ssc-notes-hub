@@ -110,6 +110,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       !normalizedEmail ||
       normalizedEmail === OWNER_CONFIG.email.toLowerCase() ||
       normalizedEmail === 'jahidulislamg.b.123@gmail.com' ||
+      normalizedEmail === 'admin@sscnotebox.com' ||
       normalizedEmail === 'admin@sscnoteshub.com' ||
       normalizedEmail === 'jahidul@gmail.com' ||
       normalizedEmail === 'jahidul' ||

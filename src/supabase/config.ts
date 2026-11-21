@@ -6,7 +6,7 @@ export const SUPABASE_STORAGE_KEYS = {
   ANON_KEY: 'ssc_hub_supabase_anon_key'
 };
 
-// Default project credentials (configured for live SSC Notes Hub)
+// Default project credentials (configured for live SSC Note Box)
 const DEFAULT_SUPABASE_URL = 'https://dwgbjgetvzbplmqesnzd.supabase.co';
 const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_KBJuwv05q761VfOhjWHj8w_DOq2b-nb';
 
@@ -65,7 +65,7 @@ export const supabase = getSupabaseClient();
 
 // Ready-to-use SQL Schema for 1-click database setup in Supabase SQL Editor
 export const SUPABASE_SQL_SETUP = `-- ==========================================================
--- SSC NOTES HUB — SUPABASE DATABASE & STORAGE SCHEMA
+-- SSC NOTE BOX — SUPABASE DATABASE & STORAGE SCHEMA
 -- Run this script in your Supabase SQL Editor
 -- ==========================================================
 

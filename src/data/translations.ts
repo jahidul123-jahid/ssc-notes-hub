@@ -4,7 +4,7 @@ export const translations: Record<Language, Record<string, string>> = {
   en: {
     // Top Bar & Brand
     top_announcement: "Click to view Founder Jahidul Islam's profile & details",
-    brand_title: "SSC Notes Hub",
+    brand_title: "SSC Note Box",
     
     // Navigation
     nav_home: "Home",
@@ -118,12 +118,12 @@ export const translations: Record<Language, Record<string, string>> = {
     // Footer
     footer_copyright: "All rights reserved.",
     footer_founder: "Founder: Jahidul Islam (Nabinagar Govt. Pilot High School)",
-    footer_privacy: "SSC Notes Hub is a non-profit, student-led open educational platform.",
+    footer_privacy: "SSC Note Box is a non-profit, student-led open educational platform.",
   },
   bn: {
     // Top Bar & Brand
     top_announcement: "আমাদের সম্পর্কে ও প্রতিষ্ঠাতা জাহিদুল ইসলামের সকল পরিচিতি দেখতে ক্লিক করুন",
-    brand_title: "SSC Notes Hub",
+    brand_title: "SSC Note Box",
 
     // Navigation
     nav_home: "হোম",
@@ -237,6 +237,6 @@ export const translations: Record<Language, Record<string, string>> = {
     // Footer
     footer_copyright: "সর্বস্বত্ব সংরক্ষিত।",
     footer_founder: "প্রতিষ্ঠাতা: জাহিদুল ইসলাম (নবীনগর সরকারি পাইলট উচ্চ বিদ্যালয়)",
-    footer_privacy: "এসএসসি নোটস হাব একটি অলাভজনক উন্মুক্ত শিক্ষা প্ল্যাটফর্ম।",
+    footer_privacy: "এসএসসি নোট বক্স একটি অলাভজনক উন্মুক্ত শিক্ষা প্ল্যাটফর্ম।",
   }
 };

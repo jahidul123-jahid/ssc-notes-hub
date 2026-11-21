@@ -1,5 +1,5 @@
 /**
- * Production Firebase Security Rules for SSC Notes Hub
+ * Production Firebase Security Rules for SSC Note Box
  * Owner: Jahidul Islam
  */
 

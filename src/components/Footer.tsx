@@ -18,7 +18,7 @@ export const Footer: React.FC = () => {
               <BookOpen className="w-5 h-5" />
             </div>
             <span className="text-xl font-bold tracking-tight text-primaryText">
-              SSC Notes Hub
+              SSC Note Box
             </span>
           </Link>
 
@@ -45,7 +45,7 @@ export const Footer: React.FC = () => {
         {/* Bottom Bar */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-secondaryText">
           <p>
-            © {CURRENT_YEAR} SSC Notes Hub. {t('footer_copyright')}
+            © {CURRENT_YEAR} SSC Note Box. {t('footer_copyright')}
           </p>
           <p>
             {t('footer_founder')}
