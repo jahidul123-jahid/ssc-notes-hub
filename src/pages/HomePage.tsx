@@ -4,6 +4,7 @@ import { SubjectCard } from '../components/SubjectCard';
 import { NoteCard } from '../components/NoteCard';
 import { Subject, Note } from '../types';
 import { dataService } from '../services/dataService';
+import { dataEvents } from '../services/dataEvents';
 import { BookOpen, Upload, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
@@ -29,21 +30,36 @@ export const HomePage: React.FC<HomePageProps> = ({
   const subjectsSectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const loadData = async () => {
+    let isMounted = true;
+    const loadData = async (showLoading = true) => {
+      if (showLoading) setLoading(true);
       try {
         const [subList, noteList] = await Promise.all([
           dataService.getSubjects(),
           dataService.getNotes('approved')
         ]);
+        if (!isMounted) return;
         setSubjects(subList);
         setNotes(noteList);
       } catch (err) {
         console.error("Home page data fetch error:", err);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     loadData();
+
+    // Auto-update content seamlessly without requiring manual browser reload
+    const unsubscribe = dataEvents.subscribe((event) => {
+      if (event.type === 'notes' || event.type === 'subjects') {
+        loadData(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const handleScrollToSubjects = () => {

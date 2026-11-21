@@ -4,6 +4,7 @@ import { db, storage, isFirebaseConfigured } from '../firebase/config';
 import { getSupabaseClient } from '../supabase/config';
 import { telegramService } from './telegramService';
 import { convertImageToPdf, convertImagesToPdf } from '../utils/pdfConverter';
+import { dataEvents } from './dataEvents';
 import {
   collection,
   getDocs,
@@ -77,6 +78,7 @@ export const dataService = {
     const subjects = await this.getSubjects();
     subjects.push(subject);
     localStorage.setItem(STORAGE_KEYS.SUBJECTS, JSON.stringify(subjects));
+    dataEvents.emit({ type: 'subjects', action: 'create', id: subject.subjectId, data: subject });
   },
 
   async updateSubject(subjectId: string, updates: Partial<Subject>): Promise<void> {
@@ -92,6 +94,7 @@ export const dataService = {
     if (idx !== -1) {
       subjects[idx] = { ...subjects[idx], ...updates };
       localStorage.setItem(STORAGE_KEYS.SUBJECTS, JSON.stringify(subjects));
+      dataEvents.emit({ type: 'subjects', action: 'update', id: subjectId, data: updates });
     }
   },
 
@@ -106,6 +109,7 @@ export const dataService = {
     const subjects = await this.getSubjects();
     const filtered = subjects.filter(s => s.subjectId !== subjectId);
     localStorage.setItem(STORAGE_KEYS.SUBJECTS, JSON.stringify(filtered));
+    dataEvents.emit({ type: 'subjects', action: 'delete', id: subjectId });
   },
 
   // ================= CHAPTERS =================
@@ -143,6 +147,7 @@ export const dataService = {
     const chapters = await this.getChapters();
     chapters.push(chapter);
     localStorage.setItem(STORAGE_KEYS.CHAPTERS, JSON.stringify(chapters));
+    dataEvents.emit({ type: 'chapters', action: 'create', id: chapter.chapterId, data: chapter });
   },
 
   async updateChapter(chapterId: string, updates: Partial<Chapter>): Promise<void> {
@@ -158,6 +163,7 @@ export const dataService = {
     if (idx !== -1) {
       chapters[idx] = { ...chapters[idx], ...updates };
       localStorage.setItem(STORAGE_KEYS.CHAPTERS, JSON.stringify(chapters));
+      dataEvents.emit({ type: 'chapters', action: 'update', id: chapterId, data: updates });
     }
   },
 
@@ -172,6 +178,7 @@ export const dataService = {
     const chapters = await this.getChapters();
     const filtered = chapters.filter(c => c.chapterId !== chapterId);
     localStorage.setItem(STORAGE_KEYS.CHAPTERS, JSON.stringify(filtered));
+    dataEvents.emit({ type: 'chapters', action: 'delete', id: chapterId });
   },
 
   // ================= NOTES =================
@@ -422,6 +429,8 @@ export const dataService = {
       console.warn("Telegram note upload notification failed:", err);
     });
 
+    dataEvents.emit({ type: 'notes', action: 'create', id: newNote.noteId, data: newNote });
+
     return newNote;
   },
 
@@ -449,6 +458,7 @@ export const dataService = {
       notes[idx].status = status;
       localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(notes));
     }
+    dataEvents.emit({ type: 'notes', action: 'update', id: noteId, data: { status } });
   },
 
   async updateNote(noteId: string, updates: Partial<Note>): Promise<void> {
@@ -481,6 +491,7 @@ export const dataService = {
       notes[idx] = { ...notes[idx], ...updates };
       localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(notes));
     }
+    dataEvents.emit({ type: 'notes', action: 'update', id: noteId, data: updates });
   },
 
   async deleteNote(noteId: string): Promise<void> {
@@ -507,6 +518,7 @@ export const dataService = {
     const notes: Note[] = local ? JSON.parse(local) : [];
     const filtered = notes.filter(n => n.noteId !== noteId);
     localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(filtered));
+    dataEvents.emit({ type: 'notes', action: 'delete', id: noteId });
   },
 
   async incrementDownload(noteId: string): Promise<number> {
@@ -540,6 +552,7 @@ export const dataService = {
       count = notes[idx].downloadCount;
       localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(notes));
     }
+    dataEvents.emit({ type: 'notes', action: 'update', id: noteId, data: { downloadCount: count } });
     return count;
   },
 
@@ -570,6 +583,8 @@ export const dataService = {
     telegramService.notifyReport(report).catch((err) => {
       console.warn("Telegram report notification failed:", err);
     });
+
+    dataEvents.emit({ type: 'reports', action: 'create', id: report.reportId, data: report });
 
     return report;
   },
@@ -603,6 +618,7 @@ export const dataService = {
       reports[idx].status = status;
       localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(reports));
     }
+    dataEvents.emit({ type: 'reports', action: 'update', id: reportId, data: { status } });
   },
 
   // ================= DYNAMIC STATISTICS =================
@@ -649,5 +665,46 @@ export const dataService = {
         console.error("Firebase curriculum batch sync error:", err);
       }
     }
+    dataEvents.emit({ type: 'subjects', action: 'update' });
+    dataEvents.emit({ type: 'chapters', action: 'update' });
+    dataEvents.emit({ type: 'notes', action: 'update' });
   }
 };
+
+/**
+ * Initializes live Supabase Realtime synchronization across browsers and devices.
+ * When an admin approves or deletes a note anywhere, all connected clients automatically
+ * update without pressing manual page reload.
+ */
+let realtimeChannelSubscribed = false;
+export function initSupabaseRealtime() {
+  if (realtimeChannelSubscribed) return;
+  const supabase = getSupabaseClient();
+  if (!supabase) return;
+
+  try {
+    supabase
+      .channel('public:notes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notes' },
+        (payload) => {
+          const action = payload.eventType === 'INSERT' ? 'create' : payload.eventType === 'DELETE' ? 'delete' : 'update';
+          const newRow = payload.new as any;
+          dataEvents.emit({
+            type: 'notes',
+            action,
+            id: newRow?.note_id,
+            data: newRow
+          });
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          realtimeChannelSubscribed = true;
+        }
+      });
+  } catch (err) {
+    console.warn("Supabase Realtime subscription fallback:", err);
+  }
+}

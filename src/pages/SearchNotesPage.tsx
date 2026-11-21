@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Subject, Chapter, Note } from '../types';
 import { dataService } from '../services/dataService';
+import { dataEvents } from '../services/dataEvents';
 import { NoteCard } from '../components/NoteCard';
 import { useLanguage } from '../context/LanguageContext';
 import {
@@ -34,21 +35,35 @@ export const SearchNotesPage: React.FC<SearchNotesPageProps> = ({
   const [selectedFileType, setSelectedFileType] = useState('all');
 
   useEffect(() => {
-    const loadData = async () => {
+    let isMounted = true;
+    const loadData = async (showLoading = true) => {
+      if (showLoading) setLoading(true);
       try {
         const [subList, chapList, noteList] = await Promise.all([
           dataService.getSubjects(),
           dataService.getChapters(),
           dataService.getNotes('approved')
         ]);
+        if (!isMounted) return;
         setSubjects(subList);
         setChapters(chapList);
         setNotes(noteList);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     loadData();
+
+    const unsubscribe = dataEvents.subscribe((event) => {
+      if (event.type === 'notes' || event.type === 'subjects' || event.type === 'chapters') {
+        loadData(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   // Filtered chapters according to selected subject

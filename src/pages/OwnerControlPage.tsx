@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { dataService } from '../services/dataService';
+import { dataEvents } from '../services/dataEvents';
 import { Subject, Chapter, Note, Report, WebsiteStats } from '../types';
 import { isFirebaseConfigured, OWNER_CONFIG } from '../firebase/config';
 import { FIRESTORE_RULES, STORAGE_RULES } from '../firebase/securityRules';
@@ -146,10 +147,18 @@ export const OwnerControlPage: React.FC = () => {
         }
       })();
     }
+
+    const unsubscribe = dataEvents.subscribe(() => {
+      if (!ignore && isOwner) {
+        loadDashboardData();
+      }
+    });
+
     return () => {
       ignore = true;
+      unsubscribe();
     };
-  }, [isOwner]);
+  }, [isOwner, loadDashboardData]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

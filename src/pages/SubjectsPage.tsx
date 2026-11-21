@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SubjectCard } from '../components/SubjectCard';
 import { Subject, SubjectGroup } from '../types';
 import { dataService } from '../services/dataService';
+import { dataEvents } from '../services/dataEvents';
 import { Search, BookOpen } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -13,15 +14,29 @@ export const SubjectsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const load = async () => {
+    let isMounted = true;
+    const load = async (showLoading = true) => {
+      if (showLoading) setLoading(true);
       try {
         const subList = await dataService.getSubjects();
+        if (!isMounted) return;
         setSubjects(subList);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     load();
+
+    const unsubscribe = dataEvents.subscribe((event) => {
+      if (event.type === 'subjects') {
+        load(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const filteredSubjects = subjects.filter(s => {

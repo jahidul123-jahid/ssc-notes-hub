@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Subject, Chapter } from '../types';
 import { dataService } from '../services/dataService';
+import { dataEvents } from '../services/dataEvents';
 import { useAudioReader } from '../context/AudioReaderContext';
 import { useLanguage } from '../context/LanguageContext';
 import {
@@ -31,14 +32,16 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
   const { play, pause, isItemPlaying } = useAudioReader();
 
   useEffect(() => {
-    const load = async () => {
+    let isMounted = true;
+    const load = async (showLoading = true) => {
       if (!subjectId) return;
+      if (showLoading) setLoading(true);
       try {
         const [allSubs, allChaps] = await Promise.all([
           dataService.getSubjects(),
           dataService.getChapters(subjectId)
         ]);
-
+        if (!isMounted) return;
         const currentSub = allSubs.find(s => s.subjectId === subjectId) || null;
         setSubject(currentSub);
         setChapters(allChaps);
@@ -50,10 +53,21 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
           setActiveTab('all');
         }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     load();
+
+    const unsubscribe = dataEvents.subscribe((event) => {
+      if (event.type === 'chapters' || event.type === 'subjects') {
+        load(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, [subjectId]);
 
   if (loading) {

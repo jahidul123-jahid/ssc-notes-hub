@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Subject, Chapter, Note } from '../types';
 import { dataService } from '../services/dataService';
+import { dataEvents } from '../services/dataEvents';
 import { NoteCard } from '../components/NoteCard';
 import { useAudioReader } from '../context/AudioReaderContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -41,23 +42,36 @@ export const ChapterDetailsPage: React.FC<ChapterDetailsPageProps> = ({
   const { play, pause, isItemPlaying } = useAudioReader();
 
   useEffect(() => {
-    const load = async () => {
+    let isMounted = true;
+    const load = async (showLoading = true) => {
       if (!subjectId || !chapterId) return;
+      if (showLoading) setLoading(true);
       try {
         const [subs, chaps, noteList] = await Promise.all([
           dataService.getSubjects(),
           dataService.getChapters(subjectId),
           dataService.getNotes('approved', subjectId, chapterId)
         ]);
-
+        if (!isMounted) return;
         setSubject(subs.find(s => s.subjectId === subjectId) || null);
         setChapter(chaps.find(c => c.chapterId === chapterId) || null);
         setNotes(noteList);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     load();
+
+    const unsubscribe = dataEvents.subscribe((event) => {
+      if (event.type === 'notes' || event.type === 'chapters') {
+        load(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, [subjectId, chapterId]);
 
   if (loading) {

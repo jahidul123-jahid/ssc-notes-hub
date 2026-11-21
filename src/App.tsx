@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, useSearchParams } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { AudioReaderProvider } from './context/AudioReaderContext';
@@ -11,17 +11,26 @@ import { NoteViewerModal } from './components/NoteViewerModal';
 import { UploadModal } from './components/UploadModal';
 import { ReportModal } from './components/ReportModal';
 import { HomePage } from './pages/HomePage';
-import { SubjectsPage } from './pages/SubjectsPage';
-import { SubjectDetailsPage } from './pages/SubjectDetailsPage';
-import { ChapterDetailsPage } from './pages/ChapterDetailsPage';
-import { SearchNotesPage } from './pages/SearchNotesPage';
-import { AboutPage } from './pages/AboutPage';
-import { ContactPage } from './pages/ContactPage';
-import { OwnerControlPage } from './pages/OwnerControlPage';
-import { NotFoundPage } from './pages/NotFoundPage';
 import { Subject, Chapter, Note } from './types';
-import { dataService } from './services/dataService';
+import { dataService, initSupabaseRealtime } from './services/dataService';
+import { dataEvents } from './services/dataEvents';
 import { telegramService } from './services/telegramService';
+
+// Code-split route components for high performance and fast initial page loads
+const SubjectsPage = lazy(() => import('./pages/SubjectsPage').then(m => ({ default: m.SubjectsPage })));
+const SubjectDetailsPage = lazy(() => import('./pages/SubjectDetailsPage').then(m => ({ default: m.SubjectDetailsPage })));
+const ChapterDetailsPage = lazy(() => import('./pages/ChapterDetailsPage').then(m => ({ default: m.ChapterDetailsPage })));
+const SearchNotesPage = lazy(() => import('./pages/SearchNotesPage').then(m => ({ default: m.SearchNotesPage })));
+const AboutPage = lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })));
+const ContactPage = lazy(() => import('./pages/ContactPage').then(m => ({ default: m.ContactPage })));
+const OwnerControlPage = lazy(() => import('./pages/OwnerControlPage').then(m => ({ default: m.OwnerControlPage })));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
+
+const RouteLoadingFallback = () => (
+  <div className="min-h-[50vh] flex items-center justify-center">
+    <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 const AppContent: React.FC = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -39,6 +48,9 @@ const AppContent: React.FC = () => {
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
+    // Initialize live realtime sync
+    initSupabaseRealtime();
+
     const loadInitData = async () => {
       const [subs, chaps] = await Promise.all([
         dataService.getSubjects(),
@@ -59,6 +71,16 @@ const AppContent: React.FC = () => {
       telegramService.notifyVisitor().catch(() => {});
     };
     loadInitData();
+
+    // Subscribe to curriculum changes (new subjects, chapters) to update state automatically
+    const unsubscribe = dataEvents.subscribe((event) => {
+      if (event.type === 'subjects' || event.type === 'chapters') {
+        dataService.getSubjects().then(setSubjects);
+        dataService.getChapters().then(setChapters);
+      }
+    });
+
+    return () => unsubscribe();
   }, [searchParams]);
 
   const handleOpenUpload = (subjectId?: string, chapterId?: string) => {
@@ -132,53 +154,55 @@ const AppContent: React.FC = () => {
 
       {/* Main Page Routing */}
       <main className="flex-1">
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <HomePage
-                onOpenUpload={handleOpenUpload}
-                onViewNote={handleViewNote}
-                onDownloadNote={handleDownloadNote}
-                onReportNote={handleReportNote}
-              />
-            }
-          />
-          <Route path="/subjects" element={<SubjectsPage />} />
-          <Route
-            path="/subject/:subjectId"
-            element={<SubjectDetailsPage onOpenUpload={handleOpenUpload} />}
-          />
-          <Route
-            path="/subject/:subjectId/chapter/:chapterId"
-            element={
-              <ChapterDetailsPage
-                onOpenUpload={handleOpenUpload}
-                onViewNote={handleViewNote}
-                onDownloadNote={handleDownloadNote}
-                onReportNote={handleReportNote}
-              />
-            }
-          />
-          <Route
-            path="/search"
-            element={
-              <SearchNotesPage
-                onViewNote={handleViewNote}
-                onDownloadNote={handleDownloadNote}
-                onReportNote={handleReportNote}
-              />
-            }
-          />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/contact" element={<ContactPage />} />
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <HomePage
+                  onOpenUpload={handleOpenUpload}
+                  onViewNote={handleViewNote}
+                  onDownloadNote={handleDownloadNote}
+                  onReportNote={handleReportNote}
+                />
+              }
+            />
+            <Route path="/subjects" element={<SubjectsPage />} />
+            <Route
+              path="/subject/:subjectId"
+              element={<SubjectDetailsPage onOpenUpload={handleOpenUpload} />}
+            />
+            <Route
+              path="/subject/:subjectId/chapter/:chapterId"
+              element={
+                <ChapterDetailsPage
+                  onOpenUpload={handleOpenUpload}
+                  onViewNote={handleViewNote}
+                  onDownloadNote={handleDownloadNote}
+                  onReportNote={handleReportNote}
+                />
+              }
+            />
+            <Route
+              path="/search"
+              element={
+                <SearchNotesPage
+                  onViewNote={handleViewNote}
+                  onDownloadNote={handleDownloadNote}
+                  onReportNote={handleReportNote}
+                />
+              }
+            />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
 
-          {/* Private Owner Admin Panel - Hidden Route */}
-          <Route path="/owner-control" element={<OwnerControlPage />} />
+            {/* Private Owner Admin Panel - Hidden Route */}
+            <Route path="/owner-control" element={<OwnerControlPage />} />
 
-          {/* 404 Route */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+            {/* 404 Route */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
       </main>
 
       {/* Global Footer */}
@@ -204,8 +228,13 @@ const AppContent: React.FC = () => {
         subjects={subjects}
         initialSubjectId={uploadSubjectId}
         initialChapterId={uploadChapterId}
-        onUploadSuccess={() => {
-          // Refresh list if needed
+        onUploadSuccess={async () => {
+          const [subs, chaps] = await Promise.all([
+            dataService.getSubjects(),
+            dataService.getChapters()
+          ]);
+          setSubjects(subs);
+          setChapters(chaps);
         }}
       />
 
