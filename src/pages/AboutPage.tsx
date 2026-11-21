@@ -3,14 +3,15 @@ import {
   GraduationCap,
   Mail,
   MessageCircle,
-  CheckCircle2
+  MapPin,
+  BookOpen
 } from 'lucide-react';
 
 export const AboutPage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-8 sm:py-14 space-y-8 sm:space-y-12">
-      {/* Main Hero Spotlight Card with Photo, Signature & Bio */}
-      <div className="bg-white text-primaryText rounded-2xl sm:rounded-3xl p-5 sm:p-12 shadow-soft relative overflow-hidden border border-cardBorder">
+      {/* Main Profile Card - Clean, Human & Authentic */}
+      <div className="bg-white text-primaryText rounded-2xl sm:rounded-3xl p-6 sm:p-12 shadow-soft relative overflow-hidden border border-cardBorder">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           {/* Photo & Signature Column */}
           <div className="lg:col-span-5 flex flex-col items-center text-center space-y-4">
@@ -18,21 +19,20 @@ export const AboutPage: React.FC = () => {
               <div className="w-56 h-56 sm:w-64 sm:h-64 rounded-3xl overflow-hidden border-4 border-brand-200 shadow-soft relative bg-gradient-to-tr from-brand-50 to-brand-100 group-hover:border-brand-500 transition-all duration-300">
                 <img
                   src="/assets/jahidul-profile.jpg?v=20261121"
-                  alt="Jahidul Islam"
+                  alt="জাহিদুল ইসলাম"
                   className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = '/assets/jahidul-profile.png';
                   }}
                 />
               </div>
-              <div className="absolute -bottom-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-brand-600 to-violetAccent text-white font-bold text-xs px-4 py-1.5 rounded-full shadow-md whitespace-nowrap flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>উদ্যোক্তা ও প্ল্যাটফর্ম নির্মাতা</span>
+              <div className="absolute -bottom-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-brand-600 to-violetAccent text-white font-bold text-xs px-4 py-1.5 rounded-full shadow-md whitespace-nowrap">
+                প্রতিষ্ঠাতা • SSC Notes Hub
               </div>
             </div>
 
-            {/* Clean Digital Signature (No extra text) */}
-            <div className="pt-2 flex flex-col items-center select-none">
+            {/* Clean Hand-drawn Signature */}
+            <div className="pt-3 flex flex-col items-center select-none">
               <svg
                 viewBox="0 0 260 70"
                 className="w-48 sm:w-56 h-auto text-primaryText drop-shadow-sm fill-none stroke-current"
@@ -53,44 +53,55 @@ export const AboutPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Details & Biography Column */}
+          {/* Details & Natural Story Column */}
           <div className="lg:col-span-7 space-y-5">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 text-brand-700 text-xs font-bold uppercase tracking-wider mb-2 border border-brand-200">
-                <span>FOUNDER & DEVELOPER PROFILE</span>
-              </div>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-primaryText">
-                জাহিদুল ইসলাম (Jahidul Islam)
-              </h2>
-              <p className="text-base font-semibold text-brand-600 mt-1">
-                Class 10 Student • Fashion Gallery Moderator • AI Tech Explorer
+              <h1 className="text-3xl sm:text-4xl font-black text-primaryText tracking-tight">
+                জাহিদুল ইসলাম
+              </h1>
+              <p className="text-base sm:text-lg font-semibold text-brand-600 mt-1">
+                শিক্ষার্থী ও প্রতিষ্ঠাতা, এসএসসি নোটস হাব
               </p>
             </div>
 
-            {/* School Badge */}
-            <div className="flex flex-wrap gap-2.5 text-xs">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-brand-50 text-brand-800 border border-brand-200 font-semibold">
+            {/* Natural Identity Badges */}
+            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-50 text-brand-800 border border-brand-200/80 font-semibold">
                 <GraduationCap className="w-4 h-4 text-brand-600" />
                 <span>নবীনগর সরকারি পাইলট উচ্চ বিদ্যালয়</span>
               </div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 font-semibold border border-slate-200">
+                <BookOpen className="w-3.5 h-3.5 text-slate-500" />
+                <span>১০ম শ্রেণি (বিজ্ঞান শাখা)</span>
+              </div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 font-semibold border border-slate-200">
+                <MapPin className="w-3.5 h-3.5 text-slate-500" />
+                <span>ব্রাহ্মণবাড়িয়া</span>
+              </div>
             </div>
 
-            {/* Story / About */}
-            <div className="space-y-3 text-sm sm:text-base text-secondaryText leading-relaxed">
+            {/* Genuine, Human-written Story */}
+            <div className="space-y-3.5 text-sm sm:text-base text-secondaryText leading-relaxed pt-1">
               <p>
-                আমি ব্রাহ্মণবাড়িয়ার সুপ্রাচীন ও ঐতিহ্যবাহী <strong className="text-primaryText font-bold">নবীনগর সরকারি পাইলট উচ্চ বিদ্যালয়ের</strong> শ্রেণি ১০ এর বিজ্ঞান বিভাগের শিক্ষার্থী। প্রাতিষ্ঠানিক পড়াশোনার পাশাপাশি তথ্যপ্রযুক্তি, ডিজিটাল ডিজাইন, কৃত্রিম বুদ্ধিমত্তা (AI) ও ওয়েব ডেভেলপমেন্টের প্রতি আমার গভীর ভালোবাসা রয়েছে।
+                আসসালামু আলাইকুম! আমি জাহিদুল ইসলাম। ব্রাহ্মণবাড়িয়ার নবীনগর সরকারি পাইলট উচ্চ বিদ্যালয়ের ১০ম শ্রেণির বিজ্ঞান বিভাগের একজন শিক্ষার্থী।
               </p>
               <p>
-                বাস্তব জীবনের অভিজ্ঞতা অর্জনের লক্ষ্যে আমি জনপ্রিয় ই-কমার্স প্রতিষ্ঠান <strong className="text-primaryText font-bold">Fashion Gallery Shop</strong>-এর ফেসবুক পেজ মডারেটর হিসেবে নিষ্ঠার সাথে কাজ করছি। একই সাথে প্রযুক্তি ব্যবহার করে কীভাবে শিক্ষার্থীদের জন্য ইতিবাচক কিছু সৃষ্টি করা যায়, সেই চিন্তা থেকেই <strong className="text-primaryText font-bold">SSC Notes Hub</strong> এর সূচনা।
+                এসএসসি পরীক্ষার প্রস্তুতির সময় লক্ষ্য করেছি—আমাদের মতো অনেক শিক্ষার্থীর জন্যই প্রতিটি অধ্যায়ের পরিষ্কার হ্যান্ডনোট, সমাধান ও গাইডলাইন সময়মতো খুঁজে পাওয়া কঠিন হয়ে দাঁড়ায়। সেই ভাবনা থেকেই সহপাঠী ও বন্ধুদের সহযোগিতায় <strong className="text-primaryText font-semibold">এসএসসি নোটস হাব</strong> তৈরি করেছি, যাতে সবাই সম্পূর্ণ বিনামূল্যে সহজে নোট পড়তে ও নিজের খাতার সুন্দর নোট শেয়ার করতে পারে।
+              </p>
+              <p>
+                পড়াশোনার পাশাপাশি আমি টেকনোলজি, ওয়েব ডিজাইন ও ডিজিটাল ক্রিয়েটিভিটি নিয়ে কাজ করতে ভালোবাসি। এছাড়া ই-কমার্স প্ল্যাটফর্ম <strong className="text-primaryText font-semibold">Fashion Gallery Shop</strong>-এর অনলাইন কমিউনিটি মডারেশনের দায়িত্বও নিষ্ঠার সাথে পালন করছি।
               </p>
             </div>
 
-            {/* Motto Box */}
-            <div className="p-4 rounded-2xl bg-brand-50/70 border border-brand-200 text-xs sm:text-sm text-brand-900 font-medium italic leading-relaxed">
-              💬 "Stay curious every single day, keep learning with an open mind, and use technology to create meaningful things."
+            {/* Purpose Highlight (Natural Bengali) */}
+            <div className="p-4 rounded-2xl bg-brand-50/60 border border-brand-200/70 flex items-start gap-3 text-xs sm:text-sm text-brand-900 leading-relaxed font-medium">
+              <span className="text-base select-none">💡</span>
+              <p>
+                <strong className="font-bold text-primaryText">মূল লক্ষ্য:</strong> পড়াশোনা সবার জন্য সহজ ও উন্মুক্ত রাখা। শিক্ষা যেন বাণিজ্য না হয়ে একে অপরকে সাহায্য করে একসাথে এগিয়ে যাওয়ার মাধ্যম হয়।
+              </p>
             </div>
 
-            {/* Clean Social & Communication Icon Buttons (Just Logos) */}
+            {/* Clean Social Media Icons */}
             <div className="pt-2 flex items-center gap-3">
               {/* Facebook */}
               <a
