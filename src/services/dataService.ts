@@ -3,6 +3,7 @@ import { INITIAL_SUBJECTS, INITIAL_CHAPTERS, INITIAL_NOTES } from '../data/initi
 import { db, storage, isFirebaseConfigured } from '../firebase/config';
 import { getSupabaseClient } from '../supabase/config';
 import { telegramService } from './telegramService';
+import { convertImageToPdf } from '../utils/pdfConverter';
 import {
   collection,
   getDocs,
@@ -260,17 +261,29 @@ export const dataService = {
     const noteId = `note-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     let fileURL = '';
 
+    // Convert image (PNG/JPG) to PDF automatically so everything on website is standardized as clean PDF
+    let actualFile = file;
+    let actualFileType = noteData.fileType;
+    if (file.type.startsWith('image/') || ['jpg', 'jpeg', 'png', 'webp'].includes(file.name.split('.').pop()?.toLowerCase() || '')) {
+      try {
+        actualFile = await convertImageToPdf(file);
+        actualFileType = 'pdf';
+      } catch (err) {
+        console.warn("Image to PDF conversion skipped, using original:", err);
+      }
+    }
+
     // 1. Live Supabase Storage (Upload real file to Supabase public bucket)
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
         if (onProgress) onProgress(30);
-        const fileExt = file.name.split('.').pop() || 'pdf';
-        const storagePath = `${noteId}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        const fileExt = actualFile.name.split('.').pop() || 'pdf';
+        const storagePath = `${noteId}_${actualFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 
         const { data: upData, error: upErr } = await supabase.storage
           .from('notes')
-          .upload(storagePath, file, {
+          .upload(storagePath, actualFile, {
             cacheControl: '3600',
             upsert: true
           });
@@ -294,8 +307,8 @@ export const dataService = {
     // 2. If live Firebase Storage is configured, upload the binary file
     if (!fileURL && isFirebaseConfigured && storage) {
       try {
-        const storageRef = ref(storage, `notes/${noteId}_${file.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, file);
+        const storageRef = ref(storage, `notes/${noteId}_${actualFile.name}`);
+        const uploadTask = uploadBytesResumable(storageRef, actualFile);
 
         await new Promise<void>((resolve, reject) => {
           uploadTask.on(
@@ -321,8 +334,8 @@ export const dataService = {
       fileURL = await new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => resolve(URL.createObjectURL(file));
-        reader.readAsDataURL(file);
+        reader.onerror = () => resolve(URL.createObjectURL(actualFile));
+        reader.readAsDataURL(actualFile);
       });
       if (onProgress) onProgress(100);
     }
@@ -331,6 +344,7 @@ export const dataService = {
       ...noteData,
       noteId,
       fileURL,
+      fileType: actualFileType,
       createdAt: new Date().toISOString(),
       status: 'approved',
       downloadCount: 0
@@ -350,7 +364,7 @@ export const dataService = {
           section: noteData.section || '',
           school_name: noteData.schoolName || '',
           file_url: fileURL,
-          file_type: noteData.fileType,
+          file_type: actualFileType,
           file_size: noteData.fileSize || '',
           page_count: noteData.pageCount || 1,
           download_count: 0,

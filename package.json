@@ -15,6 +15,7 @@
     "autoprefixer": "^10.7.0",
     "canvas-confetti": "^1.9.4",
     "firebase": "^13.4.0",
+    "jspdf": "^4.2.1",
     "lucide-react": "^1.76.0",
     "postcss": "^8.5.33",
     "react": "^19.3.1",

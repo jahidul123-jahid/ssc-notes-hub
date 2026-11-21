@@ -431,7 +431,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                           {selectedFile.name}
                         </span>
                         <span className="text-xs text-secondaryText">
-                          সাইজ: {fileSizeStr} • পরিবর্তন করতে ক্লিক করুন
+                          সাইজ: {fileSizeStr} {['jpg', 'jpeg', 'png'].includes(fileType) ? '• স্বয়ংক্রিয়ভাবে PDF এ তৈরি হবে' : ''} • পরিবর্তন করতে ক্লিক করুন
                         </span>
                       </div>
                     ) : (
@@ -443,7 +443,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                           ফাইল বেছে নিন অথবা টেনে আনুন
                         </span>
                         <span className="text-xs text-secondaryText">
-                          সমর্থিত ফরম্যাট: PDF, JPG, PNG, DOCX
+                          ছবি (PNG/JPG) বা PDF দিতে পারেন (ছবি দিলে স্বয়ংক্রিয়ভাবে PDF হয়ে যাবে)
                         </span>
                       </div>
                     )}
