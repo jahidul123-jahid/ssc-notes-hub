@@ -2,6 +2,7 @@ import { Subject, Chapter, Note, Report, WebsiteStats, NoteStatus } from '../typ
 import { INITIAL_SUBJECTS, INITIAL_CHAPTERS, INITIAL_NOTES } from '../data/initialData';
 import { db, storage, isFirebaseConfigured } from '../firebase/config';
 import { getSupabaseClient } from '../supabase/config';
+import { telegramService } from './telegramService';
 import {
   collection,
   getDocs,
@@ -374,6 +375,11 @@ export const dataService = {
     notes.unshift(newNote);
     localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(notes));
 
+    // Send instant Telegram notification to Jahidul
+    telegramService.notifyNoteUpload(newNote).catch((err) => {
+      console.warn("Telegram note upload notification failed:", err);
+    });
+
     return newNote;
   },
 
@@ -514,6 +520,11 @@ export const dataService = {
     const reports: Report[] = local ? JSON.parse(local) : [];
     reports.unshift(report);
     localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(reports));
+
+    // Send instant Telegram report alert to Jahidul
+    telegramService.notifyReport(report).catch((err) => {
+      console.warn("Telegram report notification failed:", err);
+    });
 
     return report;
   },

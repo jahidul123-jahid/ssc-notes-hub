@@ -21,6 +21,7 @@ import { OwnerControlPage } from './pages/OwnerControlPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { Subject, Chapter, Note } from './types';
 import { dataService } from './services/dataService';
+import { telegramService } from './services/telegramService';
 
 const AppContent: React.FC = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -54,6 +55,8 @@ const AppContent: React.FC = () => {
           setActiveNoteForView(targetNote);
         }
       }
+      // Notify owner of new visitor in background
+      telegramService.notifyVisitor().catch(() => {});
     };
     loadInitData();
   }, [searchParams]);

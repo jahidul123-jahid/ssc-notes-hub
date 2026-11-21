@@ -11,6 +11,11 @@ import {
   getSupabaseClient
 } from '../supabase/config';
 import {
+  telegramService,
+  getTelegramCredentials,
+  saveTelegramCredentials
+} from '../services/telegramService';
+import {
   ShieldAlert,
   Lock,
   LogOut,
@@ -32,7 +37,9 @@ import {
   RefreshCw,
   Eye,
   Sparkles,
-  Save
+  Save,
+  Send,
+  Bell
 } from 'lucide-react';
 
 export const OwnerControlPage: React.FC = () => {
@@ -67,6 +74,13 @@ export const OwnerControlPage: React.FC = () => {
   const [supabaseAnonKey, setSupabaseAnonKey] = useState(initialSupabaseCreds.anonKey);
   const [supabaseSaveStatus, setSupabaseSaveStatus] = useState<'idle' | 'saving' | 'connected' | 'error'>('idle');
   const [copiedSql, setCopiedSql] = useState(false);
+
+  // Telegram Bot configuration state
+  const initialTgCreds = getTelegramCredentials();
+  const [tgToken, setTgToken] = useState(initialTgCreds.botToken);
+  const [tgChatId, setTgChatId] = useState(initialTgCreds.chatId);
+  const [tgTestStatus, setTgTestStatus] = useState('');
+  const [tgTesting, setTgTesting] = useState(false);
 
   // Add / Edit Subject State
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
@@ -281,6 +295,22 @@ export const OwnerControlPage: React.FC = () => {
     navigator.clipboard.writeText(SUPABASE_SQL_SETUP);
     setCopiedSql(true);
     setTimeout(() => setCopiedSql(false), 2500);
+  };
+
+  const handleSaveTelegramConfig = (e: React.FormEvent) => {
+    e.preventDefault();
+    saveTelegramCredentials(tgToken, tgChatId);
+    setSystemMessage('টেলিগ্রাম বট কনফিগারেশন সংরক্ষিত হয়েছে!');
+    setTimeout(() => setSystemMessage(''), 3000);
+  };
+
+  const handleTestTelegramAlert = async () => {
+    setTgTesting(true);
+    setTgTestStatus('');
+    saveTelegramCredentials(tgToken, tgChatId);
+    const res = await telegramService.sendTestMessage();
+    setTgTesting(false);
+    setTgTestStatus(res.message);
   };
 
   const handleResetDatabase = async () => {
@@ -1149,6 +1179,113 @@ export const OwnerControlPage: React.FC = () => {
                 >
                   <Save className="w-4 h-4" />
                   <span>{supabaseSaveStatus === 'saving' ? 'সংরক্ষণ হচ্ছে...' : 'সুপাবেস সংরক্ষণ ও কানেক্ট করুন'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* TELEGRAM BOT NOTIFICATIONS CARD */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-cardBorder shadow-soft space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-primaryText flex items-center gap-2">
+                  <Bell className="w-5 h-5 text-sky-500" />
+                  <span>টেলিগ্রাম ইনস্ট্যান্ট নোটিফিকেশন বট</span>
+                </h2>
+                <p className="text-xs sm:text-sm text-secondaryText mt-1">
+                  কেউ ওয়েবসাইটে ঢুকলে অথবা নতুন নোট আপলোড করলে সাথে সাথে আপনার টেলিগ্রামে মেসেজ ও বিস্তারিত নোটিফিকেশন চলে আসবে।
+                </p>
+              </div>
+
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-50 border border-sky-200 text-sky-700 text-xs font-bold">
+                <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+                <span>বট সক্রিয় (@note_book_note_bot)</span>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-sky-50/60 border border-sky-100 space-y-2">
+              <h4 className="text-xs font-bold text-sky-900 flex items-center gap-1.5">
+                <span>💡 টেলিগ্রাম সতর্কতা পেতে শেষ ১টি ধাপ:</span>
+              </h4>
+              <p className="text-xs text-sky-800 leading-relaxed">
+                টেলিগ্রাম সিকিউরিটির নিয়মানুযায়ী, যেকোনো নতুন বট মেসেজ পাঠানো শুরু করার আগে আপনার একবার বটটিতে গিয়ে <b>START</b> চাপতে হয়। 
+                আপনার টেলিগ্রামে যান এবং সার্চ বক্সে লিখুন: <b className="font-mono bg-white px-2 py-0.5 rounded border border-sky-200">@note_book_note_bot</b> অথবা{' '}
+                <a 
+                  href="https://t.me/note_book_note_bot" 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="font-bold underline text-sky-700 hover:text-sky-900"
+                >
+                  t.me/note_book_note_bot
+                </a>{' '}
+                লিংকে গিয়ে <b>START</b> চাপুন।
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveTelegramConfig} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-primaryText mb-1.5">
+                    Telegram Bot Token
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={tgToken}
+                    onChange={(e) => setTgToken(e.target.value)}
+                    placeholder="9085137422:AAEL..."
+                    className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder bg-slate-50 focus:bg-white focus:outline-none focus:border-sky-500 font-mono"
+                  />
+                  <span className="text-[11px] text-secondaryText mt-1 block">
+                    BotFather থেকে প্রাপ্ত বট এপিআই টোকেন
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-primaryText mb-1.5">
+                    Your Telegram Chat ID
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={tgChatId}
+                    onChange={(e) => setTgChatId(e.target.value)}
+                    placeholder="5856234447"
+                    className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder bg-slate-50 focus:bg-white focus:outline-none focus:border-sky-500 font-mono"
+                  />
+                  <span className="text-[11px] text-secondaryText mt-1 block">
+                    আপনার ব্যক্তিগত টেলিগ্রাম আইডি (যেখানে নোটিফিকেশন আসবে)
+                  </span>
+                </div>
+              </div>
+
+              {tgTestStatus && (
+                <div className={`p-3.5 rounded-xl text-xs font-semibold ${
+                  tgTestStatus.includes('সফল') 
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
+                    : 'bg-amber-50 text-amber-800 border border-amber-200'
+                }`}>
+                  {tgTestStatus}
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleTestTelegramAlert}
+                  disabled={tgTesting}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-bold transition-colors disabled:opacity-50"
+                >
+                  <Send className="w-4 h-4 text-sky-600" />
+                  <span>{tgTesting ? 'মেসেজ পাঠানো হচ্ছে...' : 'টেলিগ্রাম টেস্ট মেসেজ পাঠান'}</span>
+                </button>
+
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-soft transition-all"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>টেলিগ্রাম সেটিংস সংরক্ষণ করুন</span>
                 </button>
               </div>
             </form>
