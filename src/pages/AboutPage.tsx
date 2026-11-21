@@ -1,38 +1,16 @@
 import React from 'react';
 import {
   GraduationCap,
-  MapPin,
   Mail,
-  ShieldCheck,
-  Target,
-  Sparkles,
-  Award,
-  Users,
   ExternalLink,
   MessageCircle,
   Code2,
-  Heart,
-  Briefcase,
-  Share2,
-  CheckCircle2,
-  BookOpen,
-  Laptop,
-  Compass
+  CheckCircle2
 } from 'lucide-react';
 
 export const AboutPage: React.FC = () => {
   return (
-    <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-8 sm:py-16 space-y-10 sm:space-y-16">
-      {/* Top Header Heading */}
-      <div className="text-center space-y-2 sm:space-y-3 max-w-3xl mx-auto px-2">
-        <h1 className="text-2xl sm:text-5xl font-black text-primaryText tracking-tight">
-          আমাদের সম্পর্কে — <span className="text-gradient">জাহিদুল ইসলাম</span>
-        </h1>
-        <p className="text-sm sm:text-lg text-secondaryText leading-relaxed">
-          নবীনগর সরকারি পাইলট উচ্চ বিদ্যালয়ের শিক্ষার্থী জাহিদুল ইসলামের উদ্যোগে পরিচালিত উন্মুক্ত এসএসসি নোট প্ল্যাটফর্ম।
-        </p>
-      </div>
-
+    <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-8 sm:py-14 space-y-8 sm:space-y-12">
       {/* Main Hero Spotlight Card with Photo, Logo & Bio - Clean High-Contrast Design */}
       <div className="bg-white text-primaryText rounded-2xl sm:rounded-3xl p-5 sm:p-12 shadow-soft relative overflow-hidden border border-cardBorder">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
@@ -151,128 +129,6 @@ export const AboutPage: React.FC = () => {
                 <span>গিটহাব প্রোফাইল</span>
               </a>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Complete Information Bento Grid */}
-      <div className="space-y-6">
-        <div className="text-center">
-          <h3 className="text-2xl font-extrabold text-primaryText">
-            জাহিদুল ইসলামের জীবন, দক্ষতা ও অভিজ্ঞতা
-          </h3>
-          <p className="text-sm text-secondaryText mt-1">
-            আমার কাজের ক্ষেত্র, পড়াশোনা ও শিক্ষামূলক লক্ষ্য
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {/* Bento Card 1: School */}
-          <div className="bg-white p-6 rounded-3xl border border-cardBorder shadow-soft hover:shadow-soft-hover transition-all space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center">
-              <GraduationCap className="w-6 h-6" />
-            </div>
-            <span className="text-[11px] font-bold text-brand-600 uppercase tracking-wider block">
-              অ্যাকাডেমিক পরিচয়
-            </span>
-            <h4 className="text-base font-bold text-primaryText">
-              নবীনগর সরকারি পাইলট উচ্চ বিদ্যালয়
-            </h4>
-            <p className="text-xs text-secondaryText leading-relaxed">
-              শ্রেণি ১০ (বিজ্ঞান শাখা)। ব্রাহ্মণবাড়িয়ার অন্যতম সেরা ও ঐতিহাসিক বিদ্যাপীঠের নিয়মিত শিক্ষার্থী।
-            </p>
-          </div>
-
-          {/* Bento Card 2: Moderator */}
-          <div className="bg-white p-6 rounded-3xl border border-cardBorder shadow-soft hover:shadow-soft-hover transition-all space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
-              <Briefcase className="w-6 h-6" />
-            </div>
-            <span className="text-[11px] font-bold text-purple-600 uppercase tracking-wider block">
-              বাস্তব অভিজ্ঞতা
-            </span>
-            <h4 className="text-base font-bold text-primaryText">
-              Fashion Gallery Moderator
-            </h4>
-            <p className="text-xs text-secondaryText leading-relaxed">
-              Fashion Gallery Shop-এর ফেসবুক পেজ ও অনলাইন কমিউনিটি পরিচালনায় ডেডিকেটেড কাস্টমার কেয়ার দায়িত্ব পালন।
-            </p>
-          </div>
-
-          {/* Bento Card 3: AI & Web */}
-          <div className="bg-white p-6 rounded-3xl border border-cardBorder shadow-soft hover:shadow-soft-hover transition-all space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <Laptop className="w-6 h-6" />
-            </div>
-            <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider block">
-              প্রযুক্তিগত দক্ষতা
-            </span>
-            <h4 className="text-base font-bold text-primaryText">
-              AI Web & Modern Coding
-            </h4>
-            <p className="text-xs text-secondaryText leading-relaxed">
-              প্রম্পট ইঞ্জিনিয়ারিং, রেসপনসিভ ইউআই ডিজাইন, React, TypeScript ও Tailwind দিয়ে আধুনিক ওয়েবসাইট নির্মাণ।
-            </p>
-          </div>
-
-          {/* Bento Card 4: Hometown */}
-          <div className="bg-white p-6 rounded-3xl border border-cardBorder shadow-soft hover:shadow-soft-hover transition-all space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <Compass className="w-6 h-6" />
-            </div>
-            <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider block">
-              শিকড় ও নিবাস
-            </span>
-            <h4 className="text-base font-bold text-primaryText">
-              নবীনগর, ব্রাহ্মণবাড়িয়া
-            </h4>
-            <p className="text-xs text-secondaryText leading-relaxed">
-              ব্রাহ্মণবাড়িয়া জেলার ঐতিহ্যবাহী উপজেলা নবীনগর, চট্টগ্রাম বিভাগ, বাংলাদেশ।
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Why SSC Notes Hub Was Created */}
-      <div className="bg-brand-50/60 rounded-3xl border border-brand-200/80 p-8 sm:p-12 shadow-soft space-y-6">
-        <div className="max-w-2xl">
-          <span className="text-xs font-bold text-brand-700 uppercase tracking-wider">
-            কেন এই ওয়েবসাইট তৈরি করা হলো?
-          </span>
-          <h3 className="text-2xl sm:text-3xl font-extrabold text-primaryText mt-1.5">
-            "একসাথে শিখি, একসাথে এগিয়ে যাই"
-          </h3>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-secondaryText">
-          <div className="bg-white p-5 rounded-2xl border border-cardBorder space-y-2">
-            <div className="font-bold text-primaryText text-base flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-brand-600" />
-              <span>বিনামূল্যে উন্মুক্ত শিক্ষা</span>
-            </div>
-            <p className="text-xs leading-relaxed">
-              দেশের অনেক শিক্ষার্থী ভালো নোট বা সাজেশনের অভাবে পিছিয়ে থাকে। SSC Notes Hub এ যেকোনো বিষয়ের নোট সবার জন্য সম্পূর্ণ ফ্রি।
-            </p>
-          </div>
-
-          <div className="bg-white p-5 rounded-2xl border border-cardBorder space-y-2">
-            <div className="font-bold text-primaryText text-base flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-brand-600" />
-              <span>সহপাঠীদের অবদান ও মূল্যায়ন</span>
-            </div>
-            <p className="text-xs leading-relaxed">
-              নিজের ক্লাসের পড়া ও সুন্দর নোট আপলোড করে হাজারো সহপাঠীর সাহায্যে দাঁড়ানো এবং নিজের কৃতিত্ব অর্জন করা।
-            </p>
-          </div>
-
-          <div className="bg-white p-5 rounded-2xl border border-cardBorder space-y-2">
-            <div className="font-bold text-primaryText text-base flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-brand-600" />
-              <span>NCTB সিলেবাসভিত্তিক শৃঙ্খলা</span>
-            </div>
-            <p className="text-xs leading-relaxed">
-              কোনো বিশৃঙ্খলা ছাড়াই প্রতিটি বিষয়, অধ্যায়, গদ্য ও পদ্য আলাদা আলাদা করে গুছিয়ে রাখা হয়েছে।
-            </p>
           </div>
         </div>
       </div>
