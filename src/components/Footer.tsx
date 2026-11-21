@@ -14,9 +14,11 @@ export const Footer: React.FC = () => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-cardBorder/60">
           {/* Brand */}
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-violetAccent flex items-center justify-center text-white shadow-soft">
-              <BookOpen className="w-5 h-5" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="SSC Note Box"
+              className="w-9 h-9 rounded-xl object-contain shadow-soft bg-white border border-purple-100 p-0.5"
+            />
             <span className="text-xl font-bold tracking-tight text-primaryText">
               SSC Note Box
             </span>

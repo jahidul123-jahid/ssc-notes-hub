@@ -79,9 +79,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
               className="flex items-center gap-2.5 sm:gap-3 group focus:outline-none min-w-0 shrink"
               onClick={handleLinkClick}
             >
-              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr from-brand-600 to-violetAccent flex items-center justify-center text-white shadow-soft group-hover:scale-105 transition-transform duration-200 shrink-0">
-                <BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />
-              </div>
+              <img
+                src="/logo.png"
+                alt="SSC Note Box"
+                className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl object-contain shadow-soft group-hover:scale-105 transition-transform duration-200 shrink-0 bg-white border border-purple-100 p-0.5"
+              />
               <span className="text-lg sm:text-2xl font-bold tracking-tight text-primaryText group-hover:text-brand-600 transition-colors truncate">
                 SSC Note Box
               </span>
