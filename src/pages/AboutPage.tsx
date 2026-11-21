@@ -19,11 +19,11 @@ export const AboutPage: React.FC = () => {
             <div className="relative group">
               <div className="w-56 h-56 sm:w-64 sm:h-64 rounded-3xl overflow-hidden border-4 border-brand-200 shadow-soft relative bg-gradient-to-tr from-brand-50 to-brand-100 group-hover:border-brand-500 transition-all duration-300">
                 <img
-                  src="/assets/jahidul-profile.png?v=20261120"
+                  src="/assets/jahidul-profile.jpg?v=20261121"
                   alt="Jahidul Islam"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/assets/jahidul-about.jpg?v=20261120';
+                    (e.target as HTMLImageElement).src = '/assets/jahidul-profile.png';
                   }}
                 />
               </div>
