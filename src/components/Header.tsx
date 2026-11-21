@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, BookOpen, Upload, ShieldAlert, ArrowRight, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -11,8 +11,14 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { isOwner } = useAuth();
   const { language, toggleLanguage, t } = useLanguage();
+
+  const handleAdminClick = () => {
+    setIsOpen(false);
+    navigate('/owner-control');
+  };
 
   const navLinks = [
     { name: t('nav_home'), path: '/' },
@@ -118,11 +124,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
               </button>
 
               {/* Owner Admin Access Button */}
-              <Link
-                to="/owner-control"
-                onClick={() => {
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
+              <button
+                type="button"
+                onClick={handleAdminClick}
                 className={`p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer shadow-sm hover:scale-105 active:scale-95 ${
                   isOwner
                     ? 'bg-purple-100/80 text-brand-700 border-brand-300 ring-2 ring-brand-400/20'
@@ -132,7 +136,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
                 aria-label="Owner Control Panel"
               >
                 <ShieldAlert className="w-5 h-5" />
-              </Link>
+              </button>
             </div>
 
             {/* Mobile Actions (Guaranteed 44x44px minimum touch targets) */}
@@ -145,6 +149,21 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
               >
                 <Globe className="w-3.5 h-3.5 text-brand-600" />
                 <span>{language === 'en' ? 'EN' : 'বাং'}</span>
+              </button>
+
+              {/* Mobile Admin Panel Quick Shield Button */}
+              <button
+                type="button"
+                onClick={handleAdminClick}
+                className={`min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl border transition-colors active:scale-95 cursor-pointer ${
+                  isOwner
+                    ? 'bg-purple-100 text-brand-700 border-brand-300'
+                    : 'bg-purple-50 text-brand-600 border-brand-200'
+                }`}
+                title={isOwner ? "অ্যাডমিন ড্যাশবোর্ড" : "মালিক প্যানেল"}
+                aria-label="Owner Control Panel"
+              >
+                <ShieldAlert className="w-5 h-5" />
               </button>
 
               <button
@@ -239,18 +258,18 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
               })}
 
               {/* Owner panel navigation */}
-              <Link
-                to="/owner-control"
-                onClick={handleLinkClick}
-                className={`flex items-center gap-3 min-h-[48px] py-3 px-3.5 rounded-xl text-base font-bold mt-3 border transition-colors ${
+              <button
+                type="button"
+                onClick={handleAdminClick}
+                className={`w-full flex items-center gap-3 min-h-[48px] py-3 px-3.5 rounded-xl text-base font-bold mt-3 border transition-colors text-left cursor-pointer ${
                   isOwner
                     ? 'text-brand-800 bg-brand-50 border-brand-200'
                     : 'text-secondaryText bg-slate-50 border-cardBorder hover:text-brand-600'
                 }`}
               >
-                <ShieldAlert className="w-5 h-5 text-brand-600" />
+                <ShieldAlert className="w-5 h-5 text-brand-600 shrink-0" />
                 <span>{t('owner_panel')}</span>
-              </Link>
+              </button>
             </nav>
           </div>
         </div>

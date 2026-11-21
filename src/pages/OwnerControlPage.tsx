@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { dataService } from '../services/dataService';
 import { dataEvents } from '../services/dataEvents';
@@ -35,10 +36,13 @@ import {
   Eye,
   Save,
   Send,
-  Bell
+  Bell,
+  ArrowLeft,
+  Home
 } from 'lucide-react';
 
 export const OwnerControlPage: React.FC = () => {
+  const navigate = useNavigate();
   const { isOwner, ownerName, loginAsOwner, logout } = useAuth();
 
   // Login form state (pre-filled with owner credentials for easy access)
@@ -354,6 +358,19 @@ export const OwnerControlPage: React.FC = () => {
     return (
       <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 bg-gradient-to-b from-brand-50/50 via-white to-brand-50/30">
         <div className="bg-white max-w-md w-full rounded-3xl border border-cardBorder shadow-2xl p-8 space-y-6">
+          {/* Top Quick Return Link to Main Website */}
+          <div className="flex items-center justify-between pb-3 border-b border-cardBorder/60">
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-secondaryText hover:text-brand-600 bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl border border-cardBorder transition-all cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>মূল ওয়েবসাইটে ফিরে যান</span>
+            </button>
+            <span className="text-xs font-extrabold text-brand-600">SSC Notes Hub</span>
+          </div>
+
           <div className="text-center space-y-2">
             <div className="w-16 h-16 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 flex items-center justify-center mx-auto shadow-soft">
               <Lock className="w-8 h-8" />
@@ -412,10 +429,21 @@ export const OwnerControlPage: React.FC = () => {
             </button>
           </form>
 
-          <div className="pt-2 text-center border-t border-cardBorder/60">
-            <span className="text-[11px] text-secondaryText">
-              ডিফল্ট পাসওয়ার্ড: <code className="bg-slate-100 px-1.5 py-0.5 rounded text-brand-700 font-bold">admin123</code>
-            </span>
+          <div className="pt-2 text-center border-t border-cardBorder/60 space-y-2">
+            <div>
+              <span className="text-[11px] text-secondaryText">
+                ডিফল্ট পাসওয়ার্ড: <code className="bg-slate-100 px-1.5 py-0.5 rounded text-brand-700 font-bold">admin123</code>
+              </span>
+            </div>
+            <div>
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="text-xs font-semibold text-brand-600 hover:text-brand-800 underline transition-colors cursor-pointer"
+              >
+                ← সাধারণ ওয়েবসাইট ব্রাউজ করুন (প্রস্থান)
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -444,22 +472,37 @@ export const OwnerControlPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center flex-wrap gap-2.5">
+          {/* Direct Exit Back to Front Public Website */}
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-600 to-violetAccent hover:from-brand-700 hover:to-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl shadow-soft hover:shadow-soft-hover transition-all text-xs sm:text-sm cursor-pointer active:scale-95"
+            title="ওয়েবসাইটের মূল পাতায় ফিরে যান"
+          >
+            <Home className="w-4 h-4" />
+            <span>মূল ওয়েবসাইট দেখুন</span>
+          </button>
+
           <button
             onClick={loadDashboardData}
             disabled={loading}
-            className="p-2.5 text-secondaryText hover:text-brand-600 bg-slate-50 hover:bg-brand-50 rounded-xl transition-colors border border-cardBorder disabled:opacity-50"
+            className="p-2.5 text-secondaryText hover:text-brand-600 bg-slate-50 hover:bg-brand-50 rounded-xl transition-colors border border-cardBorder disabled:opacity-50 cursor-pointer"
             title="তথ্য রিফ্রেশ করুন"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-brand-600' : ''}`} />
           </button>
 
           <button
-            onClick={logout}
-            className="inline-flex items-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold px-4 py-2.5 rounded-xl border border-rose-200 transition-colors text-xs sm:text-sm"
+            onClick={() => {
+              logout();
+              navigate('/');
+            }}
+            className="inline-flex items-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold px-4 py-2.5 rounded-xl border border-rose-200 transition-colors text-xs sm:text-sm cursor-pointer"
+            title="লগআউট করে সাধারণ ওয়েবসাইটে ফিরে যান"
           >
             <LogOut className="w-4 h-4" />
-            <span>লগআউট</span>
+            <span>লগআউট ও প্রস্থান</span>
           </button>
         </div>
       </div>
