@@ -92,6 +92,9 @@ CREATE TABLE IF NOT EXISTS public.notes (
 -- 2. Enable Row Level Security
 ALTER TABLE public.notes ENABLE ROW LEVEL SECURITY;
 
+-- Grant permissions to public roles
+GRANT ALL ON TABLE public.notes TO anon, authenticated, service_role;
+
 -- 3. Allow everyone to view approved notes
 DROP POLICY IF EXISTS "Public read approved notes" ON public.notes;
 CREATE POLICY "Public read approved notes" ON public.notes
