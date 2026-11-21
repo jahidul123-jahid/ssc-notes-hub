@@ -110,7 +110,12 @@ DROP POLICY IF EXISTS "Public update notes" ON public.notes;
 CREATE POLICY "Public update notes" ON public.notes
   FOR UPDATE USING (true);
 
--- 6. Create Public Storage Bucket 'notes'
+-- 6. Allow deleting notes
+DROP POLICY IF EXISTS "Public delete notes" ON public.notes;
+CREATE POLICY "Public delete notes" ON public.notes
+  FOR DELETE USING (true);
+
+-- 7. Create Public Storage Bucket 'notes'
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('notes', 'notes', true)
 ON CONFLICT (id) DO UPDATE SET public = true;

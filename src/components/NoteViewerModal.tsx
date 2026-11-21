@@ -46,8 +46,20 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
   const [copied, setCopied] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const { play, pause, isItemPlaying } = useAudioReader();
+  const { play, pause, stop, isItemPlaying } = useAudioReader();
   const { t, isBn } = useLanguage();
+
+  // Stop voice playback immediately when closing or unmounting the viewer
+  const handleClose = () => {
+    stop();
+    onClose();
+  };
+
+  React.useEffect(() => {
+    return () => {
+      stop();
+    };
+  }, []);
 
   if (!note) return null;
 
@@ -108,7 +120,7 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-2 sm:p-5 pb-safe animate-fade-in"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         className={`relative bg-white w-full rounded-2xl sm:rounded-3xl shadow-2xl border border-cardBorder overflow-hidden my-auto flex flex-col transition-all duration-300 ${
@@ -233,7 +245,7 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
             )}
 
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="min-h-[40px] min-w-[40px] flex items-center justify-center text-secondaryText hover:text-primaryText hover:bg-slate-100 rounded-xl transition-colors active:scale-95"
               aria-label="Close viewer"
             >
@@ -433,7 +445,7 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
 
             <div className="flex items-center gap-2">
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 className="min-h-[42px] px-4 py-2 text-xs sm:text-sm font-semibold text-secondaryText hover:text-primaryText transition-colors active:scale-95"
               >
                 {t('btn_close')}

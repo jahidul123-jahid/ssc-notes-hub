@@ -182,7 +182,7 @@ export const dataService = {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        let sbQuery = supabase.from('notes').select('*');
+        let sbQuery = supabase.from('notes').select('*').neq('status', 'deleted');
         if (status !== 'all') {
           sbQuery = sbQuery.eq('status', status);
         }
@@ -236,6 +236,8 @@ export const dataService = {
       list = local ? JSON.parse(local) : INITIAL_NOTES;
     }
 
+    // Filter out deleted notes
+    list = list.filter(n => (n.status as any) !== 'deleted');
     if (status !== 'all') {
       list = list.filter(n => n.status === status);
     }
@@ -459,6 +461,9 @@ export const dataService = {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
+        // 1. Mark as deleted in Supabase so getNotes will never return it
+        await supabase.from('notes').update({ status: 'deleted' }).eq('note_id', noteId);
+        // 2. Also execute hard delete if policy allows
         await supabase.from('notes').delete().eq('note_id', noteId);
       } catch (err) {
         console.warn("Supabase deleteNote error:", err);
