@@ -16,14 +16,15 @@ import { dataService, initSupabaseRealtime } from './services/dataService';
 import { dataEvents } from './services/dataEvents';
 import { telegramService } from './services/telegramService';
 
-// Code-split route components for high performance and fast initial page loads
+import { OwnerControlPage } from './pages/OwnerControlPage';
+
+// Code-split non-critical route components for high performance and fast initial page loads
 const SubjectsPage = lazy(() => import('./pages/SubjectsPage').then(m => ({ default: m.SubjectsPage })));
 const SubjectDetailsPage = lazy(() => import('./pages/SubjectDetailsPage').then(m => ({ default: m.SubjectDetailsPage })));
 const ChapterDetailsPage = lazy(() => import('./pages/ChapterDetailsPage').then(m => ({ default: m.ChapterDetailsPage })));
 const SearchNotesPage = lazy(() => import('./pages/SearchNotesPage').then(m => ({ default: m.SearchNotesPage })));
 const AboutPage = lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })));
 const ContactPage = lazy(() => import('./pages/ContactPage').then(m => ({ default: m.ContactPage })));
-const OwnerControlPage = lazy(() => import('./pages/OwnerControlPage').then(m => ({ default: m.OwnerControlPage })));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 
 const RouteLoadingFallback = () => (

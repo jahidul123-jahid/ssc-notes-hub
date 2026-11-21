@@ -41,9 +41,9 @@ import {
 export const OwnerControlPage: React.FC = () => {
   const { isOwner, ownerName, loginAsOwner, logout } = useAuth();
 
-  // Login form state
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  // Login form state (pre-filled with owner credentials for easy access)
+  const [email, setEmail] = useState('jahidulislamg.b.123@gmail.com');
+  const [password, setPassword] = useState('admin123');
   const [loginError, setLoginError] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
 
@@ -405,16 +405,16 @@ export const OwnerControlPage: React.FC = () => {
             <button
               type="submit"
               disabled={loggingIn}
-              className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-violetAccent hover:from-brand-700 hover:to-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-soft hover:shadow-soft-hover transition-all text-sm disabled:opacity-50"
+              className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-violetAccent hover:from-brand-700 hover:to-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-soft hover:shadow-soft-hover transition-all text-sm disabled:opacity-50 cursor-pointer active:scale-95"
             >
               <Lock className="w-4 h-4" />
-              <span>{loggingIn ? 'যাচাই করা হচ্ছে...' : 'লগইন করুন'}</span>
+              <span>{loggingIn ? 'যাচাই করা হচ্ছে...' : 'অ্যাডমিন প্যানেলে প্রবেশ করুন'}</span>
             </button>
           </form>
 
           <div className="pt-2 text-center border-t border-cardBorder/60">
             <span className="text-[11px] text-secondaryText">
-              নিরাপত্তা নীতি: সাধারণ দর্শনার্থীদের জন্য অ্যাডমিন লিংক দৃশ্যমান নয়।
+              ডিফল্ট পাসওয়ার্ড: <code className="bg-slate-100 px-1.5 py-0.5 rounded text-brand-700 font-bold">admin123</code>
             </span>
           </div>
         </div>
@@ -1498,3 +1498,5 @@ export const OwnerControlPage: React.FC = () => {
     </div>
   );
 };
+
+export default OwnerControlPage;

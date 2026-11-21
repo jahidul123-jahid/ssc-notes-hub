@@ -117,16 +117,22 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
                 <span>{t('nav_upload')}</span>
               </button>
 
-              {/* Private indicator shown only if authenticated as Owner */}
-              {isOwner && (
-                <Link
-                  to="/owner-control"
-                  className="p-2.5 rounded-xl bg-purple-50 text-brand-600 border border-brand-200 hover:bg-brand-100 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                  title="Owner Dashboard Active"
-                >
-                  <ShieldAlert className="w-5 h-5" />
-                </Link>
-              )}
+              {/* Owner Admin Access Button */}
+              <Link
+                to="/owner-control"
+                onClick={() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className={`p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer shadow-sm hover:scale-105 active:scale-95 ${
+                  isOwner
+                    ? 'bg-purple-100/80 text-brand-700 border-brand-300 ring-2 ring-brand-400/20'
+                    : 'bg-purple-50 text-brand-600 border-brand-200 hover:bg-brand-100'
+                }`}
+                title={isOwner ? "অ্যাডমিন ড্যাশবোর্ড (লগইন করা আছে)" : "মালিক / অ্যাডমিন প্যানেল"}
+                aria-label="Owner Control Panel"
+              >
+                <ShieldAlert className="w-5 h-5" />
+              </Link>
             </div>
 
             {/* Mobile Actions (Guaranteed 44x44px minimum touch targets) */}
@@ -232,17 +238,19 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
                 );
               })}
 
-              {/* If owner is already logged in, show Owner panel */}
-              {isOwner && (
-                <Link
-                  to="/owner-control"
-                  onClick={handleLinkClick}
-                  className="flex items-center gap-3 min-h-[48px] py-3 px-3 rounded-xl text-base font-bold text-amber-700 bg-amber-50 mt-2"
-                >
-                  <ShieldAlert className="w-5 h-5 text-amber-600" />
-                  <span>{t('owner_panel')}</span>
-                </Link>
-              )}
+              {/* Owner panel navigation */}
+              <Link
+                to="/owner-control"
+                onClick={handleLinkClick}
+                className={`flex items-center gap-3 min-h-[48px] py-3 px-3.5 rounded-xl text-base font-bold mt-3 border transition-colors ${
+                  isOwner
+                    ? 'text-brand-800 bg-brand-50 border-brand-200'
+                    : 'text-secondaryText bg-slate-50 border-cardBorder hover:text-brand-600'
+                }`}
+              >
+                <ShieldAlert className="w-5 h-5 text-brand-600" />
+                <span>{t('owner_panel')}</span>
+              </Link>
             </nav>
           </div>
         </div>
