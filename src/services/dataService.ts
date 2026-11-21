@@ -676,14 +676,14 @@ export const dataService = {
  * When an admin approves or deletes a note anywhere, all connected clients automatically
  * update without pressing manual page reload.
  */
-let realtimeChannelSubscribed = false;
+let realtimeChannel: any = null;
 export function initSupabaseRealtime() {
-  if (realtimeChannelSubscribed) return;
+  if (realtimeChannel) return;
   const supabase = getSupabaseClient();
   if (!supabase) return;
 
   try {
-    supabase
+    realtimeChannel = supabase
       .channel('public:notes')
       .on(
         'postgres_changes',
@@ -699,11 +699,7 @@ export function initSupabaseRealtime() {
           });
         }
       )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          realtimeChannelSubscribed = true;
-        }
-      });
+      .subscribe();
   } catch (err) {
     console.warn("Supabase Realtime subscription fallback:", err);
   }

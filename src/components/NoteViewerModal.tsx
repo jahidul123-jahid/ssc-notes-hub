@@ -57,9 +57,11 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
 
   React.useEffect(() => {
     return () => {
-      stop();
+      if (note) {
+        stop();
+      }
     };
-  }, [stop]);
+  }, [note, stop]);
 
   if (!note) return null;
 

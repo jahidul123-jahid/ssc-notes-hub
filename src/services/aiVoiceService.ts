@@ -301,6 +301,11 @@ class AIVoiceService {
   }
 
   public stop() {
+    // If already idle, do nothing to prevent unnecessary state broadcasts and infinite render loops
+    if (this.state.status === 'idle') {
+      return;
+    }
+
     if (this.currentAudio) {
       this.currentAudio.pause();
       this.currentAudio.currentTime = 0;

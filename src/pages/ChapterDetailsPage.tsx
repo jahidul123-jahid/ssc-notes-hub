@@ -4,13 +4,13 @@ import { Subject, Chapter, Note } from '../types';
 import { dataService } from '../services/dataService';
 import { dataEvents } from '../services/dataEvents';
 import { NoteCard } from '../components/NoteCard';
+import { EmptyNotesState } from '../components/EmptyNotesState';
 import { useAudioReader } from '../context/AudioReaderContext';
 import { useLanguage } from '../context/LanguageContext';
 import {
   ChevronRight,
   Upload,
   Search,
-  BookOpen,
   Filter,
   Volume2,
   Pause
@@ -217,28 +217,15 @@ export const ChapterDetailsPage: React.FC<ChapterDetailsPageProps> = ({
         </div>
       </div>
 
-      {/* Notes Grid */}
+      {/* Notes Grid or Elegant Empty State */}
       {filteredNotes.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-cardBorder p-12 text-center shadow-soft space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mx-auto">
-            <BookOpen className="w-7 h-7" />
-          </div>
-          <h3 className="text-xl font-bold text-primaryText">
-            {t('no_notes_in_chapter')}
-          </h3>
-          <p className="text-sm text-secondaryText max-w-md mx-auto">
-            {t('share_first_note')}
-          </p>
-          <div className="pt-2">
-            <button
-              onClick={() => onOpenUpload(subject.subjectId, chapter.chapterId)}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-500 to-violetAccent text-white font-bold px-6 py-2.5 rounded-xl shadow-soft hover:shadow-soft-hover transition-all"
-            >
-              <Upload className="w-4 h-4" />
-              <span>{t('hero_share_note')}</span>
-            </button>
-          </div>
-        </div>
+        <EmptyNotesState
+          chapterName={chapter.chapterName}
+          subjectName={subject.name}
+          onOpenUpload={() => onOpenUpload(subject.subjectId, chapter.chapterId)}
+          backLink={`/subject/${subject.subjectId}`}
+          backLinkText={`${displaySubjectName} এর অধ্যায়ে ফিরুন`}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredNotes.map((note) => (
