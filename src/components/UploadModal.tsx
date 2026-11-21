@@ -29,6 +29,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const [schoolName, setSchoolName] = useState('');
   const [subjectId, setSubjectId] = useState(initialSubjectId || '');
   const [chapterId, setChapterId] = useState(initialChapterId || '');
+  const [customChapterName, setCustomChapterName] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
@@ -124,7 +125,11 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       return;
     }
     if (!chapterId) {
-      setErrorMessage('দয়া করে অধ্যায় বা কবিতা/গদ্য নির্বাচন করুন।');
+      setErrorMessage('দয়া করে অধ্যায় বা পাঠ নির্বাচন করুন।');
+      return;
+    }
+    if (chapterId === 'other' && !customChapterName.trim()) {
+      setErrorMessage('দয়া করে আপনার অধ্যায় বা নোটের নামটি লিখুন।');
       return;
     }
     if (!title.trim()) {
@@ -140,6 +145,30 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     setProgress(10);
 
     try {
+      let finalChapterId = chapterId;
+
+      // If user selected "Other / অন্যান্য", register a clean custom chapter
+      if (chapterId === 'other') {
+        const newChapId = `custom-${subjectId}-${Date.now()}`;
+        const customName = customChapterName.trim();
+        try {
+          await dataService.addChapter({
+            chapterId: newChapId,
+            subjectId,
+            textbookName: 'বিশেষ নোট ও সাজেশন',
+            chapterNumber: (chapters.length || 0) + 1,
+            chapterName: customName,
+            chapterType: 'chapter',
+            description: 'শিক্ষার্থী কর্তৃক সরাসরি আপলোডকৃত কাস্টম অধ্যায় বা নোট',
+            verificationStatus: 'unverified',
+            createdAt: new Date().toISOString()
+          });
+          finalChapterId = newChapId;
+        } catch {
+          finalChapterId = newChapId;
+        }
+      }
+
       await dataService.uploadNote(
         {
           studentName: studentName.trim(),
@@ -147,7 +176,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           section: section.trim() || 'সাধারণ',
           schoolName: schoolName.trim(),
           subjectId,
-          chapterId,
+          chapterId: finalChapterId,
           title: title.trim(),
           description: description.trim() || 'শিক্ষার্থী কর্তৃক সরাসরি আপলোডকৃত ক্লাস ১০ হ্যান্ডনোট।',
           fileType,
@@ -182,6 +211,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     setSchoolName('');
     setTitle('');
     setDescription('');
+    setCustomChapterName('');
     setSelectedFile(null);
     setFilePreview(null);
     setProgress(0);
@@ -346,7 +376,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                       required
                       value={chapterId}
                       onChange={(e) => setChapterId(e.target.value)}
-                      disabled={!subjectId || chapters.length === 0}
+                      disabled={!subjectId}
                       className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white disabled:bg-slate-100"
                     >
                       <option value="">
@@ -358,7 +388,29 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                           {chap.chapterName}
                         </option>
                       ))}
+                      <option value="other" className="font-bold text-brand-700 bg-brand-50">
+                        ✨ অন্যান্য (তালিকায় নেই / কাস্টম নোটের নাম)
+                      </option>
                     </select>
+
+                    {chapterId === 'other' && (
+                      <div className="mt-2.5 p-3 rounded-xl bg-amber-50/80 border border-amber-200 animate-fade-in space-y-1.5">
+                        <label className="block text-xs font-bold text-amber-900">
+                          অধ্যায় বা নোটের নাম লিখুন *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={customChapterName}
+                          onChange={(e) => setCustomChapterName(e.target.value)}
+                          placeholder="যেমন: মডেল টেস্ট / ফাইনাল সাজেশন / বিশেষ শর্টকাট টেকনিক"
+                          className="w-full px-3 py-2 text-sm rounded-lg border border-amber-300 focus:outline-none focus:border-brand-600 bg-white"
+                        />
+                        <span className="text-[11px] text-amber-800 block">
+                          তালিকায় না থাকলে এখানে যে নামটি লিখবেন সেটিই ওয়েবসাইটে এই বিষয়ের অধ্যায় হিসেবে দেখাবে।
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
