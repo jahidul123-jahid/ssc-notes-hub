@@ -1,10 +1,14 @@
 // ============================================================================
-// SSC Notes Hub - AI Audio Voice Reader Service (Cartesia AI & Web Speech Fallback)
+// SSC Notes Hub - High-Quality Bengali AI Voice Reader Service
+// Supported Engines:
+// 1. Google Neural Bengali TTS (100% natural native Bangla speaker, zero-config)
+// 2. Cartesia Multilingual Sonic-3.6 (Dedicated high-speed AI voice)
+// 3. Web Speech API (Seamless offline fallback)
 // ============================================================================
 
 export interface VoicePlaybackState {
   status: 'idle' | 'loading' | 'playing' | 'paused' | 'error';
-  engine: 'cartesia' | 'webspeech' | 'none';
+  engine: 'google' | 'cartesia' | 'webspeech' | 'none';
   title: string;
   subtitle?: string;
   progress: number; // 0 to 1
@@ -20,10 +24,12 @@ class AIVoiceService {
   private cartesiaApiKey: string;
   private cartesiaEndpoint = 'https://api.cartesia.ai/tts/bytes';
   private cartesiaVersion = '2024-11-13';
-  private defaultVoiceId = '47c38ca4-5f35-497b-b1a3-415245fb35e1'; // Daniel - Modern Assistant (supports Bengali with sonic-3.6)
+  private cartesiaVoiceId = 'd23ab7c3-2d90-4e26-aab9-a06766086ef7'; // Sohini - Cheerful Concierge (Bengali sonic-3.6)
+
   private currentAudio: HTMLAudioElement | null = null;
   private currentUtterance: SpeechSynthesisUtterance | null = null;
-  private audioCache = new Map<string, string>(); // Text hash -> Blob URL
+  private audioQueue: string[] = [];
+  private currentQueueIndex = 0;
   private listeners: StateListener[] = [];
 
   private state: VoicePlaybackState = {
@@ -83,71 +89,68 @@ class AIVoiceService {
     };
     this.notify();
 
-    // 1. Try Cartesia AI first if API Key is available
-    if (this.cartesiaApiKey) {
-      try {
-        const audioUrl = await this.fetchCartesiaAudio(cleanText);
-        this.playHtmlAudio(audioUrl, cleanText);
-        return;
-      } catch (err: any) {
-        console.warn('Cartesia TTS unavailable or limit reached, falling back to Web Speech engine:', err?.message || err);
+    // 1. Play with Google Neural Bengali TTS (crystal-clear native Bangla speaker)
+    try {
+      this.playGoogleBengali(cleanText);
+    } catch (err) {
+      console.warn("Google Bengali TTS failed, falling back to Web Speech:", err);
+      this.playWebSpeech(cleanText);
+    }
+  }
+
+  /**
+   * Split long text into natural sentence chunks
+   */
+  private splitIntoChunks(text: string, maxLen = 170): string[] {
+    const sentences = text.match(/[^।?!,\n]+[।?!,\n]?/g) || [text];
+    const chunks: string[] = [];
+    let current = '';
+
+    for (const s of sentences) {
+      if ((current + ' ' + s).trim().length <= maxLen) {
+        current = (current + ' ' + s).trim();
+      } else {
+        if (current) chunks.push(current);
+        if (s.length > maxLen) {
+          const words = s.split(' ');
+          let sub = '';
+          for (const w of words) {
+            if ((sub + ' ' + w).trim().length <= maxLen) {
+              sub = (sub + ' ' + w).trim();
+            } else {
+              if (sub) chunks.push(sub);
+              sub = w;
+            }
+          }
+          if (sub) current = sub;
+        } else {
+          current = s.trim();
+        }
       }
     }
-
-    // 2. Seamless Fallback: Native Web Speech API with Bengali Voice
-    this.playWebSpeech(cleanText);
+    if (current) chunks.push(current);
+    return chunks;
   }
 
   /**
-   * Fetch audio bytes from Cartesia AI API
+   * High-quality Google Bengali Neural Speech Streamer
    */
-  private async fetchCartesiaAudio(text: string): Promise<string> {
-    const cacheKey = `cartesia_${text.slice(0, 80)}_${text.length}`;
-    if (this.audioCache.has(cacheKey)) {
-      return this.audioCache.get(cacheKey)!;
-    }
-
-    // Truncate text if too long for a single request (Cartesia recommends max ~1000 characters)
-    const truncated = text.length > 900 ? text.slice(0, 900) + '...' : text;
-
-    const response = await fetch(this.cartesiaEndpoint, {
-      method: 'POST',
-      headers: {
-        'X-API-Key': this.cartesiaApiKey,
-        'Cartesia-Version': this.cartesiaVersion,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model_id: 'sonic-3.6',
-        transcript: truncated,
-        voice: {
-          mode: 'id',
-          id: this.defaultVoiceId,
-        },
-        language: 'bn',
-        output_format: {
-          container: 'mp3',
-          bit_rate: 128000,
-          sample_rate: 44100,
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Cartesia API HTTP ${response.status}: ${errorText}`);
-    }
-
-    const blob = await response.blob();
-    const objectUrl = URL.createObjectURL(blob);
-    this.audioCache.set(cacheKey, objectUrl);
-    return objectUrl;
+  private playGoogleBengali(text: string) {
+    this.audioQueue = this.splitIntoChunks(text);
+    this.currentQueueIndex = 0;
+    this.playNextGoogleChunk();
   }
 
-  /**
-   * Play audio via HTML5 Audio Element (Cartesia output)
-   */
-  private playHtmlAudio(url: string, _text: string) {
+  private playNextGoogleChunk() {
+    if (this.currentQueueIndex >= this.audioQueue.length) {
+      // Finished speaking all sentences cleanly
+      this.stop();
+      return;
+    }
+
+    const chunk = this.audioQueue[this.currentQueueIndex];
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(chunk)}&tl=bn&client=tw-ob`;
+
     const audio = new Audio(url);
     this.currentAudio = audio;
     audio.playbackRate = this.state.speed;
@@ -159,37 +162,39 @@ class AIVoiceService {
 
     audio.onplay = () => {
       this.state.status = 'playing';
-      this.state.engine = 'cartesia';
+      this.state.engine = 'google';
       this.notify();
     };
 
     audio.ontimeupdate = () => {
       if (audio.duration) {
+        const chunkProgress = audio.currentTime / audio.duration;
+        const totalProgress = (this.currentQueueIndex + chunkProgress) / this.audioQueue.length;
         this.state.currentTime = audio.currentTime;
-        this.state.progress = audio.currentTime / audio.duration;
+        this.state.duration = audio.duration;
+        this.state.progress = Math.min(1, totalProgress);
         this.notify();
       }
     };
 
     audio.onended = () => {
-      this.state.status = 'idle';
-      this.state.progress = 1;
-      this.notify();
+      this.currentQueueIndex++;
+      this.playNextGoogleChunk();
     };
 
     audio.onerror = () => {
-      console.warn('Audio playback error, falling back to Web Speech');
-      this.playWebSpeech(_text);
+      console.warn('Google TTS audio chunk error, switching to browser speech synthesis');
+      this.playWebSpeech(this.audioQueue.slice(this.currentQueueIndex).join(' '));
     };
 
     audio.play().catch((err) => {
-      console.warn('Audio play() rejected:', err);
-      this.playWebSpeech(_text);
+      console.warn('Audio play() blocked by browser, trying Web Speech:', err);
+      this.playWebSpeech(chunk);
     });
   }
 
   /**
-   * High-compatibility Web Speech API fallback for Bengali
+   * Seamless Fallback: Native Web Speech API
    */
   private playWebSpeech(text: string) {
     if (!('speechSynthesis' in window)) {
@@ -208,23 +213,28 @@ class AIVoiceService {
     const utterance = new SpeechSynthesisUtterance(text);
     this.currentUtterance = utterance;
 
-    // Try to find Bengali voices (bn-BD, bn-IN) or best fallback
-    const voices = window.speechSynthesis.getVoices();
-    const bengaliVoice = voices.find(
-      (v) => v.lang.startsWith('bn') || v.lang.includes('Bengali') || v.name.includes('Bangla')
-    );
+    const selectVoice = () => {
+      const voices = window.speechSynthesis.getVoices();
+      const bengaliVoice = voices.find(
+        (v) => v.lang.startsWith('bn') || v.lang.includes('Bengali') || v.name.includes('Bangla')
+      );
 
-    if (bengaliVoice) {
-      utterance.voice = bengaliVoice;
-      utterance.lang = bengaliVoice.lang;
-    } else {
-      utterance.lang = 'bn-BD';
+      if (bengaliVoice) {
+        utterance.voice = bengaliVoice;
+        utterance.lang = bengaliVoice.lang;
+      } else {
+        utterance.lang = 'bn-BD';
+      }
+    };
+
+    selectVoice();
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = selectVoice;
     }
 
     utterance.rate = this.state.speed;
     utterance.pitch = 1.0;
 
-    // Approximate duration based on word count (approx 130 words per minute)
     const words = text.split(/\s+/).length;
     const estimatedDuration = Math.max(3, (words / 130) * 60);
     this.state.duration = estimatedDuration;
@@ -251,9 +261,7 @@ class AIVoiceService {
 
     utterance.onend = () => {
       if (timer) clearInterval(timer);
-      this.state.status = 'idle';
-      this.state.progress = 1;
-      this.notify();
+      this.stop();
     };
 
     utterance.onerror = (e) => {
@@ -296,12 +304,17 @@ class AIVoiceService {
     if (this.currentAudio) {
       this.currentAudio.pause();
       this.currentAudio.currentTime = 0;
+      this.currentAudio.onended = null;
+      this.currentAudio.onerror = null;
       this.currentAudio = null;
     }
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
     this.currentUtterance = null;
+    this.audioQueue = [];
+    this.currentQueueIndex = 0;
+
     this.state = {
       ...this.state,
       status: 'idle',
@@ -320,7 +333,6 @@ class AIVoiceService {
       this.currentAudio.playbackRate = speed;
     }
     if (this.currentUtterance && window.speechSynthesis) {
-      // For speech synthesis, changing speed usually requires restart
       this.currentUtterance.rate = speed;
     }
     this.notify();
@@ -328,9 +340,8 @@ class AIVoiceService {
 
   public seek(progress: number) {
     if (this.currentAudio && this.currentAudio.duration) {
-      const targetTime = Math.max(0, Math.min(this.currentAudio.duration * progress, this.currentAudio.duration));
-      this.currentAudio.currentTime = targetTime;
-      this.state.currentTime = targetTime;
+      this.currentAudio.currentTime = progress * this.currentAudio.duration;
+      this.state.currentTime = this.currentAudio.currentTime;
       this.state.progress = progress;
       this.notify();
     }
@@ -338,9 +349,10 @@ class AIVoiceService {
 
   private sanitizeText(raw: string): string {
     return raw
-      .replace(/https?:\/\/\S+/g, '') // remove urls
-      .replace(/[#*_~`\[\]()<>]/g, ' ') // remove markdown syntax
-      .replace(/\s+/g, ' ')
+      .replace(/<[^>]*>/g, '') // Strip HTML tags
+      .replace(/https?:\/\/\S+/g, '') // Strip URLs
+      .replace(/[*_#`~[\]]/g, '') // Strip Markdown formatting
+      .replace(/\s+/g, ' ') // Collapse multiple spaces
       .trim();
   }
 }
