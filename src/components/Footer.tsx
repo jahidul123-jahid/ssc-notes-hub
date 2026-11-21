@@ -17,7 +17,7 @@ export const Footer: React.FC = () => {
             <img
               src="/logo.png"
               alt="SSC Note Box"
-              className="w-9 h-9 rounded-xl object-contain shadow-soft bg-white border border-purple-100 p-0.5"
+              className="w-8 h-8 object-contain"
             />
             <span className="text-xl font-bold tracking-tight text-primaryText">
               SSC Note Box

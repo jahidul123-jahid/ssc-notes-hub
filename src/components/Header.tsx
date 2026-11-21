@@ -82,7 +82,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
               <img
                 src="/logo.png"
                 alt="SSC Note Box"
-                className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl object-contain shadow-soft group-hover:scale-105 transition-transform duration-200 shrink-0 bg-white border border-purple-100 p-0.5"
+                className="w-8 h-8 sm:w-10 sm:h-10 object-contain group-hover:scale-105 transition-transform duration-200 shrink-0"
               />
               <span className="text-lg sm:text-2xl font-bold tracking-tight text-primaryText group-hover:text-brand-600 transition-colors truncate">
                 SSC Note Box
