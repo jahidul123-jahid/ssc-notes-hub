@@ -18,8 +18,8 @@ export const AIAudioPlayer: React.FC = () => {
   const { t, isBn } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // If status is idle and no title, don't show player
-  if (state.status === 'idle' && !state.title) {
+  // When audio is stopped or idle, immediately close and hide the player
+  if (state.status === 'idle') {
     return null;
   }
 

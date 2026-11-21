@@ -305,8 +305,11 @@ class AIVoiceService {
     this.state = {
       ...this.state,
       status: 'idle',
+      title: '',
+      subtitle: '',
       progress: 0,
       currentTime: 0,
+      duration: 0,
     };
     this.notify();
   }
