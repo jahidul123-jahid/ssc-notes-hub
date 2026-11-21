@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, BookOpen, Upload, ShieldAlert, ArrowRight } from 'lucide-react';
+import { Menu, X, BookOpen, Upload, ShieldAlert, ArrowRight, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 interface HeaderProps {
   onOpenUpload: () => void;
@@ -11,13 +12,14 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { isOwner } = useAuth();
+  const { language, toggleLanguage, t } = useLanguage();
 
   const navLinks = [
-    { name: 'হোম', path: '/' },
-    { name: 'সকল বিষয়', path: '/subjects' },
-    { name: 'নোট খুঁজুন', path: '/search' },
-    { name: 'আমাদের সম্পর্কে', path: '/about' },
-    { name: 'যোগাযোগ', path: '/contact' },
+    { name: t('nav_home'), path: '/' },
+    { name: t('nav_subjects'), path: '/subjects' },
+    { name: t('nav_search'), path: '/search' },
+    { name: t('nav_about'), path: '/about' },
+    { name: t('nav_contact'), path: '/contact' },
   ];
 
   const handleLinkClick = () => {
@@ -40,13 +42,24 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
             className="flex items-center gap-1.5 hover:text-amber-200 transition-colors mx-auto sm:mx-0 group text-center sm:text-left min-w-0"
           >
             <span className="truncate">
-              আমাদের সম্পর্কে ও প্রতিষ্ঠাতা জাহিদুল ইসলামের সকল পরিচিতি দেখতে ক্লিক করুন
+              {t('top_announcement')}
             </span>
             <ArrowRight className="w-3.5 h-3.5 inline shrink-0 group-hover:translate-x-1 transition-transform" />
           </Link>
 
-          <div className="hidden md:block text-[11px] text-white/80 shrink-0">
-            <span>SSC Notes Hub</span>
+          {/* Top Corner Language Quick Switcher */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={toggleLanguage}
+              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/15 hover:bg-white/25 text-white text-[10px] font-bold transition-all active:scale-95 border border-white/20"
+              title={language === 'en' ? 'বাংলায় পরিবর্তন করুন' : 'Switch to English'}
+              aria-label="Toggle language"
+            >
+              <Globe className="w-3 h-3 text-amber-300" />
+              <span className={language === 'en' ? 'text-amber-300 font-extrabold' : 'opacity-70'}>EN</span>
+              <span className="opacity-40">|</span>
+              <span className={language === 'bn' ? 'text-amber-300 font-extrabold' : 'opacity-70'}>বাং</span>
+            </button>
           </div>
         </div>
       </div>
@@ -82,13 +95,26 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
                 </Link>
               ))}
 
+              {/* Language Switcher Pill in Navbar */}
+              <button
+                onClick={toggleLanguage}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-cardBorder bg-slate-50 hover:bg-slate-100 text-xs font-bold transition-all active:scale-95 min-h-[44px]"
+                title={language === 'en' ? 'বাংলায় পরিবর্তন করুন' : 'Switch to English'}
+                aria-label="Toggle language"
+              >
+                <Globe className="w-4 h-4 text-brand-600" />
+                <span className={language === 'en' ? 'text-brand-600 font-extrabold' : 'text-secondaryText'}>EN</span>
+                <span className="text-slate-300">|</span>
+                <span className={language === 'bn' ? 'text-brand-600 font-extrabold' : 'text-secondaryText'}>বাংলা</span>
+              </button>
+
               {/* Upload CTA */}
               <button
                 onClick={onOpenUpload}
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-500 to-violetAccent hover:from-brand-600 hover:to-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-soft hover:shadow-soft-hover transition-all duration-200 hover:-translate-y-0.5 text-sm min-h-[44px]"
               >
                 <Upload className="w-4 h-4" />
-                <span>নোট শেয়ার করুন</span>
+                <span>{t('nav_upload')}</span>
               </button>
 
               {/* Private indicator shown only if authenticated as Owner */}
@@ -105,6 +131,16 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
 
             {/* Mobile Actions (Guaranteed 44x44px minimum touch targets) */}
             <div className="flex items-center gap-1 sm:gap-2 lg:hidden shrink-0">
+              {/* Mobile Language Button */}
+              <button
+                onClick={toggleLanguage}
+                className="min-h-[44px] px-2.5 flex items-center gap-1 text-xs font-bold rounded-xl text-primaryText bg-slate-100 hover:bg-slate-200 transition-colors active:scale-95 border border-cardBorder"
+                aria-label="Toggle language"
+              >
+                <Globe className="w-3.5 h-3.5 text-brand-600" />
+                <span>{language === 'en' ? 'EN' : 'বাং'}</span>
+              </button>
+
               <button
                 onClick={onOpenUpload}
                 className="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-600 bg-brand-50 rounded-xl hover:bg-brand-100 transition-colors active:scale-95"
@@ -144,8 +180,38 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
               className="w-full flex items-center justify-center gap-2.5 bg-gradient-to-r from-brand-500 to-violetAccent text-white py-3.5 px-4 rounded-xl font-bold shadow-soft hover:opacity-95 min-h-[48px] text-base"
             >
               <Upload className="w-5 h-5" />
-              <span>নোট আপলোড করুন</span>
+              <span>{t('nav_upload_btn')}</span>
             </button>
+
+            {/* Language Switcher in Mobile Drawer */}
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-cardBorder">
+              <span className="text-sm font-semibold text-primaryText flex items-center gap-2">
+                <Globe className="w-4 h-4 text-brand-600" />
+                <span>ভাষা / Language:</span>
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => toggleLanguage()}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    language === 'en'
+                      ? 'bg-brand-600 text-white shadow-sm'
+                      : 'bg-white text-secondaryText border border-cardBorder'
+                  }`}
+                >
+                  English
+                </button>
+                <button
+                  onClick={() => toggleLanguage()}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    language === 'bn'
+                      ? 'bg-brand-600 text-white shadow-sm'
+                      : 'bg-white text-secondaryText border border-cardBorder'
+                  }`}
+                >
+                  বাংলা
+                </button>
+              </div>
+            </div>
 
             <nav className="divide-y divide-cardBorder/60 pt-2">
               {navLinks.map((item) => {
@@ -174,7 +240,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
                   className="flex items-center gap-3 min-h-[48px] py-3 px-3 rounded-xl text-base font-bold text-amber-700 bg-amber-50 mt-2"
                 >
                   <ShieldAlert className="w-5 h-5 text-amber-600" />
-                  <span>মালিক কন্ট্রোল প্যানেল</span>
+                  <span>{t('owner_panel')}</span>
                 </Link>
               )}
             </nav>

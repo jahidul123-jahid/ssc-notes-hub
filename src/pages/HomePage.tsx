@@ -6,6 +6,7 @@ import { Subject, Note } from '../types';
 import { dataService } from '../services/dataService';
 import { BookOpen, Upload, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
 interface HomePageProps {
   onOpenUpload: (subjectId?: string, chapterId?: string) => void;
@@ -20,6 +21,7 @@ export const HomePage: React.FC<HomePageProps> = ({
   onDownloadNote,
   onReportNote
 }) => {
+  const { t } = useLanguage();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,7 +63,7 @@ export const HomePage: React.FC<HomePageProps> = ({
         <div className="flex items-center justify-between gap-4 mb-8">
           <div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-primaryText">
-              শ্রেণি ১০ বিষয়সমূহ
+              {t('class_10_subjects')}
             </h2>
           </div>
 
@@ -69,7 +71,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             to="/subjects"
             className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-600 hover:text-brand-700 group transition-colors"
           >
-            <span>সকল বিষয়</span>
+            <span>{t('all_subjects_link')}</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
@@ -98,14 +100,14 @@ export const HomePage: React.FC<HomePageProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-4 mb-8">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-primaryText">
-              সাম্প্রতিক নোট
+              {t('recent_notes')}
             </h2>
 
             <Link
               to="/search"
               className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-600 hover:text-brand-700 group transition-colors"
             >
-              <span>সকল নোট দেখুন</span>
+              <span>{t('view_all_notes')}</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
@@ -116,7 +118,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 <BookOpen className="w-7 h-7" />
               </div>
               <h3 className="text-xl font-bold text-primaryText">
-                এখনই কোনো নোট আপলোড করা হয়নি
+                {t('no_notes_yet')}
               </h3>
               <div className="pt-2">
                 <button
@@ -124,7 +126,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-500 to-violetAccent text-white font-bold px-6 py-2.5 rounded-xl shadow-soft hover:shadow-soft-hover"
                 >
                   <Upload className="w-4 h-4" />
-                  <span>নোট শেয়ার করুন</span>
+                  <span>{t('hero_share_note')}</span>
                 </button>
               </div>
             </div>

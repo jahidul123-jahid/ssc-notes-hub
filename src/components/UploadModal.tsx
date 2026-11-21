@@ -3,6 +3,7 @@ import { X, Upload, FileText, CheckCircle2, AlertCircle, Sparkles, Image as Imag
 import confetti from 'canvas-confetti';
 import { Subject, Chapter, FileType } from '../types';
 import { dataService } from '../services/dataService';
+import { useLanguage } from '../context/LanguageContext';
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   initialChapterId,
   onUploadSuccess
 }) => {
+  const { t, isBn } = useLanguage();
   const [studentName, setStudentName] = useState('');
   const [rollNumber, setRollNumber] = useState('');
   const [section, setSection] = useState('');
@@ -203,7 +205,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
               <Upload className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-primaryText">নোট আপলোড</h2>
+              <h2 className="text-base sm:text-lg font-bold text-primaryText">{t('upload_modal_title')}</h2>
             </div>
           </div>
 
@@ -472,7 +474,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                   onClick={handleResetAndClose}
                   className="min-h-[44px] px-4 py-2.5 text-sm font-semibold text-secondaryText hover:text-primaryText active:scale-95 transition-all"
                 >
-                  বাতিল
+                  {isBn ? 'বাতিল' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
@@ -480,7 +482,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                   className="min-h-[44px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-500 to-violetAccent hover:from-brand-600 hover:to-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-soft hover:shadow-soft-hover transition-all disabled:opacity-50 active:scale-95"
                 >
                   <Upload className="w-4 h-4" />
-                  <span>{loading ? 'আপলোড হচ্ছে...' : 'নোট জমা দিন'}</span>
+                  <span>{loading ? t('btn_uploading') : t('btn_submit_note')}</span>
                 </button>
               </div>
             </form>

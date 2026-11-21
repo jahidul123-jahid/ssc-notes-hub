@@ -2,6 +2,7 @@ import React from 'react';
 import { Eye, Download, FileText, User, School, Flag, Volume2, Pause } from 'lucide-react';
 import { Note } from '../types';
 import { useAudioReader } from '../context/AudioReaderContext';
+import { useLanguage } from '../context/LanguageContext';
 
 interface NoteCardProps {
   note: Note;
@@ -17,6 +18,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
   onReport
 }) => {
   const { play, pause, isItemPlaying } = useAudioReader();
+  const { t, isBn } = useLanguage();
   const isPlaying = isItemPlaying(note.title);
 
   const handleAudioClick = (e: React.MouseEvent) => {
@@ -24,20 +26,23 @@ export const NoteCard: React.FC<NoteCardProps> = ({
     if (isPlaying) {
       pause();
     } else {
-      const fullText = `${note.title}। নোটের বিবরণ: ${note.description}`;
+      const fullText = isBn
+        ? `${note.title}। নোটের বিবরণ: ${note.description}`
+        : `${note.title}. Note details: ${note.description}`;
       play(fullText, note.title);
     }
   };
+
   const getFileTypeLabel = (type: string) => {
     switch (type.toLowerCase()) {
       case 'pdf':
-        return 'PDF';
+        return t('format_tag_pdf');
       case 'jpg':
       case 'jpeg':
       case 'png':
-        return 'ছবি';
+        return t('format_tag_image');
       case 'docx':
-        return 'Word';
+        return t('format_tag_word');
       default:
         return type.toUpperCase();
     }
@@ -61,18 +66,20 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                   ? 'bg-brand-600 text-white'
                   : 'text-secondaryText hover:text-brand-600 hover:bg-brand-50'
               }`}
-              title="এআই দিয়ে শুনুন"
-              aria-label="Listen with AI"
+              title={isPlaying ? t('btn_pause') : t('btn_listen')}
+              aria-label={t('btn_listen')}
             >
               {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Volume2 className="w-3.5 h-3.5" />}
-              <span className="text-[11px] font-medium hidden sm:inline">শুনুন</span>
+              <span className="text-[11px] font-medium hidden sm:inline">
+                {isPlaying ? t('btn_pause') : t('btn_listen')}
+              </span>
             </button>
 
             {onReport && (
               <button
                 onClick={() => onReport(note)}
                 className="text-secondaryText/60 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
-                title="রিপোর্ট করুন"
+                title={t('tooltip_report')}
                 aria-label="Report note"
               >
                 <Flag className="w-3.5 h-3.5" />
@@ -108,7 +115,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
           className="inline-flex items-center justify-center gap-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 font-semibold py-2.5 px-3 rounded-xl text-sm transition-colors border border-brand-200/60"
         >
           <Eye className="w-4 h-4 text-brand-600" />
-          <span>নোট দেখুন</span>
+          <span>{t('btn_view_note')}</span>
         </button>
 
         <button
@@ -116,7 +123,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
           className="inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-brand-500 to-violetAccent hover:from-brand-600 hover:to-indigo-600 text-white font-semibold py-2.5 px-3 rounded-xl text-sm transition-all shadow-sm hover:shadow-soft"
         >
           <Download className="w-4 h-4" />
-          <span>ডাউনলোড</span>
+          <span>{t('btn_download')}</span>
         </button>
       </div>
     </div>

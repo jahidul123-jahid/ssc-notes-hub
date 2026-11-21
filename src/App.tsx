@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useSearchParams } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { AudioReaderProvider } from './context/AudioReaderContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { ScrollRestorationManager } from './components/ScrollRestorationManager';
@@ -197,13 +198,15 @@ const AppContent: React.FC = () => {
 
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <AudioReaderProvider>
-        <BrowserRouter>
-          <AppContent />
-        </BrowserRouter>
-      </AudioReaderProvider>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <AudioReaderProvider>
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+        </AudioReaderProvider>
+      </AuthProvider>
+    </LanguageProvider>
   );
 };
 

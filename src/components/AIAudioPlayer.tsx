@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAudioReader } from '../context/AudioReaderContext';
+import { useLanguage } from '../context/LanguageContext';
 import {
   Play,
   Pause,
@@ -14,6 +15,7 @@ import {
 
 export const AIAudioPlayer: React.FC = () => {
   const { state, pause, resume, stop, setSpeed, seek } = useAudioReader();
+  const { t, isBn } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(false);
 
   // If status is idle and no title, don't show player
@@ -74,7 +76,7 @@ export const AIAudioPlayer: React.FC = () => {
             <div className="flex items-center gap-1.5">
               <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-100/80 text-brand-700 uppercase tracking-wider">
                 <Sparkles className="w-2.5 h-2.5" />
-                {state.engine === 'cartesia' ? 'Cartesia AI Voice' : 'AI অডিও রিডার'}
+                {state.engine === 'cartesia' ? t('cartesia_badge') : t('ai_reader_badge')}
               </span>
               {state.subtitle && (
                 <span className="text-[11px] text-secondaryText truncate">
@@ -83,7 +85,7 @@ export const AIAudioPlayer: React.FC = () => {
               )}
             </div>
             <h4 className="text-xs sm:text-sm font-bold text-primaryText truncate mt-0.5">
-              {state.title || 'অডিও পাঠ চালু আছে'}
+              {state.title || t('player_playing')}
             </h4>
           </div>
 
@@ -156,7 +158,7 @@ export const AIAudioPlayer: React.FC = () => {
 
             {/* Playback Speed Selectors */}
             <div className="flex items-center justify-between gap-2 pt-1">
-              <span className="text-xs font-semibold text-secondaryText">পড়ার গতি:</span>
+              <span className="text-xs font-semibold text-secondaryText">{t('reading_speed')}</span>
               <div className="flex items-center gap-1.5">
                 {[0.75, 1.0, 1.25, 1.5].map((spd) => (
                   <button
@@ -181,7 +183,7 @@ export const AIAudioPlayer: React.FC = () => {
                 className="inline-flex items-center gap-1.5 text-secondaryText hover:text-brand-600 font-semibold"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>প্রথম থেকে শুনুন</span>
+                <span>{t('restart_audio')}</span>
               </button>
 
               <button
@@ -189,7 +191,7 @@ export const AIAudioPlayer: React.FC = () => {
                 className="inline-flex items-center gap-1.5 text-rose-600 hover:text-rose-700 font-semibold"
               >
                 <Square className="w-3.5 h-3.5 fill-current" />
-                <span>প্লেয়ার বন্ধ</span>
+                <span>{t('stop_player')}</span>
               </button>
             </div>
           </div>

@@ -14,11 +14,11 @@ import {
   ZoomIn,
   BookOpen,
   Volume2,
-  Sparkles,
   Pause
 } from 'lucide-react';
 import { Note, Subject, Chapter } from '../types';
 import { useAudioReader } from '../context/AudioReaderContext';
+import { useLanguage } from '../context/LanguageContext';
 
 interface NoteViewerModalProps {
   note: Note | null;
@@ -40,6 +40,7 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
   const [copied, setCopied] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   const { play, pause, isItemPlaying } = useAudioReader();
+  const { t, isBn } = useLanguage();
 
   if (!note) return null;
 
@@ -49,10 +50,10 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
     if (isCurrentNotePlaying) {
       pause();
     } else {
-      const subjectPart = subject ? `বিষয়: ${subject.name}।` : '';
-      const chapterPart = chapter ? `অধ্যায়: ${chapter.chapterName}।` : '';
-      const fullText = `${note.title}। ${subjectPart} ${chapterPart} নোটের বিস্তারিত: ${note.description}`;
-      play(fullText, note.title, subject?.name || 'এসএসসি নোট');
+      const subjectPart = subject ? `${t('subject')}: ${isBn ? subject.name : (subject.englishName || subject.name)}. ` : '';
+      const chapterPart = chapter ? `${t('chapter')}: ${chapter.chapterName}. ` : '';
+      const fullText = `${note.title}. ${subjectPart} ${chapterPart} ${note.description}`;
+      play(fullText, note.title, isBn ? (subject?.name || 'এসএসসি নোট') : (subject?.englishName || 'SSC Note'));
     }
   };
 
@@ -69,11 +70,10 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
       try {
         await navigator.share({
           title: note.title,
-          text: `${note.title} — SSC Notes Hub এ শেয়ারকৃত নোটটি দেখুন।`,
+          text: `${note.title} — SSC Notes Hub`,
           url: shareUrl,
         });
       } catch (e) {
-        // user cancelled or failed, fallback to copy
         handleCopyLink();
       }
     } else {
@@ -83,11 +83,13 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
 
   const isImage = ['jpg', 'jpeg', 'png'].includes(note.fileType.toLowerCase());
 
-  const formattedDate = new Date(note.createdAt).toLocaleDateString('bn-BD', {
+  const formattedDate = new Date(note.createdAt).toLocaleDateString(isBn ? 'bn-BD' : 'en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   });
+
+  const displaySubjectName = subject ? (isBn ? subject.name : (subject.englishName || subject.name)) : '';
 
   return (
     <div
@@ -111,7 +113,7 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
                 </span>
                 {subject && (
                   <span className="text-xs font-medium text-secondaryText truncate hidden sm:inline">
-                    • {subject.name}
+                    • {displaySubjectName}
                   </span>
                 )}
                 {chapter && (
@@ -135,18 +137,18 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
                   ? 'bg-brand-600 text-white shadow-soft animate-pulse'
                   : 'bg-brand-50 text-brand-700 hover:bg-brand-100 border border-brand-200/80'
               }`}
-              title="এআই দিয়ে নোটটি শুনুন"
+              title={isCurrentNotePlaying ? t('btn_pause') : t('listen_chapter')}
               aria-label="Listen with AI Voice"
             >
               {isCurrentNotePlaying ? (
                 <>
                   <Pause className="w-4 h-4 fill-current" />
-                  <span className="hidden sm:inline">বিরতি</span>
+                  <span className="hidden sm:inline">{t('btn_pause')}</span>
                 </>
               ) : (
                 <>
                   <Volume2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">শুনুন</span>
+                  <span className="hidden sm:inline">{t('btn_listen')}</span>
                 </>
               )}
             </button>
@@ -154,13 +156,13 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
             <button
               onClick={handleCopyLink}
               className="min-h-[44px] min-w-[44px] flex items-center justify-center text-secondaryText hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-colors relative active:scale-95"
-              title="লিংক কপি করুন"
+              title={t('tooltip_copy')}
               aria-label="Copy link"
             >
               {copied ? <Check className="w-5 h-5 text-emerald-600" /> : <Copy className="w-5 h-5" />}
               {copied && (
                 <span className="absolute -bottom-7 right-0 text-[10px] bg-emerald-700 text-white px-2 py-0.5 rounded shadow whitespace-nowrap">
-                  কপি হয়েছে!
+                  {t('copied_alert')}
                 </span>
               )}
             </button>
@@ -168,7 +170,7 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
             <button
               onClick={handleShare}
               className="min-h-[44px] min-w-[44px] flex items-center justify-center text-secondaryText hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-colors active:scale-95"
-              title="শেয়ার করুন"
+              title={t('tooltip_share')}
               aria-label="Share note"
             >
               <Share2 className="w-5 h-5" />
@@ -177,7 +179,7 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
             <button
               onClick={() => onReport(note)}
               className="min-h-[44px] min-w-[44px] flex items-center justify-center text-secondaryText hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors active:scale-95"
-              title="রিপোর্ট করুন"
+              title={t('tooltip_report')}
               aria-label="Report note"
             >
               <Flag className="w-5 h-5" />
@@ -212,7 +214,7 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
                   className="absolute bottom-4 right-4 bg-black/60 hover:bg-black/80 text-white p-2 rounded-lg backdrop-blur-sm text-xs flex items-center gap-1.5"
                 >
                   <ZoomIn className="w-4 h-4" />
-                  <span>{isZoomed ? 'ছোট করুন' : 'বড় করে দেখুন'}</span>
+                  <span>{isZoomed ? t('zoom_out') : t('zoom_in')}</span>
                 </button>
               </div>
             ) : (
@@ -230,10 +232,10 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
 
                 <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
                   <span className="px-3 py-1 rounded-full bg-brand-100 text-brand-800 font-semibold">
-                    ফরম্যাট: {note.fileType.toUpperCase()}
+                    {t('file_format')}: {note.fileType.toUpperCase()}
                   </span>
                   <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 font-medium">
-                    ফাইলের আকার: {note.fileSize}
+                    {t('file_size')}: {note.fileSize}
                   </span>
                 </div>
 
@@ -247,7 +249,7 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
                     }`}
                   >
                     <Volume2 className="w-4 h-4" />
-                    <span>{isCurrentNotePlaying ? 'অডিও থামান' : 'এআই দিয়ে শুনুন'}</span>
+                    <span>{isCurrentNotePlaying ? t('btn_pause') : t('listen_chapter')}</span>
                   </button>
 
                   <button
@@ -255,7 +257,7 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
                     className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-500 to-violetAccent text-white px-6 py-3 rounded-xl font-bold shadow-soft hover:shadow-soft-hover hover:scale-105 transition-all text-sm"
                   >
                     <Download className="w-4 h-4" />
-                    <span>সম্পূর্ণ {note.fileType.toUpperCase()} ডাউনলোড করুন</span>
+                    <span>{t('btn_download_full')} ({note.fileType.toUpperCase()})</span>
                   </button>
 
                   {note.fileURL.startsWith('http') && (
@@ -266,7 +268,7 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
                       className="inline-flex items-center gap-2 bg-white text-secondaryText hover:text-brand-600 border border-cardBorder px-5 py-3 rounded-xl font-semibold shadow-sm hover:shadow text-sm transition-all"
                     >
                       <ExternalLink className="w-4 h-4" />
-                      <span>নতুন ট্যাবে দেখুন</span>
+                      <span>{t('btn_open_tab')}</span>
                     </a>
                   )}
                 </div>
@@ -276,7 +278,7 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
 
           {/* Note Info & Contributor Details */}
           <div className="bg-white rounded-xl border border-cardBorder p-5 sm:p-6 shadow-sm">
-            <h3 className="text-base font-bold text-primaryText mb-3">নোটের বিস্তারিত বিবরণ</h3>
+            <h3 className="text-base font-bold text-primaryText mb-3">{t('note_details_title')}</h3>
             <p className="text-sm text-secondaryText leading-relaxed">
               {note.description}
             </p>
@@ -285,16 +287,16 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
               {/* Contributor Profile */}
               <div className="bg-brand-50/60 p-4 rounded-xl border border-brand-200/50 space-y-2">
                 <span className="text-[11px] font-bold text-brand-600 uppercase tracking-wider block">
-                  নোট প্রদানকারী শিক্ষার্থী
+                  {t('contributor_student')}
                 </span>
                 <div className="flex items-center gap-2 text-base font-bold text-primaryText">
                   <User className="w-4 h-4 text-brand-500" />
                   <span>{note.studentName}</span>
                 </div>
                 <div className="text-xs text-secondaryText flex items-center gap-2">
-                  <span>রোল নম্বর: <strong>{note.rollNumber}</strong></span>
+                  <span>{t('roll_number')}: <strong>{note.rollNumber}</strong></span>
                   <span>•</span>
-                  <span>শাখা: <strong>{note.section}</strong></span>
+                  <span>{t('section')}: <strong>{note.section}</strong></span>
                 </div>
                 <div className="text-xs text-secondaryText flex items-center gap-1.5 pt-1">
                   <School className="w-3.5 h-3.5 text-brand-500 shrink-0" />
@@ -305,22 +307,22 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
               {/* Subject & Meta Information */}
               <div className="bg-slate-50 p-4 rounded-xl border border-cardBorder space-y-2">
                 <span className="text-[11px] font-bold text-secondaryText uppercase tracking-wider block">
-                  পাঠ্যসূচি ও প্রকাশনা
+                  {t('curriculum_meta')}
                 </span>
                 {subject && (
                   <div className="flex items-center gap-2 text-sm font-semibold text-primaryText">
                     <BookOpen className="w-4 h-4 text-brand-500" />
-                    <span>বিষয়: {subject.name}</span>
+                    <span>{t('subject')}: {displaySubjectName}</span>
                   </div>
                 )}
                 {chapter && (
                   <div className="text-xs text-secondaryText">
-                    অধ্যায়: <strong className="text-primaryText">{chapter.chapterName}</strong>
+                    {t('chapter')}: <strong className="text-primaryText">{chapter.chapterName}</strong>
                   </div>
                 )}
                 <div className="text-xs text-secondaryText flex items-center gap-1.5 pt-1">
                   <Calendar className="w-3.5 h-3.5 text-brand-500" />
-                  <span>আপলোড তারিখ: {formattedDate}</span>
+                  <span>{t('upload_date')}: {formattedDate}</span>
                 </div>
               </div>
             </div>
@@ -333,14 +335,14 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
             onClick={onClose}
             className="min-h-[44px] px-4 py-2 text-sm font-semibold text-secondaryText hover:text-primaryText transition-colors active:scale-95"
           >
-            বন্ধ করুন
+            {t('btn_close')}
           </button>
           <button
             onClick={() => onDownload(note)}
             className="min-h-[44px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-500 to-violetAccent text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-soft hover:shadow-soft-hover transition-all active:scale-95"
           >
             <Download className="w-4 h-4" />
-            <span>নোট ডাউনলোড</span>
+            <span>{t('btn_download')}</span>
           </button>
         </div>
       </div>

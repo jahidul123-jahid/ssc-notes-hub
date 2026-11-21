@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Subject, Chapter, Note } from '../types';
+import { Subject, Chapter } from '../types';
 import { dataService } from '../services/dataService';
 import { useAudioReader } from '../context/AudioReaderContext';
+import { useLanguage } from '../context/LanguageContext';
 import {
   BookOpen,
   Upload,
@@ -19,6 +20,7 @@ interface SubjectDetailsPageProps {
 
 export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUpload }) => {
   const { subjectId } = useParams<{ subjectId: string }>();
+  const { t, isBn } = useLanguage();
 
   const [subject, setSubject] = useState<Subject | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -70,18 +72,19 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
   if (!subject) {
     return (
       <div className="max-w-md mx-auto my-20 p-8 bg-white rounded-2xl border border-cardBorder text-center shadow-soft">
-        <h2 className="text-xl font-bold text-primaryText">বিষয়টি পাওয়া যায়নি</h2>
+        <h2 className="text-xl font-bold text-primaryText">{t('subject_not_found')}</h2>
         <Link
           to="/subjects"
           className="inline-block mt-4 px-5 py-2.5 rounded-xl bg-brand-600 text-white font-semibold text-sm"
         >
-          সকল বিষয় দেখুন
+          {t('all_subjects_link')}
         </Link>
       </div>
     );
   }
 
   const isBangla1st = subject.subjectId === 'bangla-1st';
+  const displaySubjectName = isBn ? subject.name : (subject.englishName || subject.name);
 
   const filteredChapters = chapters.filter(c => {
     const matchesSearch = c.chapterName.toLowerCase().includes(searchChapter.toLowerCase());
@@ -98,11 +101,11 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
       {/* Breadcrumb Navigation */}
       <nav className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-secondaryText font-medium">
-        <Link to="/" className="hover:text-brand-600 transition-colors py-1">হোম</Link>
+        <Link to="/" className="hover:text-brand-600 transition-colors py-1">{t('breadcrumb_home')}</Link>
         <ChevronRight className="w-3.5 h-3.5" />
-        <Link to="/subjects" className="hover:text-brand-600 transition-colors py-1">সকল বিষয়</Link>
+        <Link to="/subjects" className="hover:text-brand-600 transition-colors py-1">{t('breadcrumb_all_subjects')}</Link>
         <ChevronRight className="w-3.5 h-3.5" />
-        <span className="text-primaryText font-semibold py-1">{subject.name}</span>
+        <span className="text-primaryText font-semibold py-1">{displaySubjectName}</span>
       </nav>
 
       {/* Clean Subject Banner */}
@@ -111,10 +114,10 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
       >
         <div className="relative z-10 space-y-1.5 sm:space-y-2">
           <h1 className="text-2xl sm:text-5xl font-extrabold text-amber-300 drop-shadow-md">
-            {subject.name}
+            {displaySubjectName}
           </h1>
           <p className="text-white/80 text-xs sm:text-sm font-medium">
-            {subject.englishName}
+            {isBn ? subject.englishName : subject.name}
           </p>
         </div>
 
@@ -124,7 +127,7 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-brand-700 hover:bg-brand-50 px-6 py-3.5 rounded-xl font-bold text-sm sm:text-base shadow-soft hover:shadow-soft-hover transition-all min-h-[48px] active:scale-95"
           >
             <Upload className="w-5 h-5 text-brand-600" />
-            <span>নোট শেয়ার করুন</span>
+            <span>{t('hero_share_note')}</span>
           </button>
         </div>
       </div>
@@ -142,7 +145,7 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
                   : 'text-secondaryText hover:text-primaryText'
               }`}
             >
-              গদ্য
+              {t('tab_prose')}
             </button>
 
             <button
@@ -153,12 +156,12 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
                   : 'text-secondaryText hover:text-primaryText'
               }`}
             >
-              পদ্য
+              {t('tab_poem')}
             </button>
           </div>
         ) : (
           <h2 className="text-base sm:text-lg font-bold text-primaryText">
-            অধ্যায়সমূহ
+            {t('chapters_heading')}
           </h2>
         )}
 
@@ -169,13 +172,13 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
             type="text"
             value={searchChapter}
             onChange={(e) => setSearchChapter(e.target.value)}
-            placeholder={isBangla1st ? "গদ্য বা পদ্য খুঁজুন..." : "অধ্যায় খুঁজুন..."}
+            placeholder={t('search_chapter_placeholder')}
             className="w-full pl-9 pr-3 py-2.5 text-base sm:text-sm bg-slate-50 border border-cardBorder rounded-xl focus:outline-none focus:border-brand-500 min-h-[44px]"
           />
         </div>
       </div>
 
-      {/* Chapters / Poems / Prose Grid: Displaying ONLY the actual chapter/poem/prose name prominently in large bold Bengali text */}
+      {/* Chapters / Poems / Prose Grid: Displaying chapter name prominently */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
         {filteredChapters.map((chap) => {
           const isPlaying = isItemPlaying(chap.chapterName);
@@ -210,7 +213,7 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
                       ? 'bg-brand-600 text-white shadow-soft animate-pulse'
                       : 'bg-brand-50 hover:bg-brand-100 text-brand-600 border border-brand-200/60'
                   }`}
-                  title={`${chap.chapterName} শুনুন`}
+                  title={`${chap.chapterName} ${t('btn_listen')}`}
                   aria-label={`Listen to ${chap.chapterName}`}
                 >
                   {isPlaying ? (
@@ -236,7 +239,7 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
       {filteredChapters.length === 0 && (
         <div className="bg-white rounded-2xl border border-cardBorder p-12 text-center">
           <BookOpen className="w-12 h-12 text-secondaryText mx-auto mb-3 opacity-40" />
-          <h3 className="text-lg font-bold text-primaryText">কোনো অধ্যায় পাওয়া যায়নি</h3>
+          <h3 className="text-lg font-bold text-primaryText">{t('no_chapters_found')}</h3>
         </div>
       )}
     </div>

@@ -1,8 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export const Footer: React.FC = () => {
+  const { t } = useLanguage();
+
   return (
     <footer className="bg-white border-t border-cardBorder mt-16 pt-12 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -20,19 +23,19 @@ export const Footer: React.FC = () => {
           {/* Navigation Links */}
           <div className="flex flex-wrap items-center justify-center gap-6 text-sm font-medium text-secondaryText">
             <Link to="/" className="hover:text-brand-600 transition-colors">
-              হোম
+              {t('nav_home')}
             </Link>
             <Link to="/subjects" className="hover:text-brand-600 transition-colors">
-              সকল বিষয়
+              {t('nav_subjects')}
             </Link>
             <Link to="/search" className="hover:text-brand-600 transition-colors">
-              নোট খুঁজুন
+              {t('nav_search')}
             </Link>
             <Link to="/about" className="hover:text-brand-600 transition-colors">
-              আমাদের সম্পর্কে
+              {t('nav_about')}
             </Link>
             <Link to="/contact" className="hover:text-brand-600 transition-colors">
-              যোগাযোগ
+              {t('nav_contact')}
             </Link>
           </div>
         </div>
@@ -40,10 +43,10 @@ export const Footer: React.FC = () => {
         {/* Bottom Bar */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-secondaryText">
           <p>
-            © {new Date().getFullYear()} SSC Notes Hub. সর্বস্বত্ব সংরক্ষিত।
+            © {new Date().getFullYear()} SSC Notes Hub. {t('footer_copyright')}
           </p>
           <p>
-            প্রতিষ্ঠাতা: <strong className="text-primaryText font-semibold">জাহিদুল ইসলাম</strong> (নবীনগর সরকারি পাইলট উচ্চ বিদ্যালয়)
+            {t('footer_founder')}
           </p>
         </div>
       </div>

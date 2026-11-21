@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Subject, Chapter, Note } from '../types';
 import { dataService } from '../services/dataService';
 import { NoteCard } from '../components/NoteCard';
+import { useLanguage } from '../context/LanguageContext';
 import {
   Search,
   Filter,
@@ -20,6 +21,7 @@ export const SearchNotesPage: React.FC<SearchNotesPageProps> = ({
   onDownloadNote,
   onReportNote
 }) => {
+  const { t, isBn } = useLanguage();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
@@ -97,7 +99,7 @@ export const SearchNotesPage: React.FC<SearchNotesPageProps> = ({
       {/* Search Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl sm:text-4xl font-extrabold text-primaryText">
-          নোট অনুসন্ধান
+          {isBn ? 'নোট অনুসন্ধান' : 'Search Notes'}
         </h1>
 
         {/* Search Input */}
@@ -107,7 +109,7 @@ export const SearchNotesPage: React.FC<SearchNotesPageProps> = ({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="নোট শিরোনাম বা শিক্ষার্থীর নাম দিয়ে খুঁজুন..."
+            placeholder={isBn ? 'নোট শিরোনাম বা শিক্ষার্থীর নাম দিয়ে খুঁজুন...' : 'Search by note title or student name...'}
             className="w-full pl-10 pr-4 py-2.5 text-base sm:text-sm bg-white rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 shadow-sm min-h-[44px]"
           />
         </div>
@@ -118,14 +120,14 @@ export const SearchNotesPage: React.FC<SearchNotesPageProps> = ({
         <div className="flex items-center justify-between pb-2 border-b border-cardBorder/60">
           <div className="flex items-center gap-2 text-xs font-bold text-primaryText">
             <Filter className="w-3.5 h-3.5 text-brand-600" />
-            <span>ফিল্টার</span>
+            <span>{isBn ? 'ফিল্টার' : 'Filters'}</span>
           </div>
           <button
             onClick={handleResetFilters}
             className="text-xs text-brand-600 hover:text-brand-800 font-semibold flex items-center gap-1 min-h-[36px] px-2"
           >
             <RefreshCw className="w-3 h-3" />
-            <span>রিসেট</span>
+            <span>{isBn ? 'রিসেট' : 'Reset'}</span>
           </button>
         </div>
 
@@ -140,10 +142,10 @@ export const SearchNotesPage: React.FC<SearchNotesPageProps> = ({
               }}
               className="w-full bg-slate-50 border border-cardBorder rounded-xl p-2.5 font-medium text-primaryText focus:outline-none focus:border-brand-500 text-base sm:text-xs min-h-[44px]"
             >
-              <option value="all">সকল বিষয়</option>
+              <option value="all">{isBn ? 'সকল বিষয়' : 'All Subjects'}</option>
               {subjects.map((s) => (
                 <option key={s.subjectId} value={s.subjectId}>
-                  {s.name}
+                  {isBn ? s.name : (s.englishName || s.name)}
                 </option>
               ))}
             </select>
@@ -157,7 +159,7 @@ export const SearchNotesPage: React.FC<SearchNotesPageProps> = ({
               disabled={selectedSubject === 'all'}
               className="w-full bg-slate-50 border border-cardBorder rounded-xl p-2.5 font-medium text-primaryText focus:outline-none focus:border-brand-500 disabled:opacity-50 text-base sm:text-xs min-h-[44px]"
             >
-              <option value="all">সকল অধ্যায়</option>
+              <option value="all">{isBn ? 'সকল অধ্যায়' : 'All Chapters'}</option>
               {availableChapters.map((c) => (
                 <option key={c.chapterId} value={c.chapterId}>
                   {c.chapterName}
@@ -173,9 +175,9 @@ export const SearchNotesPage: React.FC<SearchNotesPageProps> = ({
               onChange={(e) => setSelectedFileType(e.target.value)}
               className="w-full bg-slate-50 border border-cardBorder rounded-xl p-2.5 font-medium text-primaryText focus:outline-none focus:border-brand-500 text-base sm:text-xs min-h-[44px]"
             >
-              <option value="all">সকল ফাইল ফরম্যাট</option>
+              <option value="all">{isBn ? 'সকল ফাইল ফরম্যাট' : 'All File Formats'}</option>
               <option value="pdf">PDF</option>
-              <option value="jpg">ছবি (JPG/PNG)</option>
+              <option value="jpg">{isBn ? 'ছবি (JPG/PNG)' : 'Images (JPG/PNG)'}</option>
               <option value="docx">DOCX</option>
             </select>
           </div>
@@ -192,7 +194,7 @@ export const SearchNotesPage: React.FC<SearchNotesPageProps> = ({
       ) : filteredNotes.length === 0 ? (
         <div className="bg-white rounded-2xl border border-cardBorder p-12 text-center shadow-soft">
           <BookOpen className="w-12 h-12 text-secondaryText mx-auto mb-3 opacity-40" />
-          <h3 className="text-lg font-bold text-primaryText">কোনো নোট পাওয়া যায়নি</h3>
+          <h3 className="text-lg font-bold text-primaryText">{isBn ? 'কোনো নোট পাওয়া যায়নি' : 'No notes found'}</h3>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

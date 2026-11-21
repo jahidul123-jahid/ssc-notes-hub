@@ -3,8 +3,10 @@ import { SubjectCard } from '../components/SubjectCard';
 import { Subject, SubjectGroup } from '../types';
 import { dataService } from '../services/dataService';
 import { Search, BookOpen } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export const SubjectsPage: React.FC = () => {
+  const { t, isBn } = useLanguage();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<SubjectGroup | 'all'>('all');
@@ -32,14 +34,23 @@ export const SubjectsPage: React.FC = () => {
     return matchesSearch && matchesGroup;
   });
 
-  const groupTabs: { id: SubjectGroup | 'all'; label: string }[] = [
-    { id: 'all', label: 'সকল বিষয়' },
-    { id: 'compulsory', label: 'আবশ্যিক' },
-    { id: 'science', label: 'বিজ্ঞান' },
-    { id: 'humanities', label: 'মানবিক' },
-    { id: 'business', label: 'ব্যবসায় শিক্ষা' },
-    { id: 'optional', label: 'ঐচ্ছিক' },
-  ];
+  const groupTabs: { id: SubjectGroup | 'all'; label: string }[] = isBn
+    ? [
+        { id: 'all', label: 'সকল বিষয়' },
+        { id: 'compulsory', label: 'আবশ্যিক' },
+        { id: 'science', label: 'বিজ্ঞান' },
+        { id: 'humanities', label: 'মানবিক' },
+        { id: 'business', label: 'ব্যবসায় শিক্ষা' },
+        { id: 'optional', label: 'ঐচ্ছিক' },
+      ]
+    : [
+        { id: 'all', label: 'All Subjects' },
+        { id: 'compulsory', label: 'Compulsory' },
+        { id: 'science', label: 'Science' },
+        { id: 'humanities', label: 'Humanities' },
+        { id: 'business', label: 'Business Studies' },
+        { id: 'optional', label: 'Optional' },
+      ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -47,8 +58,11 @@ export const SubjectsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-4xl font-extrabold text-primaryText">
-            সকল বিষয়
+            {t('subjects_page_title')}
           </h1>
+          <p className="text-sm text-secondaryText mt-1">
+            {t('subjects_page_subtitle')}
+          </p>
         </div>
 
         <div className="relative w-full sm:w-80">
@@ -57,7 +71,7 @@ export const SubjectsPage: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="বিষয় খুঁজুন..."
+            placeholder={t('search_subject_placeholder')}
             className="w-full pl-10 pr-4 py-2.5 bg-white text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 shadow-sm"
           />
         </div>
@@ -90,7 +104,7 @@ export const SubjectsPage: React.FC = () => {
       ) : filteredSubjects.length === 0 ? (
         <div className="bg-white rounded-2xl border border-cardBorder p-12 text-center shadow-soft">
           <BookOpen className="w-12 h-12 text-secondaryText mx-auto mb-3 opacity-40" />
-          <h3 className="text-lg font-bold text-primaryText">কোনো বিষয় পাওয়া যায়নি</h3>
+          <h3 className="text-lg font-bold text-primaryText">{t('no_subjects_found')}</h3>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
