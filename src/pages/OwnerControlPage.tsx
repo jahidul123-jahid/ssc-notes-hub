@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { dataService } from '../services/dataService';
 import { Subject, Chapter, Note, Report, WebsiteStats } from '../types';
@@ -20,7 +20,6 @@ import {
   Lock,
   LogOut,
   CheckCircle,
-  XCircle,
   Trash2,
   Edit3,
   Plus,
@@ -28,22 +27,18 @@ import {
   FileText,
   AlertTriangle,
   Database,
-  Users,
-  Download,
   Search,
-  ExternalLink,
   Copy,
   Check,
   RefreshCw,
   Eye,
-  Sparkles,
   Save,
   Send,
   Bell
 } from 'lucide-react';
 
 export const OwnerControlPage: React.FC = () => {
-  const { isOwner, currentUser, ownerName, loginAsOwner, logout } = useAuth();
+  const { isOwner, ownerName, loginAsOwner, logout } = useAuth();
 
   // Login form state
   const [email, setEmail] = useState('');
@@ -83,12 +78,11 @@ export const OwnerControlPage: React.FC = () => {
   const [tgTesting, setTgTesting] = useState(false);
 
   // Add / Edit Subject State
-  const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [newSubName, setNewSubName] = useState('');
   const [newSubEngName, setNewSubEngName] = useState('');
   const [newSubBadge, setNewSubBadge] = useState('NCTB সিলেবাস');
   const [newSubDesc, setNewSubDesc] = useState('');
-  const [newSubGradient, setNewSubGradient] = useState('from-indigo-950 via-purple-900 to-slate-900');
+  const newSubGradient = 'from-indigo-950 via-purple-900 to-slate-900';
 
   // Add Chapter State
   const [selectedSubForChapter, setSelectedSubForChapter] = useState('');
@@ -101,7 +95,7 @@ export const OwnerControlPage: React.FC = () => {
   const [editingNote, setEditingNote] = useState<Note | null>(null);
 
   // Load all dashboard data
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     setLoading(true);
     try {
       const [allNotes, allSubs, allChaps, allReps, statData] = await Promise.all([
@@ -119,20 +113,42 @@ export const OwnerControlPage: React.FC = () => {
       setReports(allReps);
       setStats(statData);
 
-      if (!selectedSubForChapter && allSubs.length > 0) {
-        setSelectedSubForChapter(allSubs[0].subjectId);
-      }
+      setSelectedSubForChapter(curr => curr || (allSubs.length > 0 ? allSubs[0].subjectId : ''));
     } catch (err) {
       console.error("Dashboard data load error:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
+    let ignore = false;
     if (isOwner) {
-      loadDashboardData();
+      void (async () => {
+        try {
+          const [allNotes, allSubs, allChaps, allReps, statData] = await Promise.all([
+            dataService.getNotes('all'),
+            dataService.getSubjects(),
+            dataService.getChapters(),
+            dataService.getReports(),
+            dataService.getStats()
+          ]);
+          if (ignore) return;
+          setPendingNotes(allNotes.filter(n => n.status === 'pending'));
+          setActiveNotes(allNotes.filter(n => n.status === 'approved'));
+          setSubjects(allSubs);
+          setChapters(allChaps);
+          setReports(allReps);
+          setStats(statData);
+          setSelectedSubForChapter(curr => curr || (allSubs.length > 0 ? allSubs[0].subjectId : ''));
+        } catch (err) {
+          console.error("Dashboard data load error:", err);
+        }
+      })();
     }
+    return () => {
+      ignore = true;
+    };
   }, [isOwner]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -420,10 +436,11 @@ export const OwnerControlPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={loadDashboardData}
-            className="p-2.5 text-secondaryText hover:text-brand-600 bg-slate-50 hover:bg-brand-50 rounded-xl transition-colors border border-cardBorder"
+            disabled={loading}
+            className="p-2.5 text-secondaryText hover:text-brand-600 bg-slate-50 hover:bg-brand-50 rounded-xl transition-colors border border-cardBorder disabled:opacity-50"
             title="তথ্য রিফ্রেশ করুন"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-brand-600' : ''}`} />
           </button>
 
           <button

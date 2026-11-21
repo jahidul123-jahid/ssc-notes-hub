@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Upload, FileText, CheckCircle2, AlertCircle, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { X, Upload, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Subject, Chapter, FileType } from '../types';
 import { dataService } from '../services/dataService';
@@ -47,28 +47,41 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync initial selections
-  useEffect(() => {
-    if (initialSubjectId) setSubjectId(initialSubjectId);
-    if (initialChapterId) setChapterId(initialChapterId);
-  }, [initialSubjectId, initialChapterId, isOpen]);
+  const [prevProps, setPrevProps] = useState({ isOpen, initialSubjectId, initialChapterId });
+  if (
+    prevProps.isOpen !== isOpen ||
+    prevProps.initialSubjectId !== initialSubjectId ||
+    prevProps.initialChapterId !== initialChapterId
+  ) {
+    setPrevProps({ isOpen, initialSubjectId, initialChapterId });
+    if (isOpen) {
+      if (initialSubjectId) setSubjectId(initialSubjectId);
+      if (initialChapterId) setChapterId(initialChapterId);
+    }
+  }
 
   // Load chapters for selected subject
   useEffect(() => {
+    let isMounted = true;
     const fetchChapters = async () => {
       if (subjectId) {
         const list = await dataService.getChapters(subjectId);
+        if (!isMounted) return;
         setChapters(list);
         if (!initialChapterId || list.every(c => c.chapterId !== initialChapterId)) {
           setChapterId(list[0]?.chapterId || '');
         }
       } else {
+        if (!isMounted) return;
         setChapters([]);
         setChapterId('');
       }
     };
     fetchChapters();
-  }, [subjectId]);
+    return () => {
+      isMounted = false;
+    };
+  }, [subjectId, initialChapterId]);
 
   if (!isOpen) return null;
 

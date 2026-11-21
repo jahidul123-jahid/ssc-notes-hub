@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Flag, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { X, Flag, CheckCircle2 } from 'lucide-react';
 import { Note } from '../types';
 import { dataService } from '../services/dataService';
 

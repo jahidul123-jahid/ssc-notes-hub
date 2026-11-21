@@ -280,7 +280,6 @@ export const dataService = {
     if (supabase) {
       try {
         if (onProgress) onProgress(30);
-        const fileExt = actualFile.name.split('.').pop() || 'pdf';
         const storagePath = `${noteId}_${actualFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 
         const { data: upData, error: upErr } = await supabase.storage

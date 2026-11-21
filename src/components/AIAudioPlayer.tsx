@@ -15,7 +15,7 @@ import {
 
 export const AIAudioPlayer: React.FC = () => {
   const { state, pause, resume, stop, setSpeed, seek } = useAudioReader();
-  const { t, isBn } = useLanguage();
+  const { t } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(false);
 
   // When audio is stopped or idle, immediately close and hide the player

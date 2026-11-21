@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Home, ArrowLeft } from 'lucide-react';
+import { BookOpen, Home } from 'lucide-react';
 
 export const NotFoundPage: React.FC = () => {
   return (

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
 export type Language = 'en' | 'bn';
 
@@ -263,7 +263,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (saved === 'en' || saved === 'bn') {
         return saved;
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
     return 'en'; // default to English
@@ -273,7 +273,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setLanguageState(lang);
     try {
       localStorage.setItem(STORAGE_KEY, lang);
-    } catch (e) {
+    } catch {
       // ignore
     }
   };

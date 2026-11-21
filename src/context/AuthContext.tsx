@@ -20,10 +20,35 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const LOCAL_AUTH_KEY = 'ssc_hub_owner_session_v1';
 
+const getInitialOwnerState = (): { isOwner: boolean; user: FirebaseUser | null } => {
+  if (!isFirebaseConfigured && typeof window !== 'undefined') {
+    try {
+      const savedSession = localStorage.getItem(LOCAL_AUTH_KEY);
+      if (savedSession) {
+        const parsed = JSON.parse(savedSession);
+        if (parsed && parsed.isOwner) {
+          return {
+            isOwner: true,
+            user: {
+              uid: OWNER_CONFIG.authorizedUID,
+              email: OWNER_CONFIG.email,
+              displayName: OWNER_CONFIG.name,
+            } as FirebaseUser
+          };
+        }
+      }
+    } catch {
+      localStorage.removeItem(LOCAL_AUTH_KEY);
+    }
+  }
+  return { isOwner: false, user: null };
+};
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [isOwner, setIsOwner] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [initialState] = useState(getInitialOwnerState);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(initialState.user);
+  const [isOwner, setIsOwner] = useState<boolean>(initialState.isOwner);
+  const [loading, setLoading] = useState<boolean>(isFirebaseConfigured);
 
   useEffect(() => {
     // 1. If Firebase Auth is configured, listen to Firebase Auth State
@@ -42,25 +67,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setLoading(false);
       });
       return () => unsubscribe();
-    } else {
-      // 2. Local simulation mode for owner session
-      const savedSession = localStorage.getItem(LOCAL_AUTH_KEY);
-      if (savedSession) {
-        try {
-          const parsed = JSON.parse(savedSession);
-          if (parsed && parsed.isOwner) {
-            setIsOwner(true);
-            setCurrentUser({
-              uid: OWNER_CONFIG.authorizedUID,
-              email: OWNER_CONFIG.email,
-              displayName: OWNER_CONFIG.name,
-            } as FirebaseUser);
-          }
-        } catch {
-          localStorage.removeItem(LOCAL_AUTH_KEY);
-        }
-      }
-      setLoading(false);
     }
   }, []);
 

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export const Footer: React.FC = () => {
   const { t } = useLanguage();
 
@@ -43,7 +45,7 @@ export const Footer: React.FC = () => {
         {/* Bottom Bar */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-secondaryText">
           <p>
-            © {new Date().getFullYear()} SSC Notes Hub. {t('footer_copyright')}
+            © {CURRENT_YEAR} SSC Notes Hub. {t('footer_copyright')}
           </p>
           <p>
             {t('footer_founder')}

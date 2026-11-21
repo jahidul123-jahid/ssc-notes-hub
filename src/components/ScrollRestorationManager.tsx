@@ -52,7 +52,6 @@ export const ScrollRestorationManager: React.FC = () => {
 
   // Handle navigation events
   useEffect(() => {
-    const prevKey = prevKeyRef.current;
     const prevPath = prevPathRef.current;
     prevKeyRef.current = location.key;
     prevPathRef.current = location.pathname;

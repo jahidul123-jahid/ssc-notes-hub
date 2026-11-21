@@ -21,7 +21,7 @@ export const SearchNotesPage: React.FC<SearchNotesPageProps> = ({
   onDownloadNote,
   onReportNote
 }) => {
-  const { t, isBn } = useLanguage();
+  const { isBn } = useLanguage();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);

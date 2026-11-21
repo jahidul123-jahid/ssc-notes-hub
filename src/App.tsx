@@ -71,8 +71,6 @@ const AppContent: React.FC = () => {
     setActiveNoteForView(note);
   };
 
-  const [downloadingNoteId, setDownloadingNoteId] = useState<string | null>(null);
-
   const handleDownloadNote = async (note: Note) => {
     // 1. Increment download count in database
     const newCount = await dataService.incrementDownload(note.noteId);
@@ -84,7 +82,6 @@ const AppContent: React.FC = () => {
     if (!note.fileURL) return;
 
     try {
-      setDownloadingNoteId(note.noteId);
       // Fetch as blob to force real file download rather than opening in tab
       const res = await fetch(note.fileURL);
       if (!res.ok) throw new Error('Fetch failed');
@@ -109,8 +106,6 @@ const AppContent: React.FC = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } finally {
-      setDownloadingNoteId(null);
     }
   };
 

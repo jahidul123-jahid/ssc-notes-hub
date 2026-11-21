@@ -122,7 +122,7 @@ function detectOS(): string {
   const ua = navigator.userAgent;
 
   // Android
-  const androidMatch = ua.match(/Android\s([0-9\.]+)/i);
+  const androidMatch = ua.match(/Android\s([0-9.]+)/i);
   if (androidMatch) return `Android ${androidMatch[1]}`;
 
   // iOS

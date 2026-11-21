@@ -59,7 +59,7 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
     return () => {
       stop();
     };
-  }, []);
+  }, [stop]);
 
   if (!note) return null;
 
