@@ -71,6 +71,8 @@ const AppContent: React.FC = () => {
     setActiveNoteForView(note);
   };
 
+  const [downloadingNoteId, setDownloadingNoteId] = useState<string | null>(null);
+
   const handleDownloadNote = async (note: Note) => {
     // 1. Increment download count in database
     const newCount = await dataService.incrementDownload(note.noteId);
@@ -78,15 +80,37 @@ const AppContent: React.FC = () => {
       setActiveNoteForView({ ...activeNoteForView, downloadCount: newCount });
     }
 
-    // 2. Trigger browser download
-    if (note.fileURL) {
+    // 2. Reliable direct download for mobile & desktop
+    if (!note.fileURL) return;
+
+    try {
+      setDownloadingNoteId(note.noteId);
+      // Fetch as blob to force real file download rather than opening in tab
+      const res = await fetch(note.fileURL);
+      if (!res.ok) throw new Error('Fetch failed');
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const cleanFileName = `${note.title.replace(/[/\\?%*:|"<>]/g, '_')}.${note.fileType || 'pdf'}`;
+
       const link = document.createElement('a');
-      link.href = note.fileURL;
-      link.download = `${note.title.replace(/[^a-zA-Z0-9\u0980-\u09FF]/g, '_')}.${note.fileType}`;
-      link.target = '_blank';
+      link.href = blobUrl;
+      link.download = cleanFileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 2000);
+    } catch {
+      // Fallback for cross-origin restricted URLs: direct window open or anchor
+      const link = document.createElement('a');
+      link.href = note.fileURL;
+      link.download = `${note.title.replace(/[/\\?%*:|"<>]/g, '_')}.${note.fileType || 'pdf'}`;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } finally {
+      setDownloadingNoteId(null);
     }
   };
 

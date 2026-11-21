@@ -50,15 +50,26 @@ export const NoteCard: React.FC<NoteCardProps> = ({
 
   return (
     <div className="bg-white rounded-2xl border border-cardBorder shadow-soft hover:shadow-soft-hover transition-all duration-200 flex flex-col justify-between overflow-hidden group">
-      {/* Note Header & Title */}
-      <div className="p-5 pb-4">
+      {/* Note Header & Title - Clickable for fast reading */}
+      <div 
+        onClick={() => onView(note)}
+        className="p-5 pb-4 cursor-pointer select-none"
+      >
         <div className="flex items-center justify-between gap-2 mb-3">
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-brand-50 text-brand-700 border border-brand-200/80">
-            <FileText className="w-3 h-3" />
-            <span>{getFileTypeLabel(note.fileType)}</span>
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-brand-50 text-brand-700 border border-brand-200/80">
+              <FileText className="w-3 h-3" />
+              <span>{getFileTypeLabel(note.fileType)}</span>
+            </span>
+            {note.downloadCount !== undefined && note.downloadCount > 0 && (
+              <span className="text-[11px] font-medium text-secondaryText flex items-center gap-0.5">
+                <Download className="w-3 h-3 text-slate-400" />
+                <span>{note.downloadCount}</span>
+              </span>
+            )}
+          </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={handleAudioClick}
               className={`p-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 ${
@@ -112,7 +123,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
       <div className="p-4 pt-0 grid grid-cols-2 gap-2.5 bg-white">
         <button
           onClick={() => onView(note)}
-          className="inline-flex items-center justify-center gap-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 font-semibold py-2.5 px-3 rounded-xl text-sm transition-colors border border-brand-200/60"
+          className="inline-flex items-center justify-center gap-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold py-2.5 px-3 rounded-xl text-sm transition-colors border border-brand-200/60 active:scale-95"
         >
           <Eye className="w-4 h-4 text-brand-600" />
           <span>{t('btn_view_note')}</span>
@@ -120,7 +131,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
 
         <button
           onClick={() => onDownload(note)}
-          className="inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-brand-500 to-violetAccent hover:from-brand-600 hover:to-indigo-600 text-white font-semibold py-2.5 px-3 rounded-xl text-sm transition-all shadow-sm hover:shadow-soft"
+          className="inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-2.5 px-3 rounded-xl text-sm transition-all shadow-soft active:scale-95"
         >
           <Download className="w-4 h-4" />
           <span>{t('btn_download')}</span>

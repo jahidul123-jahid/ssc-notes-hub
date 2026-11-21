@@ -39,12 +39,22 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const { play, pause, isItemPlaying } = useAudioReader();
   const { t, isBn } = useLanguage();
 
   if (!note) return null;
 
   const isCurrentNotePlaying = isItemPlaying(note.title);
+
+  const handleDownloadClick = async () => {
+    setIsDownloading(true);
+    try {
+      await onDownload(note);
+    } finally {
+      setTimeout(() => setIsDownloading(false), 1200);
+    }
+  };
 
   const handleToggleAudio = () => {
     if (isCurrentNotePlaying) {
@@ -218,60 +228,99 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
                 </button>
               </div>
             ) : (
-              /* PDF and Document preview container */
-              <div className="w-full h-full min-h-[440px] flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-brand-50/30 to-white">
-                <div className="w-20 h-20 rounded-2xl bg-brand-50 border-2 border-brand-200 text-brand-600 flex items-center justify-center mb-4 shadow-soft">
-                  <FileText className="w-10 h-10" />
-                </div>
-                <h4 className="text-xl font-bold text-primaryText max-w-md">
-                  {note.title}
-                </h4>
-                <p className="text-sm text-secondaryText mt-1.5 max-w-lg leading-relaxed">
-                  {note.description}
-                </p>
+              /* PDF & Document Interactive Reader */
+              <div className="w-full flex flex-col bg-slate-900 rounded-xl overflow-hidden shadow-inner">
+                {/* PDF In-Viewer Top Navigation Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 sm:px-4 py-2.5 bg-slate-800 text-white text-xs border-b border-slate-700">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span className="font-bold text-slate-100 truncate">
+                      {isBn ? 'অনলাইনে সরাসরি পড়ুন' : 'Read Document Online'} ({note.fileType.toUpperCase()})
+                    </span>
+                  </div>
 
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
-                  <span className="px-3 py-1 rounded-full bg-brand-100 text-brand-800 font-semibold">
-                    {t('file_format')}: {note.fileType.toUpperCase()}
-                  </span>
-                  <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 font-medium">
-                    {t('file_size')}: {note.fileSize}
-                  </span>
-                </div>
-
-                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                  <button
-                    onClick={handleToggleAudio}
-                    className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl font-bold shadow-soft transition-all text-sm active:scale-95 ${
-                      isCurrentNotePlaying
-                        ? 'bg-brand-600 text-white animate-pulse'
-                        : 'bg-white text-brand-700 hover:bg-brand-50 border-2 border-brand-300'
-                    }`}
-                  >
-                    <Volume2 className="w-4 h-4" />
-                    <span>{isCurrentNotePlaying ? t('btn_pause') : t('listen_chapter')}</span>
-                  </button>
-
-                  <button
-                    onClick={() => onDownload(note)}
-                    className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-500 to-violetAccent text-white px-6 py-3 rounded-xl font-bold shadow-soft hover:shadow-soft-hover hover:scale-105 transition-all text-sm"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>{t('btn_download_full')} ({note.fileType.toUpperCase()})</span>
-                  </button>
-
-                  {note.fileURL.startsWith('http') && (
-                    <a
-                      href={note.fileURL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 bg-white text-secondaryText hover:text-brand-600 border border-cardBorder px-5 py-3 rounded-xl font-semibold shadow-sm hover:shadow text-sm transition-all"
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={handleToggleAudio}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        isCurrentNotePlaying
+                          ? 'bg-brand-600 text-white animate-pulse'
+                          : 'bg-slate-700 hover:bg-slate-600 text-slate-200'
+                      }`}
+                      title={isCurrentNotePlaying ? t('btn_pause') : t('listen_chapter')}
                     >
-                      <ExternalLink className="w-4 h-4" />
-                      <span>{t('btn_open_tab')}</span>
-                    </a>
-                  )}
+                      <Volume2 className="w-3.5 h-3.5" />
+                      <span>{isCurrentNotePlaying ? t('btn_pause') : (isBn ? 'অডিও শুনুন' : 'Listen')}</span>
+                    </button>
+
+                    {note.fileURL.startsWith('http') && (
+                      <a
+                        href={note.fileURL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium text-xs transition-colors"
+                        title={isBn ? 'নতুন ট্যাবে বড় করে পড়ুন' : 'Open in new tab'}
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>{isBn ? 'ফুলস্ক্রিন' : 'Fullscreen'}</span>
+                      </a>
+                    )}
+
+                    <button
+                      onClick={handleDownloadClick}
+                      disabled={isDownloading}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-soft transition-all active:scale-95 disabled:opacity-75"
+                    >
+                      <Download className={`w-3.5 h-3.5 ${isDownloading ? 'animate-bounce' : ''}`} />
+                      <span>{isDownloading ? (isBn ? 'হচ্ছে...' : 'Downloading...') : (isBn ? 'ডাউনলোড' : 'Download')}</span>
+                    </button>
+                  </div>
                 </div>
+
+                {/* Embedded PDF Canvas / Viewer */}
+                {note.fileURL.toLowerCase().includes('.pdf') || note.fileType.toLowerCase() === 'pdf' ? (
+                  <div className="relative w-full h-[480px] sm:h-[620px] bg-slate-800">
+                    <iframe
+                      src={note.fileURL.startsWith('http') 
+                        ? `${note.fileURL}#toolbar=1&navpanes=0&scrollbar=1` 
+                        : note.fileURL}
+                      className="w-full h-full border-0 bg-white"
+                      title={note.title}
+                    />
+                  </div>
+                ) : (
+                  /* Other document types preview */
+                  <div className="w-full min-h-[360px] flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-brand-50/30 to-white text-slate-800">
+                    <div className="w-16 h-16 rounded-2xl bg-brand-50 border-2 border-brand-200 text-brand-600 flex items-center justify-center mb-3 shadow-soft">
+                      <FileText className="w-8 h-8" />
+                    </div>
+                    <h4 className="text-lg font-bold text-primaryText max-w-md">
+                      {note.title}
+                    </h4>
+                    <p className="text-xs text-secondaryText mt-1 max-w-lg leading-relaxed">
+                      {note.description}
+                    </p>
+                    <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
+                      <span className="px-3 py-1 rounded-full bg-brand-100 text-brand-800 font-semibold">
+                        {note.fileType.toUpperCase()}
+                      </span>
+                      {note.fileSize && (
+                        <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 font-medium">
+                          {note.fileSize}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-5 flex items-center gap-3">
+                      <button
+                        onClick={handleDownloadClick}
+                        className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-soft hover:shadow-soft-hover transition-all text-xs"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>{isBn ? 'সরাসরি ফাইল ডাউনলোড করুন' : 'Download File'}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -330,20 +379,29 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
         </div>
 
         {/* Modal Footer Bar */}
-        <div className="p-3.5 sm:p-4 border-t border-cardBorder bg-white flex items-center justify-end gap-2.5 shrink-0">
-          <button
-            onClick={onClose}
-            className="min-h-[44px] px-4 py-2 text-sm font-semibold text-secondaryText hover:text-primaryText transition-colors active:scale-95"
-          >
-            {t('btn_close')}
-          </button>
-          <button
-            onClick={() => onDownload(note)}
-            className="min-h-[44px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-500 to-violetAccent text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-soft hover:shadow-soft-hover transition-all active:scale-95"
-          >
-            <Download className="w-4 h-4" />
-            <span>{t('btn_download')}</span>
-          </button>
+        <div className="p-3.5 sm:p-4 border-t border-cardBorder bg-white flex flex-wrap items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-2 text-xs text-secondaryText">
+            <span className="font-semibold text-primaryText">বিনামূল্যে SSC প্রস্তুতি:</span>
+            <span>সব নোট বিনামূল্যে পড়া ও ডাউনলোড করা যায়।</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="min-h-[44px] px-4 py-2 text-sm font-semibold text-secondaryText hover:text-primaryText transition-colors active:scale-95"
+            >
+              {t('btn_close')}
+            </button>
+
+            <button
+              onClick={handleDownloadClick}
+              disabled={isDownloading}
+              className="min-h-[44px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-soft hover:shadow-soft-hover transition-all active:scale-95 disabled:opacity-75"
+            >
+              <Download className={`w-4 h-4 ${isDownloading ? 'animate-bounce' : ''}`} />
+              <span>{isDownloading ? (isBn ? 'ডাউনলোড হচ্ছে...' : 'Downloading...') : (isBn ? 'ডাউনলোড করুন (ফ্রি)' : 'Download Free')}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
