@@ -1,9 +1,9 @@
-import { Subject, Chapter, Note, Report, WebsiteStats, NoteStatus } from '../types';
+import { Subject, Chapter, Note, Report, WebsiteStats, NoteStatus, FileType } from '../types';
 import { INITIAL_SUBJECTS, INITIAL_CHAPTERS, INITIAL_NOTES } from '../data/initialData';
 import { db, storage, isFirebaseConfigured } from '../firebase/config';
 import { getSupabaseClient } from '../supabase/config';
 import { telegramService } from './telegramService';
-import { convertImageToPdf } from '../utils/pdfConverter';
+import { convertImageToPdf, convertImagesToPdf } from '../utils/pdfConverter';
 import {
   collection,
   getDocs,
@@ -257,23 +257,48 @@ export const dataService = {
 
   async uploadNote(
     noteData: Omit<Note, 'noteId' | 'fileURL' | 'createdAt' | 'status' | 'downloadCount'>,
-    file: File,
+    file: File | File[],
     onProgress?: (progress: number) => void
   ): Promise<Note> {
     const noteId = `note-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     let fileURL = '';
 
-    // Convert image (PNG/JPG) to PDF automatically so everything on website is standardized as clean PDF
-    let actualFile = file;
-    let actualFileType = noteData.fileType;
-    if (file.type.startsWith('image/') || ['jpg', 'jpeg', 'png', 'webp'].includes(file.name.split('.').pop()?.toLowerCase() || '')) {
-      try {
-        actualFile = await convertImageToPdf(file);
+    // Convert image(s) (PNG/JPG/WEBP) to PDF automatically so everything on website is standardized as clean PDF
+    let actualFile: File;
+    let actualFileType: FileType = noteData.fileType;
+    let actualPageCount = noteData.pageCount || 1;
+
+    if (Array.isArray(file)) {
+      if (file.length === 0) {
+        throw new Error('কোনো ফাইল নির্বাচন করা হয়নি।');
+      }
+      if (file.length === 1 && !file[0].type.startsWith('image/')) {
+        actualFile = file[0];
+        actualFileType = (file[0].name.split('.').pop()?.toLowerCase() || 'pdf') as FileType;
+      } else {
+        if (onProgress) onProgress(15);
+        actualFile = await convertImagesToPdf(file, noteData.title, (p) => {
+          if (onProgress) onProgress(15 + Math.round(p * 0.35));
+        });
         actualFileType = 'pdf';
-      } catch (err) {
-        console.warn("Image to PDF conversion skipped, using original:", err);
+        actualPageCount = file.length;
+      }
+    } else {
+      actualFile = file;
+      actualFileType = noteData.fileType;
+      if (file.type.startsWith('image/') || ['jpg', 'jpeg', 'png', 'webp'].includes(file.name.split('.').pop()?.toLowerCase() || '')) {
+        try {
+          if (onProgress) onProgress(20);
+          actualFile = await convertImageToPdf(file);
+          actualFileType = 'pdf';
+          actualPageCount = 1;
+        } catch (err) {
+          console.warn("Image to PDF conversion skipped, using original:", err);
+        }
       }
     }
+
+    const calculatedSize = `${(actualFile.size / (1024 * 1024)).toFixed(1)} MB`;
 
     // 1. Live Supabase Storage (Upload real file to Supabase public bucket)
     const supabase = getSupabaseClient();
@@ -346,6 +371,8 @@ export const dataService = {
       noteId,
       fileURL,
       fileType: actualFileType,
+      fileSize: noteData.fileSize || calculatedSize,
+      pageCount: actualPageCount,
       createdAt: new Date().toISOString(),
       status: 'pending',
       downloadCount: 0
@@ -366,8 +393,8 @@ export const dataService = {
           school_name: noteData.schoolName || '',
           file_url: fileURL,
           file_type: actualFileType,
-          file_size: noteData.fileSize || '',
-          page_count: noteData.pageCount || 1,
+          file_size: newNote.fileSize,
+          page_count: actualPageCount,
           download_count: 0,
           status: 'pending',
           created_at: newNote.createdAt

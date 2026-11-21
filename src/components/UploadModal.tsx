@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Upload, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Upload, FileText, CheckCircle2, AlertCircle, Plus, Image as ImageIcon } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Subject, Chapter, FileType } from '../types';
 import { dataService } from '../services/dataService';
@@ -35,13 +35,13 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const [description, setDescription] = useState('');
 
   const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [filePreview, setFilePreview] = useState<string | null>(null);
-  const [fileType, setFileType] = useState<FileType>('pdf');
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<{ id: string; url: string; name: string }[]>([]);
   const [fileSizeStr, setFileSizeStr] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [statusText, setStatusText] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -87,38 +87,83 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setErrorMessage('');
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const incoming = Array.from(e.target.files || []);
+    if (incoming.length === 0) return;
 
-    // Check size (Max 15MB)
-    const maxSizeBytes = 15 * 1024 * 1024;
-    if (file.size > maxSizeBytes) {
-      setErrorMessage('ফাইলের সাইজ ১৫ মেগাবাইট (15MB) এর বেশি হতে পারবে না।');
+    // Check if user selected PDF or DOCX
+    const pdfFile = incoming.find(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+    const docxFile = incoming.find(f => f.name.toLowerCase().endsWith('.docx'));
+
+    if (pdfFile) {
+      setSelectedFiles([pdfFile]);
+      setImagePreviews([]);
+      const mb = (pdfFile.size / (1024 * 1024)).toFixed(1);
+      setFileSizeStr(`${mb} MB`);
       return;
     }
 
-    // Format file size
-    const sizeInMb = (file.size / (1024 * 1024)).toFixed(1);
-    setFileSizeStr(`${sizeInMb} MB`);
-
-    // Check extension
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    const validExtensions: FileType[] = ['pdf', 'jpg', 'jpeg', 'png', 'docx'];
-    if (!ext || !validExtensions.includes(ext as FileType)) {
-      setErrorMessage('শুধুমাত্র PDF, JPG, JPEG, PNG অথবা DOCX ফাইল আপলোড করা যাবে।');
+    if (docxFile) {
+      setSelectedFiles([docxFile]);
+      setImagePreviews([]);
+      const mb = (docxFile.size / (1024 * 1024)).toFixed(1);
+      setFileSizeStr(`${mb} MB`);
       return;
     }
 
-    setFileType(ext as FileType);
-    setSelectedFile(file);
+    // Otherwise, treat as images (unlimited pages)
+    const validImages = incoming.filter(f =>
+      f.type.startsWith('image/') ||
+      ['jpg', 'jpeg', 'png', 'webp'].includes(f.name.split('.').pop()?.toLowerCase() || '')
+    );
 
-    // If image, create preview
-    if (['jpg', 'jpeg', 'png'].includes(ext)) {
-      const reader = new FileReader();
-      reader.onload = () => setFilePreview(reader.result as string);
-      reader.readAsDataURL(file);
+    if (validImages.length === 0) {
+      setErrorMessage('শুধুমাত্র PDF, JPG, JPEG, PNG, WEBP অথবা DOCX ফাইল নির্বাচন করুন।');
+      return;
+    }
+
+    // Keep existing images and append new ones (allows adding more photos sequentially)
+    const existingImages = selectedFiles.filter(f =>
+      f.type.startsWith('image/') ||
+      ['jpg', 'jpeg', 'png', 'webp'].includes(f.name.split('.').pop()?.toLowerCase() || '')
+    );
+
+    const merged = [...existingImages, ...validImages];
+    setSelectedFiles(merged);
+
+    const previews = merged.map((file, idx) => ({
+      id: `${file.name}-${idx}-${file.lastModified}`,
+      url: URL.createObjectURL(file),
+      name: file.name
+    }));
+    setImagePreviews(previews);
+
+    const totalBytes = merged.reduce((acc, f) => acc + f.size, 0);
+    const totalMb = (totalBytes / (1024 * 1024)).toFixed(1);
+    setFileSizeStr(`${totalMb} MB (${merged.length} পৃষ্ঠা)`);
+
+    // Reset input value so user can click to add more files anytime
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemovePage = (index: number) => {
+    const updated = selectedFiles.filter((_, i) => i !== index);
+    setSelectedFiles(updated);
+
+    const previews = updated.map((file, idx) => ({
+      id: `${file.name}-${idx}-${file.lastModified}`,
+      url: URL.createObjectURL(file),
+      name: file.name
+    }));
+    setImagePreviews(previews);
+
+    if (updated.length === 0) {
+      setFileSizeStr('');
     } else {
-      setFilePreview(null);
+      const totalBytes = updated.reduce((acc, f) => acc + f.size, 0);
+      const totalMb = (totalBytes / (1024 * 1024)).toFixed(1);
+      setFileSizeStr(`${totalMb} MB (${updated.length} পৃষ্ঠা)`);
     }
   };
 
@@ -162,13 +207,14 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       setErrorMessage('নোটের শিরোনাম লিখুন।');
       return;
     }
-    if (!selectedFile) {
-      setErrorMessage('দয়া করে নোটের ফাইল (PDF/Image) যুক্ত করুন।');
+    if (selectedFiles.length === 0) {
+      setErrorMessage('দয়া করে নোটের ফাইল (PDF বা এক বা একাধিক ছবি) যুক্ত করুন।');
       return;
     }
 
     setLoading(true);
-    setProgress(10);
+    setProgress(5);
+    setStatusText('নোট প্রস্তুত করা হচ্ছে...');
 
     try {
       let finalChapterId = chapterId;
@@ -199,6 +245,16 @@ export const UploadModal: React.FC<UploadModalProps> = ({
         ? `${group} (${sectionName.trim()})`
         : group;
 
+      const isImages = selectedFiles.some(f =>
+        f.type.startsWith('image/') ||
+        ['jpg', 'jpeg', 'png', 'webp'].includes(f.name.split('.').pop()?.toLowerCase() || '')
+      );
+
+      setStatusText(isImages && selectedFiles.length > 1
+        ? `ছবিগুলো(${selectedFiles.length} পৃষ্ঠা) থেকে PDF তৈরি করা হচ্ছে...`
+        : 'নোট ফাইল আপলোড হচ্ছে...'
+      );
+
       await dataService.uploadNote(
         {
           studentName: studentName.trim(),
@@ -209,12 +265,19 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           chapterId: finalChapterId,
           title: title.trim(),
           description: description.trim() || 'শিক্ষার্থী কর্তৃক সরাসরি আপলোডকৃত ক্লাস ১০ হ্যান্ডনোট।',
-          fileType,
+          fileType: isImages ? 'pdf' : (selectedFiles[0].name.split('.').pop()?.toLowerCase() as FileType) || 'pdf',
           fileSize: fileSizeStr || '২.০ MB',
-          pageCount: fileType === 'pdf' ? 5 : 1
+          pageCount: isImages ? selectedFiles.length : 1
         },
-        selectedFile,
-        (p) => setProgress(p)
+        selectedFiles.length === 1 && !isImages ? selectedFiles[0] : selectedFiles,
+        (p) => {
+          setProgress(p);
+          if (p < 50 && isImages) {
+            setStatusText(`পৃষ্ঠা অপটিমাইজেশন ও PDF তৈরি চলছে... (${p}%)`);
+          } else {
+            setStatusText(`ক্লাউডে আপলোড হচ্ছে... (${p}%)`);
+          }
+        }
       );
 
       setIsSuccess(true);
@@ -243,9 +306,11 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     setTitle('');
     setDescription('');
     setCustomChapterName('');
-    setSelectedFile(null);
-    setFilePreview(null);
+    setSelectedFiles([]);
+    setImagePreviews([]);
+    setFileSizeStr('');
     setProgress(0);
+    setStatusText('');
     setErrorMessage('');
     onClose();
   };
@@ -512,68 +577,132 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
                 {/* File Upload Area */}
                 <div>
-                  <label className="block text-xs font-semibold text-primaryText mb-1">
-                    নোটের ফাইল যুক্ত করুন (PDF, JPG, PNG, DOCX - সর্বোচ্চ 15MB) *
-                  </label>
-
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-brand-200 hover:border-brand-500 rounded-xl p-5 text-center cursor-pointer transition-colors bg-brand-50/20 hover:bg-brand-50/50"
-                  >
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      accept=".pdf,.jpg,.jpeg,.png,.docx"
-                      className="hidden"
-                    />
-
-                    {selectedFile ? (
-                      <div className="flex flex-col items-center gap-2">
-                        {filePreview ? (
-                          <img
-                            src={filePreview}
-                            alt="Preview"
-                            className="w-24 h-24 object-cover rounded-lg shadow-sm border border-cardBorder"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 rounded-xl bg-brand-100 text-brand-600 flex items-center justify-center">
-                            <FileText className="w-6 h-6" />
-                          </div>
-                        )}
-                        <span className="font-bold text-sm text-primaryText truncate max-w-xs">
-                          {selectedFile.name}
-                        </span>
-                        <span className="text-xs text-secondaryText">
-                          সাইজ: {fileSizeStr} {['jpg', 'jpeg', 'png'].includes(fileType) ? '• স্বয়ংক্রিয়ভাবে PDF এ তৈরি হবে' : ''} • পরিবর্তন করতে ক্লিক করুন
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="w-10 h-10 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center">
-                          <Upload className="w-5 h-5" />
-                        </div>
-                        <span className="text-sm font-semibold text-primaryText">
-                          ফাইল বেছে নিন অথবা টেনে আনুন
-                        </span>
-                        <span className="text-xs text-secondaryText">
-                          ছবি (PNG/JPG) বা PDF দিতে পারেন (ছবি দিলে স্বয়ংক্রিয়ভাবে PDF হয়ে যাবে)
-                        </span>
-                      </div>
-                    )}
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-primaryText">
+                      নোটের ফাইল যুক্ত করুন *
+                    </label>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                      যেকোনো সাইজ • যতখুশি পৃষ্ঠা/ছবি
+                    </span>
                   </div>
+
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    multiple
+                    accept=".pdf,.png,.jpg,.jpeg,.webp,.docx"
+                    className="hidden"
+                  />
+
+                  {/* Case 1: Image Gallery (Unlimited Multi-Page) */}
+                  {imagePreviews.length > 0 ? (
+                    <div className="border border-brand-200 rounded-2xl p-3.5 bg-brand-50/20 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-brand-700">
+                          <ImageIcon className="w-4 h-4" />
+                          <span>নির্বাচিত পৃষ্ঠা সমূহ ({imagePreviews.length} টি ছবি)</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="inline-flex items-center gap-1 text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 px-2.5 py-1 rounded-lg shadow-sm transition-all"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>আরও ছবি যোগ করুন</span>
+                        </button>
+                      </div>
+
+                      {/* Image Thumbnails Grid */}
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2.5 max-h-56 overflow-y-auto p-1">
+                        {imagePreviews.map((preview, idx) => (
+                          <div key={preview.id} className="relative group rounded-xl overflow-hidden border border-cardBorder bg-white shadow-soft">
+                            <img
+                              src={preview.url}
+                              alt={`পৃষ্ঠা ${idx + 1}`}
+                              className="w-full h-24 object-cover"
+                            />
+                            <div className="absolute top-1 left-1 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                              পৃঃ {idx + 1}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemovePage(idx)}
+                              className="absolute top-1 right-1 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center opacity-85 hover:opacity-100 hover:scale-110 transition-all shadow"
+                              title="এই ছবিটি বাদ দিন"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+
+                        {/* Add More Tile */}
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="h-24 rounded-xl border-2 border-dashed border-brand-300 hover:border-brand-500 bg-white hover:bg-brand-50 flex flex-col items-center justify-center gap-1 text-brand-600 transition-colors"
+                        >
+                          <Plus className="w-5 h-5" />
+                          <span className="text-[11px] font-bold">+ আরও যোগ</span>
+                        </button>
+                      </div>
+
+                      <div className="text-[11px] text-brand-800 bg-white p-2.5 rounded-xl border border-brand-100 flex items-center justify-between">
+                        <span>
+                          ✨ <strong>অটোমেটিক PDF:</strong> সব ছবি ক্রমানুসারে একত্রিত ও কম্প্রেস হয়ে একটি চমৎকার A4 PDF বই তৈরি হবে।
+                        </span>
+                        <span className="font-bold shrink-0 ml-2">সাইজ: {fileSizeStr}</span>
+                      </div>
+                    </div>
+                  ) : selectedFiles.length > 0 ? (
+                    /* Case 2: Single PDF / Document */
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-brand-300 hover:border-brand-500 rounded-2xl p-5 text-center cursor-pointer transition-colors bg-brand-50/20 hover:bg-brand-50/40"
+                    >
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 rounded-2xl bg-brand-100 text-brand-600 flex items-center justify-center shadow-soft">
+                          <FileText className="w-6 h-6" />
+                        </div>
+                        <span className="font-bold text-sm text-primaryText truncate max-w-sm">
+                          {selectedFiles[0].name}
+                        </span>
+                        <span className="text-xs text-secondaryText">
+                          সাইজ: {fileSizeStr} • পরিবর্তন করতে ক্লিক করুন
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Case 3: Empty Dropzone */
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-brand-200 hover:border-brand-500 rounded-2xl p-6 text-center cursor-pointer transition-colors bg-brand-50/20 hover:bg-brand-50/50 group"
+                    >
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 group-hover:scale-110 flex items-center justify-center transition-transform shadow-soft">
+                          <Upload className="w-6 h-6" />
+                        </div>
+                        <span className="text-sm font-bold text-primaryText">
+                          নোটের ফাইল বেছে নিন বা ছবিগুলো নির্বাচন করুন
+                        </span>
+                        <p className="text-xs text-secondaryText max-w-md">
+                          যেকোনো সাইজের <strong>PDF</strong> অথবা খাতার পাতার <strong>যতখুশি ছবি (PNG / JPG / WEBP)</strong> একসাথে নির্বাচন করুন। ছবিগুলো স্বয়ংক্রিয়ভাবে সাজানো PDF তৈরি হয়ে যাবে।
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Upload Progress Indicator */}
                 {loading && (
-                  <div className="space-y-1.5 pt-2">
+                  <div className="space-y-1.5 pt-2 animate-fade-in">
                     <div className="flex justify-between text-xs text-secondaryText font-medium">
-                      <span>আপলোড হচ্ছে...</span>
-                      <span>{progress}%</span>
+                      <span>{statusText || 'আপলোড হচ্ছে...'}</span>
+                      <span className="font-bold text-brand-600">{progress}%</span>
                     </div>
                     <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                       <div
-                        className="bg-brand-600 h-full transition-all duration-300"
+                        className="bg-gradient-to-r from-brand-500 to-violetAccent h-full transition-all duration-300"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
