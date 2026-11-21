@@ -1,7 +1,7 @@
 // ==========================================================
 // SSC Notes Hub — Telegram Real-time Notification Service
-// Sends instant alerts to Owner (Jahidul) for:
-// 1. New visitors entering the website
+// Sends rich alerts to Owner (Jahidul) for:
+// 1. New website visitors with comprehensive device & location data
 // 2. Students uploading notes (with download/view link)
 // 3. User reports & system activities
 // ==========================================================
@@ -12,7 +12,8 @@ const DEFAULT_TG_CHAT_ID = '5856234447';
 export const TG_STORAGE_KEYS = {
   TOKEN: 'ssc_hub_tg_token',
   CHAT_ID: 'ssc_hub_tg_chat_id',
-  VISITOR_SESSION: 'ssc_hub_tg_visitor_notified_v1'
+  VISITOR_SESSION: 'ssc_hub_tg_visitor_notified_v2',
+  VISIT_COUNTER: 'ssc_hub_visitor_counter_v1'
 };
 
 export function getTelegramCredentials(): { botToken: string; chatId: string } {
@@ -64,12 +65,15 @@ async function sendTelegramMessage(htmlText: string): Promise<boolean> {
   }
 }
 
-function getDhakaTime(): string {
+function getFormattedTime(): string {
   try {
-    return new Date().toLocaleString('bn-BD', {
-      timeZone: 'Asia/Dhaka',
-      dateStyle: 'medium',
-      timeStyle: 'short'
+    return new Date().toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
     });
   } catch {
     return new Date().toLocaleString();
@@ -77,17 +81,120 @@ function getDhakaTime(): string {
 }
 
 function detectDevice(): string {
-  if (typeof window === 'undefined') return 'Unknown';
+  if (typeof window === 'undefined') return 'Desktop PC / Laptop';
   const ua = navigator.userAgent;
-  if (/mobile/i.test(ua)) return '📱 Mobile';
-  if (/ipad|tablet/i.test(ua)) return '📱 Tablet';
-  return '💻 Desktop / PC';
+  if (/ipad|tablet/i.test(ua)) return 'Tablet Device';
+  if (/mobile|android|iphone/i.test(ua)) return 'Mobile Device';
+  return 'Desktop PC / Laptop';
+}
+
+function detectBrand(): string {
+  if (typeof window === 'undefined') return 'Generic';
+  const ua = navigator.userAgent;
+
+  if (/iphone/i.test(ua)) return 'Apple (iPhone)';
+  if (/ipad/i.test(ua)) return 'Apple (iPad)';
+  if (/macintosh/i.test(ua)) return 'Apple (Macintosh)';
+
+  // Samsung detection
+  const samsungMatch = ua.match(/SM-[A-Z0-9]+/i);
+  if (samsungMatch) return `Samsung (${samsungMatch[0]})`;
+  if (/samsung/i.test(ua)) return 'Samsung';
+
+  // Popular Android brands
+  if (/xiaomi|redmi|poco/i.test(ua)) return 'Xiaomi / Redmi';
+  if (/oneplus/i.test(ua)) return 'OnePlus';
+  if (/oppo/i.test(ua)) return 'OPPO';
+  if (/vivo/i.test(ua)) return 'Vivo';
+  if (/realme/i.test(ua)) return 'Realme';
+  if (/pixel/i.test(ua)) return 'Google Pixel';
+  if (/huawei/i.test(ua)) return 'Huawei';
+  if (/motorola|moto/i.test(ua)) return 'Motorola';
+
+  if (/windows/i.test(ua)) return 'PC (Windows)';
+  if (/linux/i.test(ua)) return 'PC (Linux)';
+  if (/mobile/i.test(ua)) return 'Generic (Mobile)';
+  return 'Generic Device';
+}
+
+function detectOS(): string {
+  if (typeof window === 'undefined') return 'Unknown OS';
+  const ua = navigator.userAgent;
+
+  // Android
+  const androidMatch = ua.match(/Android\s([0-9\.]+)/i);
+  if (androidMatch) return `Android ${androidMatch[1]}`;
+
+  // iOS
+  const iosMatch = ua.match(/OS\s([0-9_]+)/i);
+  if (iosMatch && /iphone|ipad/i.test(ua)) {
+    return `iOS ${iosMatch[1].replace(/_/g, '.')}`;
+  }
+
+  // Windows
+  if (/Windows NT 10.0/i.test(ua)) return 'Windows 10 / 11';
+  if (/Windows NT 6.3/i.test(ua)) return 'Windows 8.1';
+  if (/Windows NT 6.2/i.test(ua)) return 'Windows 8';
+  if (/Windows NT 6.1/i.test(ua)) return 'Windows 7';
+
+  // Mac
+  const macMatch = ua.match(/Mac OS X\s([0-9_]+)/i);
+  if (macMatch) return `macOS ${macMatch[1].replace(/_/g, '.')}`;
+
+  if (/CrOS/i.test(ua)) return 'Chrome OS';
+  if (/Linux/i.test(ua)) return 'Linux';
+  return 'Unknown OS';
+}
+
+function detectBrowser(): string {
+  if (typeof window === 'undefined') return 'Web Browser';
+  const ua = navigator.userAgent;
+
+  if (/edg/i.test(ua)) return 'Microsoft Edge';
+  if (/samsungbrowser/i.test(ua)) return 'Samsung Internet';
+  if (/opr|opera/i.test(ua)) return 'Opera';
+  if (/chrome|crios/i.test(ua)) return 'Google Chrome';
+  if (/firefox|fxios/i.test(ua)) return 'Mozilla Firefox';
+  if (/safari/i.test(ua) && !/chrome/i.test(ua)) return 'Safari';
+  if (/ucbrowser/i.test(ua)) return 'UC Browser';
+  return 'Web Browser';
+}
+
+function detectHardwareGPU(): string {
+  if (typeof window === 'undefined') return 'Standard GPU / Software';
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')) as WebGLRenderingContext | null;
+    if (gl) {
+      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+      if (debugInfo) {
+        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+        if (renderer) return String(renderer).replace(/Angle \((.+)\)/i, '$1');
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return 'Standard GPU / Software';
+}
+
+function detectNetwork(): string {
+  if (typeof window === 'undefined') return '4G';
+  try {
+    const conn = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
+    if (conn) {
+      return (conn.effectiveType || conn.type || '4G').toUpperCase();
+    }
+  } catch {
+    // ignore
+  }
+  return '4G';
 }
 
 export const telegramService = {
   // Test bot connectivity
   async sendTestMessage(): Promise<{ ok: boolean; message: string }> {
-    const time = getDhakaTime();
+    const time = getFormattedTime();
     const html = `✅ <b>SSC Notes Hub — টেস্ট নোটিফিকেশন</b>\n\n` +
       `জাহিদুল ইসলাম, আপনার টেলিগ্রাম বট সফলভাবে কানেক্ট হয়েছে!\n` +
       `⏰ <b>সময়:</b> ${time}\n` +
@@ -102,46 +209,92 @@ export const telegramService = {
     };
   },
 
-  // 1. Notify Owner when someone enters the website
+  // 1. Rich visitor notification matching the exact requested layout
   async notifyVisitor(): Promise<void> {
     if (typeof window === 'undefined') return;
 
-    // Throttle per session so 1 user visiting multiple tabs doesn't spam
+    // Prevent flooding from the same tab reload
     const alreadyNotified = sessionStorage.getItem(TG_STORAGE_KEYS.VISITOR_SESSION);
     if (alreadyNotified) return;
     sessionStorage.setItem(TG_STORAGE_KEYS.VISITOR_SESSION, 'true');
 
-    const time = getDhakaTime();
-    const device = detectDevice();
-    const screenRes = `${window.screen.width}x${window.screen.height}`;
-    const pagePath = window.location.pathname + window.location.search;
-    const referrer = document.referrer ? new URL(document.referrer).hostname : 'Direct / সরাসরি';
-
-    // Fast IP & City lookup (non-blocking)
-    let ipInfo = '';
+    // Calculate persistent visitor counter
+    let visitCount = 1;
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
-      const ipRes = await fetch('https://ipapi.co/json/', { signal: controller.signal });
-      clearTimeout(timeoutId);
-      if (ipRes.ok) {
-        const d = await ipRes.json();
-        const city = d.city || '';
-        const country = d.country_name || '';
-        const org = d.org || '';
-        ipInfo = `\n📍 <b>স্থান:</b> ${city ? city + ', ' : ''}${country} (${d.ip || ''})\n🏢 <b>নেটওয়ার্ক:</b> ${org}`;
-      }
+      const current = parseInt(localStorage.getItem(TG_STORAGE_KEYS.VISIT_COUNTER) || '0', 10);
+      visitCount = current + 1;
+      localStorage.setItem(TG_STORAGE_KEYS.VISIT_COUNTER, visitCount.toString());
     } catch {
-      // Continue without IP if blocked or timeout
+      // fallback
     }
 
-    const html = `🌐 <b>নতুন ভিজিটর ওয়েবসাইটে প্রবেশ করেছে!</b>\n\n` +
-      `⏰ <b>সময়:</b> ${time}\n` +
-      `📱 <b>ডিভাইস:</b> ${device}\n` +
-      `🖥️ <b>স্ক্রিন:</b> ${screenRes}\n` +
-      `🔗 <b>পেইজ:</b> <code>${pagePath || '/'}</code>\n` +
-      `🌐 <b>উৎস (Referrer):</b> ${referrer}` +
-      ipInfo;
+    const device = detectDevice();
+    const brand = detectBrand();
+    const os = detectOS();
+    const browser = detectBrowser();
+    const pixelRatio = window.devicePixelRatio ? Math.round(window.devicePixelRatio * 100) / 100 : 1;
+    const screen = `${window.screen.width} x ${window.screen.height} (@${pixelRatio}x)`;
+    const hardware = detectHardwareGPU();
+    const network = detectNetwork();
+    const time = getFormattedTime();
+    let timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Dhaka';
+
+    let location = 'Dhaka, Dhaka Division, Bangladesh';
+    let isp = 'Internet Provider';
+    let ip = 'Unknown IP';
+
+    // Fast IP & Location lookup using ipwho.is (fast, no rate-limits, CORS-friendly)
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2500);
+      const res = await fetch('https://ipwho.is/', { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const d = await res.json();
+        if (d.success) {
+          ip = d.ip || ip;
+          const city = d.city || '';
+          const region = d.region || '';
+          const country = d.country || '';
+          location = [city, region, country].filter(Boolean).join(', ') || location;
+
+          if (d.connection) {
+            isp = d.connection.isp || d.connection.org || isp;
+          }
+          if (d.timezone?.id) {
+            timezone = d.timezone.id;
+          }
+        }
+      }
+    } catch {
+      // Fallback to ipify if ipwho fails
+      try {
+        const ipRes = await fetch('https://api.ipify.org?format=json');
+        if (ipRes.ok) {
+          const ipData = await ipRes.json();
+          ip = ipData.ip || ip;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    // Exact message template requested by user
+    const html = `🔔 <b>New Website Visitor!</b>\n\n` +
+      `📱 <b>Phone / Device:</b> ${device}\n` +
+      `🏷 <b>Brand:</b> ${brand}\n` +
+      `💻 <b>OS:</b> ${os}\n` +
+      `📍 <b>Location:</b> ${location}\n` +
+      `🏢 <b>ISP / Network:</b> ${isp}\n` +
+      `🌐 <b>IP Address:</b> <code>${ip}</code>\n` +
+      `🌐 <b>Browser:</b> ${browser}\n` +
+      `📐 <b>Screen:</b> ${screen}\n` +
+      `🎮 <b>Hardware:</b> ${hardware}\n` +
+      `📶 <b>Network:</b> ${network}\n` +
+      `⏰ <b>Time:</b> ${time}\n` +
+      `🌍 <b>Timezone:</b> ${timezone}\n` +
+      `🔁 <b>Visits:</b> ${visitCount}`;
 
     sendTelegramMessage(html);
   },
@@ -160,7 +313,7 @@ export const telegramService = {
     fileSize?: string;
     description?: string;
   }): Promise<void> {
-    const time = getDhakaTime();
+    const time = getFormattedTime();
 
     const html = `📚 <b>নতুন নোট আপলোড হয়েছে!</b>\n\n` +
       `👤 <b>শিক্ষার্থীর নাম:</b> <b>${escapeHtml(note.studentName)}</b>\n` +
@@ -169,7 +322,7 @@ export const telegramService = {
       `📖 <b>বিষয়:</b> <code>${escapeHtml(note.subjectId)}</code> (অধ্যায়: ${escapeHtml(note.chapterId)})\n` +
       `📝 <b>নোটের নাম:</b> <b>${escapeHtml(note.title)}</b>\n` +
       (note.description ? `💬 <b>বিবরণ:</b> <i>${escapeHtml(note.description)}</i>\n` : '') +
-      `📄 <b>ফাইল:</b> ${note.fileType} (${note.fileSize || 'Unknown'})\n` +
+      `📄 <b>ফাইল:</b> ${note.fileType.toUpperCase()} (${note.fileSize || 'Unknown'})\n` +
       `⏰ <b>সময়:</b> ${time}\n\n` +
       `🔗 <a href="${note.fileURL}"><b>নোটের ফাইল দেখুন / ডাউনলোড করুন</b></a>`;
 
@@ -184,7 +337,7 @@ export const telegramService = {
     reporterName?: string;
     reporterContact?: string;
   }): Promise<void> {
-    const time = getDhakaTime();
+    const time = getFormattedTime();
 
     const html = `⚠️ <b>একটি নোট রিপোর্ট করা হয়েছে!</b>\n\n` +
       `📝 <b>নোট আইডি:</b> <code>${escapeHtml(report.noteId)}</code>\n` +
@@ -198,7 +351,7 @@ export const telegramService = {
 
   // 4. Notify Owner when Owner panel is accessed
   async notifyAdminAccess(user: string): Promise<void> {
-    const time = getDhakaTime();
+    const time = getFormattedTime();
     const device = detectDevice();
 
     const html = `🛡️ <b>এডমিন প্যানেলে লগইন হয়েছে!</b>\n\n` +
