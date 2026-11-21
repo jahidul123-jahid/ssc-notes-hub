@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useSearchParams, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useSearchParams } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { AudioReaderProvider } from './context/AudioReaderContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -25,7 +25,6 @@ import { dataEvents } from './services/dataEvents';
 import { telegramService } from './services/telegramService';
 
 const AppContent: React.FC = () => {
-  const location = useLocation();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [chapters, setChapters] = useState<Chapter[]>([]);
 
@@ -147,7 +146,7 @@ const AppContent: React.FC = () => {
 
       {/* Main Page Routing */}
       <main className="flex-1">
-        <Routes location={location}>
+        <Routes>
             <Route
               path="/"
               element={
@@ -240,15 +239,15 @@ const AppContent: React.FC = () => {
 
 export const App: React.FC = () => {
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <AudioReaderProvider>
-          <BrowserRouter>
+    <BrowserRouter>
+      <LanguageProvider>
+        <AuthProvider>
+          <AudioReaderProvider>
             <AppContent />
-          </BrowserRouter>
-        </AudioReaderProvider>
-      </AuthProvider>
-    </LanguageProvider>
+          </AudioReaderProvider>
+        </AuthProvider>
+      </LanguageProvider>
+    </BrowserRouter>
   );
 };
 
