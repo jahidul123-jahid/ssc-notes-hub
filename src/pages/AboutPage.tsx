@@ -1,16 +1,13 @@
 import React from 'react';
 import {
-  GraduationCap,
   Mail,
-  MessageCircle,
-  MapPin,
-  BookOpen
+  MessageCircle
 } from 'lucide-react';
 
 export const AboutPage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-8 sm:py-14 space-y-8 sm:space-y-12">
-      {/* Main Profile Card - Clean, Human & Authentic */}
+      {/* Main Profile Card - Clean & Direct */}
       <div className="bg-white text-primaryText rounded-2xl sm:rounded-3xl p-6 sm:p-12 shadow-soft relative overflow-hidden border border-cardBorder">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           {/* Photo & Signature Column */}
@@ -53,55 +50,31 @@ export const AboutPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Details & Natural Story Column */}
+          {/* Details & Direct Story Column */}
           <div className="lg:col-span-7 space-y-5">
             <div>
               <h1 className="text-3xl sm:text-4xl font-black text-primaryText tracking-tight">
                 জাহিদুল ইসলাম
               </h1>
               <p className="text-base sm:text-lg font-semibold text-brand-600 mt-1">
-                শিক্ষার্থী ও প্রতিষ্ঠাতা, এসএসসি নোটস হাব
+                প্রতিষ্ঠাতা, এসএসসি নোটস হাব
               </p>
             </div>
 
-            {/* Natural Identity Badges */}
-            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-50 text-brand-800 border border-brand-200/80 font-semibold">
-                <GraduationCap className="w-4 h-4 text-brand-600" />
-                <span>নবীনগর সরকারি পাইলট উচ্চ বিদ্যালয়</span>
-              </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 font-semibold border border-slate-200">
-                <BookOpen className="w-3.5 h-3.5 text-slate-500" />
-                <span>১০ম শ্রেণি (বিজ্ঞান শাখা)</span>
-              </div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 font-semibold border border-slate-200">
-                <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                <span>ব্রাহ্মণবাড়িয়া</span>
-              </div>
-            </div>
-
-            {/* Genuine, Human-written Story */}
-            <div className="space-y-3.5 text-sm sm:text-base text-secondaryText leading-relaxed pt-1">
+            {/* User-provided Authentic Bio */}
+            <div className="space-y-4 text-sm sm:text-base text-secondaryText leading-relaxed pt-1">
               <p>
-                আসসালামু আলাইকুম! আমি জাহিদুল ইসলাম। ব্রাহ্মণবাড়িয়ার নবীনগর সরকারি পাইলট উচ্চ বিদ্যালয়ের ১০ম শ্রেণির বিজ্ঞান বিভাগের একজন শিক্ষার্থী।
+                আমি জাহিদুল ইসলাম। ব্রাহ্মণবাড়িয়ার নবীনগর সরকারি পাইলট উচ্চ বিদ্যালয়ের দশম শ্রেণির বিজ্ঞান বিভাগের একজন শিক্ষার্থী।
               </p>
               <p>
-                এসএসসি পরীক্ষার প্রস্তুতির সময় লক্ষ্য করেছি—আমাদের মতো অনেক শিক্ষার্থীর জন্যই প্রতিটি অধ্যায়ের পরিষ্কার হ্যান্ডনোট, সমাধান ও গাইডলাইন সময়মতো খুঁজে পাওয়া কঠিন হয়ে দাঁড়ায়। সেই ভাবনা থেকেই সহপাঠী ও বন্ধুদের সহযোগিতায় <strong className="text-primaryText font-semibold">এসএসসি নোটস হাব</strong> তৈরি করেছি, যাতে সবাই সম্পূর্ণ বিনামূল্যে সহজে নোট পড়তে ও নিজের খাতার সুন্দর নোট শেয়ার করতে পারে।
+                শিক্ষার্থীদের পড়াশোনা সহজ ও সুন্দর করতে তৈরি করেছি <strong className="text-primaryText font-semibold">SSC Notes Hub</strong>—একটি বিনামূল্যের শিক্ষামূলক ওয়েবসাইট, যেখানে সবাই নোট পড়তে ও নিজের নোট শেয়ার করতে পারে।
               </p>
               <p>
-                পড়াশোনার পাশাপাশি আমি টেকনোলজি, ওয়েব ডিজাইন ও ডিজিটাল ক্রিয়েটিভিটি নিয়ে কাজ করতে ভালোবাসি। এছাড়া ই-কমার্স প্ল্যাটফর্ম <strong className="text-primaryText font-semibold">Fashion Gallery Shop</strong>-এর অনলাইন কমিউনিটি মডারেশনের দায়িত্বও নিষ্ঠার সাথে পালন করছি।
+                ওয়েবসাইট ব্যবহার করতে কোনো সমস্যা হলে বা কোনো পরামর্শ থাকলে নির্দ্বিধায় আমাকে মেসেজ দিতে পারেন।
               </p>
             </div>
 
-            {/* Purpose Highlight (Natural Bengali) */}
-            <div className="p-4 rounded-2xl bg-brand-50/60 border border-brand-200/70 flex items-start gap-3 text-xs sm:text-sm text-brand-900 leading-relaxed font-medium">
-              <span className="text-base select-none">💡</span>
-              <p>
-                <strong className="font-bold text-primaryText">মূল লক্ষ্য:</strong> পড়াশোনা সবার জন্য সহজ ও উন্মুক্ত রাখা। শিক্ষা যেন বাণিজ্য না হয়ে একে অপরকে সাহায্য করে একসাথে এগিয়ে যাওয়ার মাধ্যম হয়।
-              </p>
-            </div>
-
-            {/* Clean Social Media Icons */}
+            {/* Direct Messaging & Social Icons */}
             <div className="pt-2 flex items-center gap-3">
               {/* Facebook */}
               <a
