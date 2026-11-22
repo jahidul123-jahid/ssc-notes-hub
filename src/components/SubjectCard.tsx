@@ -17,7 +17,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({ subject }) => {
   return (
     <Link
       to={`/subject/${subject.subjectId}`}
-      className="group block bg-white rounded-xl sm:rounded-2xl border border-cardBorder shadow-soft hover:shadow-soft-hover transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+      className="group block bg-white rounded-xl sm:rounded-2xl border border-cardBorder shadow-soft hover:shadow-soft-hover transition-all duration-300 hover:-translate-y-1 overflow-hidden touch-manipulation active:scale-[0.98] select-none"
     >
       {/* Subject Banner */}
       <div

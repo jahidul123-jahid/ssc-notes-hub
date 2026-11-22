@@ -743,18 +743,18 @@ export const UploadModal: React.FC<UploadModalProps> = ({
               </div>
 
               {/* Submit Button */}
-              <div className="pt-2 flex items-center justify-end gap-2.5">
+              <div className="pt-2 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={handleResetAndClose}
-                  className="min-h-[44px] px-4 py-2.5 text-sm font-semibold text-secondaryText hover:text-primaryText active:scale-95 transition-all"
+                  className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 text-sm font-semibold text-secondaryText hover:text-primaryText active:scale-95 transition-all text-center touch-manipulation"
                 >
                   {isBn ? 'বাতিল' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="min-h-[44px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-500 to-violetAccent hover:from-brand-600 hover:to-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-soft hover:shadow-soft-hover transition-all disabled:opacity-50 active:scale-95"
+                  className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-500 to-violetAccent hover:from-brand-600 hover:to-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-soft hover:shadow-soft-hover transition-all disabled:opacity-50 active:scale-95 touch-manipulation"
                 >
                   <Upload className="w-4 h-4" />
                   <span>{loading ? t('btn_uploading') : t('btn_submit_note')}</span>

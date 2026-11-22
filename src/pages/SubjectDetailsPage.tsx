@@ -156,7 +156,7 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({
         <div className="relative z-10 shrink-0">
           <button
             onClick={() => onOpenUpload(subject.subjectId)}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-brand-700 hover:bg-brand-50 px-6 py-3.5 rounded-xl font-bold text-sm sm:text-base shadow-soft hover:shadow-soft-hover transition-all min-h-[48px] active:scale-95"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-brand-700 hover:bg-brand-50 px-6 py-3.5 rounded-xl font-bold text-sm sm:text-base shadow-soft hover:shadow-soft-hover transition-all min-h-[48px] active:scale-95 touch-manipulation select-none"
           >
             <Upload className="w-5 h-5 text-brand-600" />
             <span>{t('hero_share_note')}</span>
@@ -269,25 +269,25 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({
       </div>
 
       {/* Chapters / Poems / Prose Grid: Displaying chapter name prominently */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
         {filteredChapters.map((chap) => {
           const isPlaying = isItemPlaying(chap.chapterName);
 
           return (
             <div
               key={chap.chapterId}
-              className="group bg-white hover:bg-brand-50/40 p-5 sm:p-7 rounded-2xl border border-cardBorder hover:border-brand-300 shadow-soft hover:shadow-soft-hover transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-between gap-3"
+              className="group bg-white hover:bg-brand-50/40 p-4 sm:p-7 rounded-2xl border border-cardBorder hover:border-brand-300 shadow-soft hover:shadow-soft-hover transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-between gap-3 select-none"
             >
               <Link
                 to={`/subject/${subject.subjectId}/chapter/${chap.chapterId}`}
-                className="flex-1 min-w-0"
+                className="flex-1 min-w-0 touch-manipulation"
               >
-                <h3 className="text-xl sm:text-2xl font-bold text-primaryText group-hover:text-brand-600 transition-colors leading-snug">
+                <h3 className="text-base sm:text-2xl font-bold text-primaryText group-hover:text-brand-600 transition-colors leading-snug">
                   {chap.chapterName}
                 </h3>
               </Link>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -299,7 +299,7 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({
                       play(`${subject.name} এর ${typeLabel}: ${chap.chapterName}।`, chap.chapterName, subject.name);
                     }
                   }}
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all touch-manipulation active:scale-95 ${
                     isPlaying
                       ? 'bg-brand-600 text-white shadow-soft animate-pulse'
                       : 'bg-brand-50 hover:bg-brand-100 text-brand-600 border border-brand-200/60'
@@ -316,7 +316,7 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({
 
                 <Link
                   to={`/subject/${subject.subjectId}/chapter/${chap.chapterId}`}
-                  className="w-9 h-9 rounded-xl bg-slate-50 text-secondaryText flex items-center justify-center group-hover:bg-brand-600 group-hover:text-white transition-all"
+                  className="w-10 h-10 rounded-xl bg-slate-50 text-secondaryText flex items-center justify-center group-hover:bg-brand-600 group-hover:text-white transition-all touch-manipulation active:scale-95"
                   aria-label={`Open ${chap.chapterName}`}
                 >
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />

@@ -63,7 +63,7 @@ export const ContactPage: React.FC = () => {
               href="https://wa.me/?text=Hello%20Jahidul"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-3.5 py-2.5 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-colors min-h-[44px]"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-3.5 py-2.5 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-colors min-h-[44px] touch-manipulation select-none"
             >
               <span>{isBn ? 'হোয়াটসঅ্যাপে মেসেজ পাঠান' : 'Chat on WhatsApp'}</span>
               <ExternalLink className="w-3 h-3" />
@@ -175,7 +175,7 @@ export const ContactPage: React.FC = () => {
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-500 to-violetAccent text-white px-8 py-3.5 rounded-xl font-bold shadow-soft hover:shadow-soft-hover transition-all min-h-[48px] active:scale-95"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-500 to-violetAccent text-white px-8 py-3.5 rounded-xl font-bold shadow-soft hover:shadow-soft-hover transition-all min-h-[48px] active:scale-95 touch-manipulation select-none"
                 >
                   <Send className="w-4 h-4" />
                   <span>{isBn ? 'বার্তা প্রেরণ করুন' : 'Send Message'}</span>

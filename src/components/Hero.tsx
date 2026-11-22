@@ -36,7 +36,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenUpload, onScrollToSubjects }) 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-md sm:max-w-none mx-auto">
           <button
             onClick={onScrollToSubjects}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-gradient-to-r from-brand-500 to-violetAccent hover:from-brand-600 hover:to-indigo-600 text-white px-7 py-3.5 rounded-xl font-bold text-base sm:text-lg shadow-soft hover:shadow-soft-hover transition-all duration-200 hover:-translate-y-0.5 min-h-[48px] active:scale-95"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-gradient-to-r from-brand-500 to-violetAccent hover:from-brand-600 hover:to-indigo-600 text-white px-7 py-3.5 rounded-xl font-bold text-base sm:text-lg shadow-soft hover:shadow-soft-hover transition-all duration-200 hover:-translate-y-0.5 min-h-[48px] active:scale-95 touch-manipulation select-none"
           >
             <BookOpen className="w-5 h-5" />
             <span>{t('hero_view_subjects')}</span>
@@ -44,7 +44,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenUpload, onScrollToSubjects }) 
 
           <button
             onClick={onOpenUpload}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-white text-brand-600 border-2 border-brand-200 hover:border-brand-500 hover:bg-brand-50/50 px-7 py-3.5 rounded-xl font-bold text-base sm:text-lg shadow-sm hover:shadow-soft transition-all duration-200 min-h-[48px] active:scale-95"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-white text-brand-600 border-2 border-brand-200 hover:border-brand-500 hover:bg-brand-50/50 px-7 py-3.5 rounded-xl font-bold text-base sm:text-lg shadow-sm hover:shadow-soft transition-all duration-200 min-h-[48px] active:scale-95 touch-manipulation select-none"
           >
             <Upload className="w-5 h-5 text-brand-500" />
             <span>{t('hero_share_note')}</span>

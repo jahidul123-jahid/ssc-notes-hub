@@ -29,6 +29,10 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  button, a {
+    touch-action: manipulation;
+  }
+
   /* Prevent iOS Safari auto-zoom on input focus by guaranteeing 16px minimum on mobile */
   @media screen and (max-width: 640px) {
     input[type="text"],

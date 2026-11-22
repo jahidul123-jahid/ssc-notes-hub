@@ -139,7 +139,7 @@ export const SearchNotesPage: React.FC<SearchNotesPageProps> = ({
           </div>
           <button
             onClick={handleResetFilters}
-            className="text-xs text-brand-600 hover:text-brand-800 font-semibold flex items-center gap-1 min-h-[36px] px-2"
+            className="text-xs text-brand-600 hover:text-brand-800 font-semibold flex items-center gap-1.5 min-h-[40px] px-3 py-1.5 rounded-lg hover:bg-brand-50 active:scale-95 touch-manipulation transition-all select-none"
           >
             <RefreshCw className="w-3 h-3" />
             <span>{isBn ? 'রিসেট' : 'Reset'}</span>

@@ -90,11 +90,11 @@ export const AIAudioPlayer: React.FC = () => {
           </div>
 
           {/* Quick Controls */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             {isPlaying ? (
               <button
                 onClick={pause}
-                className="w-9 h-9 rounded-xl bg-brand-600 text-white flex items-center justify-center hover:bg-brand-700 transition-colors shadow-sm active:scale-95"
+                className="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center hover:bg-brand-700 transition-colors shadow-sm active:scale-95 touch-manipulation"
                 title="বিরতি দিন"
                 aria-label="Pause audio"
               >
@@ -104,7 +104,7 @@ export const AIAudioPlayer: React.FC = () => {
               <button
                 onClick={resume}
                 disabled={isLoading}
-                className="w-9 h-9 rounded-xl bg-brand-600 text-white flex items-center justify-center hover:bg-brand-700 transition-colors shadow-sm disabled:opacity-50 active:scale-95"
+                className="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center hover:bg-brand-700 transition-colors shadow-sm disabled:opacity-50 active:scale-95 touch-manipulation"
                 title="চালিয়ে যান"
                 aria-label="Resume audio"
               >
@@ -114,7 +114,7 @@ export const AIAudioPlayer: React.FC = () => {
 
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="w-8 h-8 rounded-lg text-secondaryText hover:text-primaryText hover:bg-slate-100 flex items-center justify-center transition-colors"
+              className="w-9 h-9 rounded-xl text-secondaryText hover:text-primaryText hover:bg-slate-100 flex items-center justify-center transition-colors touch-manipulation active:scale-95"
               title={isExpanded ? 'ছোট করুন' : 'বিস্তারিত নিয়ন্ত্রণ'}
               aria-label="Toggle player details"
             >
@@ -127,7 +127,7 @@ export const AIAudioPlayer: React.FC = () => {
 
             <button
               onClick={stop}
-              className="w-8 h-8 rounded-lg text-secondaryText hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors"
+              className="w-9 h-9 rounded-xl text-secondaryText hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors touch-manipulation active:scale-95"
               title="বন্ধ করুন"
               aria-label="Stop audio"
             >

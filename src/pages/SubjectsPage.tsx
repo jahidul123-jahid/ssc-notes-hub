@@ -93,12 +93,12 @@ export const SubjectsPage: React.FC = () => {
       </div>
 
       {/* Group Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-1 scrollbar-none touch-pan-x overscroll-x-contain select-none">
         {groupTabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setSelectedGroup(tab.id)}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all min-h-[40px] touch-manipulation active:scale-95 ${
               selectedGroup === tab.id
                 ? 'bg-gradient-to-r from-brand-500 to-violetAccent text-white shadow-soft'
                 : 'bg-white text-secondaryText hover:text-primaryText border border-cardBorder hover:bg-slate-50'

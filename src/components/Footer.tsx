@@ -25,20 +25,20 @@ export const Footer: React.FC = () => {
           </Link>
 
           {/* Navigation Links */}
-          <div className="flex flex-wrap items-center justify-center gap-6 text-sm font-medium text-secondaryText">
-            <Link to="/" className="hover:text-brand-600 transition-colors">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-sm font-medium text-secondaryText select-none">
+            <Link to="/" className="hover:text-brand-600 transition-colors py-2 px-1 touch-manipulation">
               {t('nav_home')}
             </Link>
-            <Link to="/subjects" className="hover:text-brand-600 transition-colors">
+            <Link to="/subjects" className="hover:text-brand-600 transition-colors py-2 px-1 touch-manipulation">
               {t('nav_subjects')}
             </Link>
-            <Link to="/search" className="hover:text-brand-600 transition-colors">
+            <Link to="/search" className="hover:text-brand-600 transition-colors py-2 px-1 touch-manipulation">
               {t('nav_search')}
             </Link>
-            <Link to="/about" className="hover:text-brand-600 transition-colors">
+            <Link to="/about" className="hover:text-brand-600 transition-colors py-2 px-1 touch-manipulation">
               {t('nav_about')}
             </Link>
-            <Link to="/contact" className="hover:text-brand-600 transition-colors">
+            <Link to="/contact" className="hover:text-brand-600 transition-colors py-2 px-1 touch-manipulation">
               {t('nav_contact')}
             </Link>
           </div>

@@ -69,18 +69,18 @@ export const NoteCard: React.FC<NoteCardProps> = ({
             )}
           </div>
 
-          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={handleAudioClick}
-              className={`p-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 ${
+              className={`min-h-[36px] px-2.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 touch-manipulation active:scale-95 ${
                 isPlaying
-                  ? 'bg-brand-600 text-white'
-                  : 'text-secondaryText hover:text-brand-600 hover:bg-brand-50'
+                  ? 'bg-brand-600 text-white shadow-xs'
+                  : 'text-secondaryText hover:text-brand-600 hover:bg-brand-50 border border-transparent hover:border-brand-200/60'
               }`}
               title={isPlaying ? t('btn_pause') : t('btn_listen')}
               aria-label={t('btn_listen')}
             >
-              {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Volume2 className="w-3.5 h-3.5" />}
+              {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current shrink-0" /> : <Volume2 className="w-3.5 h-3.5 shrink-0" />}
               <span className="text-[11px] font-medium hidden sm:inline">
                 {isPlaying ? t('btn_pause') : t('btn_listen')}
               </span>
@@ -89,7 +89,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
             {onReport && (
               <button
                 onClick={() => onReport(note)}
-                className="text-secondaryText/60 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
+                className="text-secondaryText/60 hover:text-rose-500 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg hover:bg-rose-50 transition-colors touch-manipulation active:scale-95"
                 title={t('tooltip_report')}
                 aria-label="Report note"
               >
@@ -99,7 +99,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
           </div>
         </div>
 
-        <h3 className="text-lg font-bold text-primaryText group-hover:text-brand-600 transition-colors line-clamp-2 leading-snug">
+        <h3 className="text-base sm:text-lg font-bold text-primaryText group-hover:text-brand-600 transition-colors line-clamp-2 leading-snug">
           {note.title}
         </h3>
 
@@ -119,22 +119,22 @@ export const NoteCard: React.FC<NoteCardProps> = ({
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="p-4 pt-0 grid grid-cols-2 gap-2.5 bg-white">
+      {/* Action Buttons - Optimized for mobile tap comfort */}
+      <div className="p-3.5 sm:p-4 pt-0 grid grid-cols-2 gap-2 sm:gap-2.5 bg-white">
         <button
           onClick={() => onView(note)}
-          className="inline-flex items-center justify-center gap-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold py-2.5 px-3 rounded-xl text-sm transition-colors border border-brand-200/60 active:scale-95"
+          className="min-h-[44px] inline-flex items-center justify-center gap-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold py-2.5 px-3 rounded-xl text-xs sm:text-sm transition-all border border-brand-200/60 active:scale-95 touch-manipulation shadow-xs select-none"
         >
-          <Eye className="w-4 h-4 text-brand-600" />
-          <span>{t('btn_view_note')}</span>
+          <Eye className="w-4 h-4 text-brand-600 shrink-0" />
+          <span className="truncate">{t('btn_view_note')}</span>
         </button>
 
         <button
           onClick={() => onDownload(note)}
-          className="inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-2.5 px-3 rounded-xl text-sm transition-all shadow-soft active:scale-95"
+          className="min-h-[44px] inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs sm:text-sm transition-all shadow-soft hover:shadow-soft-hover active:scale-95 touch-manipulation select-none"
         >
-          <Download className="w-4 h-4" />
-          <span>{t('btn_download')}</span>
+          <Download className="w-4 h-4 shrink-0" />
+          <span className="truncate">{t('btn_download')}</span>
         </button>
       </div>
     </div>

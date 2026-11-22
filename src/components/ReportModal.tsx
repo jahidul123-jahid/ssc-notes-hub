@@ -156,18 +156,18 @@ export const ReportModal: React.FC<ReportModalProps> = ({ note, onClose }) => {
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2.5 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2.5 pt-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-semibold text-secondaryText hover:text-primaryText"
+                className="w-full sm:w-auto min-h-[44px] px-4 py-2 text-sm font-semibold text-secondaryText hover:text-primaryText touch-manipulation active:scale-95 text-center"
               >
                 বাতিল
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-5 py-2 rounded-xl text-sm shadow-sm transition-all"
+                className="w-full sm:w-auto min-h-[44px] bg-rose-600 hover:bg-rose-700 text-white font-bold px-5 py-2 rounded-xl text-sm shadow-sm transition-all touch-manipulation active:scale-95 text-center"
               >
                 {loading ? 'প্রেরণ হচ্ছে...' : 'রিপোর্ট জমা দিন'}
               </button>

@@ -384,34 +384,34 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
         {/* BOTTOM FOOTER BAR (When in Overview Mode)                */}
         {/* ======================================================== */}
         {viewStep === 'overview' && (
-          <div className="p-3.5 sm:p-4 border-t border-cardBorder bg-white flex items-center justify-between gap-3 shrink-0">
+          <div className="p-3 sm:p-4 border-t border-cardBorder bg-white flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0">
             <button
               onClick={handleClose}
-              className="min-h-[42px] px-4 py-2 text-xs sm:text-sm font-semibold text-secondaryText hover:text-primaryText transition-colors active:scale-95"
+              className="w-full sm:w-auto min-h-[42px] px-4 py-2 text-xs sm:text-sm font-semibold text-secondaryText hover:text-primaryText transition-colors active:scale-95 touch-manipulation text-center"
             >
               {t('btn_close')}
             </button>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               {note.fileURL.startsWith('http') && (
                 <a
                   href={note.fileURL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="min-h-[42px] inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-primaryText text-xs sm:text-sm font-bold transition-all active:scale-95"
+                  className="flex-1 sm:flex-initial min-h-[42px] inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-primaryText text-xs sm:text-sm font-bold transition-all active:scale-95 touch-manipulation text-center"
                 >
-                  <ExternalLink className="w-4 h-4 text-brand-600" />
-                  <span>অন্য একটা নতুন ট্যাবে দেখুন</span>
+                  <ExternalLink className="w-4 h-4 text-brand-600 shrink-0" />
+                  <span className="truncate">অন্য একটা নতুন ট্যাবে দেখুন</span>
                 </a>
               )}
 
               <button
                 onClick={handleDownloadClick}
                 disabled={isDownloading}
-                className="min-h-[42px] inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-soft transition-all active:scale-95 disabled:opacity-75"
+                className="flex-1 sm:flex-initial min-h-[42px] inline-flex items-center justify-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-soft transition-all active:scale-95 disabled:opacity-75 touch-manipulation text-center"
               >
-                <Download className={`w-4 h-4 ${isDownloading ? 'animate-bounce' : ''}`} />
-                <span>{isDownloading ? 'ডাউনলোড হচ্ছে...' : 'ডাউনলোড করুন'}</span>
+                <Download className={`w-4 h-4 shrink-0 ${isDownloading ? 'animate-bounce' : ''}`} />
+                <span className="truncate">{isDownloading ? 'ডাউনলোড হচ্ছে...' : 'ডাউনলোড করুন'}</span>
               </button>
             </div>
           </div>

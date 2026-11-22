@@ -142,7 +142,7 @@ export const ChapterDetailsPage: React.FC<ChapterDetailsPageProps> = ({
         </div>
 
         {/* Action Buttons: AI Audio & Upload Notes */}
-        <div className="flex flex-wrap items-center gap-3 shrink-0">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 shrink-0 w-full sm:w-auto">
           <button
             onClick={() => {
               if (isItemPlaying(chapter.chapterName)) {
@@ -155,7 +155,7 @@ export const ChapterDetailsPage: React.FC<ChapterDetailsPageProps> = ({
                 );
               }
             }}
-            className={`inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl font-bold text-sm sm:text-base border transition-all min-h-[48px] active:scale-95 ${
+            className={`inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl font-bold text-sm sm:text-base border transition-all min-h-[48px] active:scale-95 touch-manipulation select-none ${
               isItemPlaying(chapter.chapterName)
                 ? 'bg-brand-600 text-white border-brand-600 shadow-soft animate-pulse'
                 : 'bg-brand-50 hover:bg-brand-100 text-brand-700 border-brand-200'
@@ -177,7 +177,7 @@ export const ChapterDetailsPage: React.FC<ChapterDetailsPageProps> = ({
 
           <button
             onClick={() => onOpenUpload(subject.subjectId, chapter.chapterId)}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-500 to-violetAccent hover:from-brand-600 hover:to-indigo-600 text-white font-bold px-6 py-3.5 rounded-xl shadow-soft hover:shadow-soft-hover transition-all text-sm sm:text-base min-h-[48px] active:scale-95"
+            className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-500 to-violetAccent hover:from-brand-600 hover:to-indigo-600 text-white font-bold px-6 py-3.5 rounded-xl shadow-soft hover:shadow-soft-hover transition-all text-sm sm:text-base min-h-[48px] active:scale-95 touch-manipulation select-none"
           >
             <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>{t('hero_share_note')}</span>
