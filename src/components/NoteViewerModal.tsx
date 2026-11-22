@@ -257,133 +257,77 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
         </div>
 
         {/* ======================================================== */}
-        {/* MODE 1: FIRST OVERVIEW INTERFACE (প্রথম ইন্টারফেস)          */}
+        {/* MODE 1: CLEAN & SMART OVERVIEW INTERFACE                 */}
         {/* ======================================================== */}
         {viewStep === 'overview' && (
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/60 space-y-5">
-            {/* HERO ACTION BANNER — View Note & Direct Download */}
-            <div className="bg-gradient-to-br from-indigo-900 via-brand-800 to-slate-900 text-white rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-soft relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-2xl pointer-events-none" />
-
-              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
-                <div className="space-y-2">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-emerald-300 text-xs font-semibold backdrop-blur-sm">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>প্রস্তুতকৃত ক্লাস ১০ স্পেশাল নোট</span>
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-black text-white leading-tight">
-                    {note.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-200/90 line-clamp-2 max-w-xl">
-                    {note.description || 'শিক্ষার্থী কর্তৃক সরাসরি সংগৃহীত ও প্রস্তুতকৃত হ্যান্ডনোট।'}
-                  </p>
-                </div>
-
-                {/* Primary Action Buttons */}
-                <div className="flex flex-col sm:flex-row md:flex-col gap-2.5 shrink-0">
-                  {/* VIEW NOTE BUTTON (ভিউ নোট - Opens Interactive Reader) */}
-                  <button
-                    onClick={() => setViewStep('reading')}
-                    className="inline-flex items-center justify-center gap-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black px-6 py-3.5 rounded-xl sm:rounded-2xl text-sm sm:text-base shadow-soft hover:shadow-lg transition-all active:scale-95"
-                  >
-                    <BookOpen className="w-5 h-5 text-slate-950" />
-                    <span>ভিউ নোট (অনলাইনে পড়ুন)</span>
-                  </button>
-
-                  {/* DOWNLOAD BUTTON */}
-                  <button
-                    onClick={handleDownloadClick}
-                    disabled={isDownloading}
-                    className="inline-flex items-center justify-center gap-2 bg-white/15 hover:bg-white/25 text-white font-bold px-5 py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm backdrop-blur-sm border border-white/20 transition-all active:scale-95 disabled:opacity-75"
-                  >
-                    <Download className={`w-4 h-4 ${isDownloading ? 'animate-bounce' : ''}`} />
-                    <span>{isDownloading ? 'ডাউনলোড হচ্ছে...' : 'সরাসরি ডাউনলোড করুন'}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Note Information & Contributor Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Contributor Profile */}
-              <div className="bg-white p-5 rounded-2xl border border-cardBorder shadow-soft space-y-3">
-                <span className="text-[11px] font-bold text-brand-700 uppercase tracking-wider block">
-                  কন্ট্রিবিউটর শিক্ষার্থী
-                </span>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-black">
-                    <User className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="text-base font-bold text-primaryText leading-none">
-                      {note.studentName}
-                    </h4>
-                    <span className="text-xs text-secondaryText mt-1 block">
-                      দশম শ্রেণি • বিজ্ঞান বিভাগ
-                    </span>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-cardBorder/60 space-y-1.5 text-xs text-secondaryText">
-                  <div className="flex items-center gap-1.5 text-primaryText font-medium">
-                    <School className="w-3.5 h-3.5 text-brand-600 shrink-0" />
-                    <span>{note.schoolName || 'নবীনগর সরকারি পাইলট উচ্চ বিদ্যালয়'}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-secondaryText">
-                    <span>রোল: <strong>{note.rollNumber || '—'}</strong></span>
-                    <span>•</span>
-                    <span>শাখা: <strong>{note.section || '—'}</strong></span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Subject & File Metadata */}
-              <div className="bg-white p-5 rounded-2xl border border-cardBorder shadow-soft space-y-3">
-                <span className="text-[11px] font-bold text-secondaryText uppercase tracking-wider block">
-                  সিলেবাস ও ফাইল বিবরণ
-                </span>
-
-                <div className="space-y-2 text-xs">
-                  {subject && (
-                    <div className="flex items-center gap-2 font-semibold text-primaryText">
-                      <BookOpen className="w-4 h-4 text-brand-500" />
-                      <span>বিষয়: {displaySubjectName}</span>
-                    </div>
-                  )}
-                  {chapter && (
-                    <div className="text-secondaryText pl-6">
-                      অধ্যায়: <strong className="text-primaryText">{chapter.chapterName}</strong>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 text-secondaryText pt-1">
-                    <Calendar className="w-3.5 h-3.5 text-brand-500" />
-                    <span>আপলোডের তারিখ: {formattedDate}</span>
-                  </div>
-                  <div className="flex items-center gap-2 pt-1">
-                    <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200">
-                      ফরম্যাট: PDF
-                    </span>
-                    {note.fileSize && (
-                      <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold">
-                        সাইজ: {note.fileSize}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Note Description Details */}
-            {note.description && (
-              <div className="bg-white p-5 rounded-2xl border border-cardBorder shadow-soft space-y-2">
-                <h4 className="text-xs font-bold text-primaryText uppercase tracking-wider">
-                  নোটের পূর্ণ বিবরণ
-                </h4>
-                <p className="text-xs sm:text-sm text-secondaryText leading-relaxed whitespace-pre-line">
-                  {note.description}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/50 space-y-4">
+            {/* Top Clean Smart Card */}
+            <div className="bg-white rounded-2xl p-5 sm:p-6 border border-cardBorder shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1.5">
+                <h3 className="text-lg sm:text-xl font-bold text-primaryText leading-snug">
+                  {note.title}
+                </h3>
+                <p className="text-xs sm:text-sm text-secondaryText font-medium">
+                  পিডিএফটি অনলাইনে পড়ুন অথবা ডাউনলোড করুন
                 </p>
               </div>
-            )}
+
+              {/* Primary Buttons */}
+              <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto">
+                <button
+                  onClick={() => setViewStep('reading')}
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm shadow-soft hover:shadow-soft-hover transition-all active:scale-95 min-h-[44px]"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span>পিডিএফটি পড়ুন</span>
+                </button>
+
+                <button
+                  onClick={handleDownloadClick}
+                  disabled={isDownloading}
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-primaryText font-bold px-4 py-2.5 rounded-xl text-sm transition-all active:scale-95 disabled:opacity-75 min-h-[44px]"
+                >
+                  <Download className={`w-4 h-4 ${isDownloading ? 'animate-bounce text-brand-600' : ''}`} />
+                  <span>{isDownloading ? 'ডাউনলোড হচ্ছে...' : 'ডাউনলোড'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Student Details Card */}
+            <div className="bg-white p-5 rounded-2xl border border-cardBorder shadow-soft space-y-4">
+              <div className="flex items-center gap-2 pb-3 border-b border-cardBorder/60">
+                <User className="w-4 h-4 text-brand-600" />
+                <h4 className="text-xs font-bold text-primaryText uppercase tracking-wider">
+                  শিক্ষার্থীর বিবরণ
+                </h4>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-xs text-secondaryText block mb-0.5">শিক্ষার্থীর নাম</span>
+                  <span className="font-bold text-primaryText text-base">{note.studentName || '—'}</span>
+                </div>
+
+                <div>
+                  <span className="text-xs text-secondaryText block mb-0.5">স্কুল / শিক্ষাপ্রতিষ্ঠান</span>
+                  <span className="font-semibold text-primaryText">{note.schoolName || '—'}</span>
+                </div>
+
+                <div>
+                  <span className="text-xs text-secondaryText block mb-0.5">বিভাগ ও রোল</span>
+                  <span className="font-semibold text-primaryText">
+                    {note.section || 'বিজ্ঞান বিভাগ'}{note.rollNumber ? ` • রোল: ${note.rollNumber}` : ''}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-xs text-secondaryText block mb-0.5">ফাইল সাইজ ও ফরম্যাট</span>
+                  <span className="font-semibold text-primaryText">
+                    {note.fileSize || 'PDF'} • ফরম্যাট: {note.fileType?.toUpperCase() || 'PDF'}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -440,25 +384,34 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
         {/* BOTTOM FOOTER BAR (When in Overview Mode)                */}
         {/* ======================================================== */}
         {viewStep === 'overview' && (
-          <div className="p-3.5 sm:p-4 border-t border-cardBorder bg-white flex flex-wrap items-center justify-between gap-3 shrink-0">
-            <span className="text-xs text-secondaryText">
-              বিনামূল্যে SSC প্রস্তুতি • সব নোট সরাসরি পড়তে ও ডাউনলোড করতে পারেন।
-            </span>
+          <div className="p-3.5 sm:p-4 border-t border-cardBorder bg-white flex items-center justify-between gap-3 shrink-0">
+            <button
+              onClick={handleClose}
+              className="min-h-[42px] px-4 py-2 text-xs sm:text-sm font-semibold text-secondaryText hover:text-primaryText transition-colors active:scale-95"
+            >
+              {t('btn_close')}
+            </button>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleClose}
-                className="min-h-[42px] px-4 py-2 text-xs sm:text-sm font-semibold text-secondaryText hover:text-primaryText transition-colors active:scale-95"
-              >
-                {t('btn_close')}
-              </button>
+            <div className="flex items-center gap-2.5">
+              {note.fileURL.startsWith('http') && (
+                <a
+                  href={note.fileURL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="min-h-[42px] inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-primaryText text-xs sm:text-sm font-bold transition-all active:scale-95"
+                >
+                  <ExternalLink className="w-4 h-4 text-brand-600" />
+                  <span>অন্য একটা নতুন ট্যাবে দেখুন</span>
+                </a>
+              )}
 
               <button
-                onClick={() => setViewStep('reading')}
-                className="min-h-[42px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-soft transition-all active:scale-95"
+                onClick={handleDownloadClick}
+                disabled={isDownloading}
+                className="min-h-[42px] inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-soft transition-all active:scale-95 disabled:opacity-75"
               >
-                <Eye className="w-4 h-4" />
-                <span>ভিউ নোট (পড়ুন)</span>
+                <Download className={`w-4 h-4 ${isDownloading ? 'animate-bounce' : ''}`} />
+                <span>{isDownloading ? 'ডাউনলোড হচ্ছে...' : 'ডাউনলোড করুন'}</span>
               </button>
             </div>
           </div>
