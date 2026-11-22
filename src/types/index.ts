@@ -42,6 +42,7 @@ export interface Note {
   rollNumber: string;
   section: string;
   schoolName: string;
+  whatsappNumber?: string;
   subjectId: string;
   chapterId: string;
   title: string;

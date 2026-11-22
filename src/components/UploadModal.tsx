@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Upload, FileText, CheckCircle2, AlertCircle, Plus, Image as ImageIcon } from 'lucide-react';
+import { X, Upload, FileText, CheckCircle2, AlertCircle, Plus, Image as ImageIcon, MessageCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Subject, Chapter, FileType } from '../types';
 import { dataService } from '../services/dataService';
@@ -25,6 +25,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const { t, isBn } = useLanguage();
   const [studentName, setStudentName] = useState('');
   const [rollNumber, setRollNumber] = useState('');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
   const [group, setGroup] = useState('বিজ্ঞান');
   const [sectionName, setSectionName] = useState('');
   const [schoolName, setSchoolName] = useState('');
@@ -191,6 +192,15 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       setErrorMessage('দয়া করে আপনার স্কুলের নাম লিখুন।');
       return;
     }
+    const cleanPhone = whatsappNumber.replace(/[^0-9]/g, '');
+    if (!whatsappNumber.trim()) {
+      setErrorMessage('দয়া করে আপনার হোয়াটসঅ্যাপ নম্বর (WhatsApp Number) লিখুন।');
+      return;
+    }
+    if (cleanPhone.length < 10 || cleanPhone.length > 15) {
+      setErrorMessage('দয়া করে একটি সঠিক মোবাইল বা হোয়াটসঅ্যাপ নম্বর লিখুন (যেমন: 017xxxxxxxx)।');
+      return;
+    }
     if (!subjectId) {
       setErrorMessage('দয়া করে বিষয় নির্বাচন করুন।');
       return;
@@ -261,6 +271,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           rollNumber: rollNumber.trim() || 'প্রযোজ্য নয়',
           section: formattedSection,
           schoolName: schoolName.trim(),
+          whatsappNumber: whatsappNumber.trim(),
           subjectId,
           chapterId: finalChapterId,
           title: title.trim(),
@@ -300,6 +311,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     setIsSuccess(false);
     setStudentName('');
     setRollNumber('');
+    setWhatsappNumber('');
     setGroup('বিজ্ঞান');
     setSectionName('');
     setSchoolName('');
@@ -421,6 +433,33 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                       শুধুমাত্র সংখ্যা (কোনো টেক্সট নয়)
                     </span>
                   </div>
+                </div>
+
+                {/* WhatsApp Number Contact Field */}
+                <div className="p-3 bg-emerald-50/70 rounded-xl border border-emerald-200/90 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                      <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>হোয়াটসঅ্যাপ নম্বর (WhatsApp Number) *</span>
+                    </label>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-white px-2 py-0.5 rounded-full border border-emerald-200 shadow-2xs">
+                      যোগাযোগের জন্য
+                    </span>
+                  </div>
+                  <input
+                    type="tel"
+                    required
+                    value={whatsappNumber}
+                    onChange={(e) => {
+                      const cleanDigits = e.target.value.replace(/[^0-9+]/g, '');
+                      setWhatsappNumber(cleanDigits);
+                    }}
+                    placeholder="যেমন: 017xxxxxxxx বা +88017xxxxxxxx"
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-emerald-300 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500 bg-white font-mono font-medium"
+                  />
+                  <p className="text-[11px] text-emerald-800 leading-tight">
+                    💡 নোটে কোনো সমস্যা বা সংশোধনের প্রয়োজন হলে অ্যাডমিন আপনার সাথে হোয়াটসঅ্যাপে যোগাযোগ করবে।
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

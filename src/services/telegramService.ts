@@ -306,6 +306,7 @@ export const telegramService = {
     schoolName?: string;
     rollNumber?: string;
     section?: string;
+    whatsappNumber?: string;
     subjectId: string;
     chapterId: string;
     fileURL: string;
@@ -315,8 +316,22 @@ export const telegramService = {
   }): Promise<void> {
     const time = getFormattedTime();
 
+    let waSection = '';
+    if (note.whatsappNumber) {
+      const cleanDigits = note.whatsappNumber.replace(/[^0-9]/g, '');
+      const waNumber = cleanDigits.startsWith('880')
+        ? cleanDigits
+        : cleanDigits.startsWith('0')
+        ? `88${cleanDigits}`
+        : cleanDigits;
+      const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(`আসসালামু আলাইকুম ${note.studentName}, SSC Note Box-এ আপনার "${note.title}" নোট সংক্রান্ত:`)}`;
+      waSection = `📱 <b>হোয়াটসঅ্যাপ নম্বর:</b> <code>${escapeHtml(note.whatsappNumber)}</code>\n` +
+        `👉 <a href="${waUrl}"><b>শিক্ষার্থীকে WhatsApp এ মেসেজ দিন</b></a>\n`;
+    }
+
     const html = `📚 <b>নতুন নোট আপলোড হয়েছে!</b>\n\n` +
       `👤 <b>শিক্ষার্থীর নাম:</b> <b>${escapeHtml(note.studentName)}</b>\n` +
+      waSection +
       `🏫 <b>বিদ্যালয়:</b> ${escapeHtml(note.schoolName || 'দেওয়া হয়নি')}\n` +
       `🏷️ <b>রোল/শাখা:</b> রোল: ${note.rollNumber || '—'}, শাখা: ${note.section || '—'}\n` +
       `📖 <b>বিষয়:</b> <code>${escapeHtml(note.subjectId)}</code> (অধ্যায়: ${escapeHtml(note.chapterId)})\n` +

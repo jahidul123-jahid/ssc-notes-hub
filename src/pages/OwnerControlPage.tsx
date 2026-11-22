@@ -38,7 +38,10 @@ import {
   Send,
   Bell,
   ArrowLeft,
-  Home
+  Home,
+  MessageCircle,
+  ExternalLink,
+  Phone
 } from 'lucide-react';
 
 export const OwnerControlPage: React.FC = () => {
@@ -757,6 +760,25 @@ export const OwnerControlPage: React.FC = () => {
                         <span className="text-slate-500">বিদ্যালয়: </span>
                         <strong className="text-primaryText">{note.schoolName || 'দেওয়া হয়নি'}</strong>
                       </div>
+                      {note.whatsappNumber ? (
+                        <div className="flex items-center justify-between pt-1 bg-emerald-50/60 p-2 rounded-lg border border-emerald-200/80">
+                          <span className="text-emerald-950 font-bold flex items-center gap-1.5 text-xs">
+                            <MessageCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>হোয়াটসঅ্যাপ:</span>
+                            <span className="font-mono text-emerald-800 font-semibold">{note.whatsappNumber}</span>
+                          </span>
+                          <a
+                            href={`https://wa.me/${(note.whatsappNumber || '').replace(/[^0-9]/g, '').startsWith('880') ? (note.whatsappNumber || '').replace(/[^0-9]/g, '') : (note.whatsappNumber || '').replace(/[^0-9]/g, '').startsWith('0') ? '88' + (note.whatsappNumber || '').replace(/[^0-9]/g, '') : (note.whatsappNumber || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`আসসালামু আলাইকুম ${note.studentName}, SSC Note Box-এ আপনার "${note.title}" নোট সংক্রান্ত:`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1 rounded-md shadow-2xs transition-all active:scale-95"
+                            title="শিক্ষার্থীর হোয়াটসঅ্যাপে সরাসরি মেসেজ পাঠান"
+                          >
+                            <span>মেসেজ দিন</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
+                      ) : null}
                       <div className="pt-1.5 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
                         <span className="text-brand-800 font-bold">
                           {sub?.name || note.subjectId} • {chap?.chapterName || note.chapterId}
@@ -859,6 +881,18 @@ export const OwnerControlPage: React.FC = () => {
                         <td className="p-3.5 text-secondaryText">
                           <span className="font-semibold text-primaryText block">{note.studentName}</span>
                           <span className="text-[11px] line-clamp-1">{note.schoolName}</span>
+                          {note.whatsappNumber && (
+                            <a
+                              href={`https://wa.me/${(note.whatsappNumber || '').replace(/[^0-9]/g, '').startsWith('880') ? (note.whatsappNumber || '').replace(/[^0-9]/g, '') : (note.whatsappNumber || '').replace(/[^0-9]/g, '').startsWith('0') ? '88' + (note.whatsappNumber || '').replace(/[^0-9]/g, '') : (note.whatsappNumber || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`আসসালামু আলাইকুম ${note.studentName}, SSC Note Box-এ আপনার "${note.title}" নোট সংক্রান্ত:`)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-bold hover:underline mt-0.5"
+                              title="শিক্ষার্থীর সাথে হোয়াটসঅ্যাপে চ্যাট করুন"
+                            >
+                              <MessageCircle className="w-3 h-3 text-emerald-600" />
+                              <span>{note.whatsappNumber}</span>
+                            </a>
+                          )}
                         </td>
                         <td className="p-3.5 font-bold text-primaryText">
                           {note.downloadCount}

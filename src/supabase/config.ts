@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS public.notes (
   roll_number TEXT DEFAULT '',
   section TEXT DEFAULT '',
   school_name TEXT DEFAULT '',
+  whatsapp_number TEXT DEFAULT '',
   file_url TEXT NOT NULL,
   file_type TEXT NOT NULL,
   file_size TEXT DEFAULT '',
