@@ -440,6 +440,9 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                       placeholder="017xxxxxxxx"
                       className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors font-mono"
                     />
+                    <span className="text-[11px] text-secondaryText mt-1 block">
+                      নোটে কোনো সমস্যা থাকলে যাতে আপনার সাথে যোগাযোগ করা যায়
+                    </span>
                   </div>
 
                   <div>
