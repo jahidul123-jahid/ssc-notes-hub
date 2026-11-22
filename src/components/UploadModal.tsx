@@ -96,6 +96,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     const docxFile = incoming.find(f => f.name.toLowerCase().endsWith('.docx'));
 
     if (pdfFile) {
+      if (pdfFile.size > 50 * 1024 * 1024) {
+        setErrorMessage('ফাইলের সাইজ ৫০ MB এর বেশি। ৫০ MB এর কম সাইজের PDF ফাইল নির্বাচন করুন।');
+        return;
+      }
       setSelectedFiles([pdfFile]);
       setImagePreviews([]);
       const mb = (pdfFile.size / (1024 * 1024)).toFixed(1);
@@ -104,6 +108,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     }
 
     if (docxFile) {
+      if (docxFile.size > 50 * 1024 * 1024) {
+        setErrorMessage('ফাইলের সাইজ ৫০ MB এর বেশি। ৫০ MB এর কম সাইজের ফাইল নির্বাচন করুন।');
+        return;
+      }
       setSelectedFiles([docxFile]);
       setImagePreviews([]);
       const mb = (docxFile.size / (1024 * 1024)).toFixed(1);
@@ -170,6 +178,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Guard against duplicate concurrent submissions
+    if (loading) return;
     setErrorMessage('');
 
     if (!studentName.trim()) {
@@ -222,6 +232,13 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       return;
     }
 
+    // Check individual or total file sizes
+    const isSingleDoc = selectedFiles.length === 1 && (selectedFiles[0].type === 'application/pdf' || selectedFiles[0].name.toLowerCase().endsWith('.pdf') || selectedFiles[0].name.toLowerCase().endsWith('.docx'));
+    if (isSingleDoc && selectedFiles[0].size > 50 * 1024 * 1024) {
+      setErrorMessage(`ফাইলের সাইজ ${(selectedFiles[0].size / (1024 * 1024)).toFixed(1)} MB। সর্বোচ্চ ৫০ MB অনুমোদিত।`);
+      return;
+    }
+
     setLoading(true);
     setProgress(5);
     setStatusText('নোট প্রস্তুত করা হচ্ছে...');
@@ -261,7 +278,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       );
 
       setStatusText(isImages && selectedFiles.length > 1
-        ? `ছবিগুলো(${selectedFiles.length} পৃষ্ঠা) থেকে PDF তৈরি করা হচ্ছে...`
+        ? `ছবিগুলো (${selectedFiles.length} পৃষ্ঠা) অপটিমাইজ করে PDF তৈরি করা হচ্ছে...`
         : 'নোট ফাইল আপলোড হচ্ছে...'
       );
 
@@ -283,10 +300,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({
         selectedFiles.length === 1 && !isImages ? selectedFiles[0] : selectedFiles,
         (p) => {
           setProgress(p);
-          if (p < 50 && isImages) {
+          if (p < 40 && isImages) {
             setStatusText(`পৃষ্ঠা অপটিমাইজেশন ও PDF তৈরি চলছে... (${p}%)`);
           } else {
-            setStatusText(`ক্লাউডে আপলোড হচ্ছে... (${p}%)`);
+            setStatusText(`ক্লাউড সার্ভারে নিরাপদে আপলোড হচ্ছে... (${p}%)`);
           }
         }
       );
@@ -300,8 +317,18 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
       if (onUploadSuccess) onUploadSuccess();
     } catch (err: any) {
-      setErrorMessage('নোট আপলোডে ত্রুটি দেখা দিয়েছে। আবার চেষ্টা করুন।');
-      console.error(err);
+      console.error("Upload error caught:", err);
+      let message = 'নোট আপলোডে ত্রুটি দেখা দিয়েছে। আবার চেষ্টা করুন।';
+      if (err?.message) {
+        if (err.message.includes('৫০ MB') || err.message.includes('50MB') || err.message.includes('৫০MB') || err.message.includes('৫০')) {
+          message = err.message;
+        } else if (err.message.toLowerCase().includes('network') || err.message.toLowerCase().includes('fetch') || err.message.toLowerCase().includes('connection') || err.message.includes('সংযোগ')) {
+          message = 'ইন্টারনেট সংযোগে সমস্যা দেখা দিয়েছে। ইন্টারনেট সংযোগ নিশ্চিত করে পুনরায় চেষ্টা করুন।';
+        } else {
+          message = err.message;
+        }
+      }
+      setErrorMessage(message);
     } finally {
       setLoading(false);
     }

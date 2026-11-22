@@ -28,21 +28,104 @@ const STORAGE_KEYS = {
 
 // Initialize LocalStorage with fresh NCTB verified data and clean notes
 function initializeLocalStorage() {
-  if (!localStorage.getItem(STORAGE_KEYS.SUBJECTS)) {
-    localStorage.setItem(STORAGE_KEYS.SUBJECTS, JSON.stringify(INITIAL_SUBJECTS));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.CHAPTERS)) {
-    localStorage.setItem(STORAGE_KEYS.CHAPTERS, JSON.stringify(INITIAL_CHAPTERS));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.NOTES)) {
-    localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(INITIAL_NOTES));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.REPORTS)) {
-    localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify([]));
+  try {
+    if (!localStorage.getItem(STORAGE_KEYS.SUBJECTS)) {
+      localStorage.setItem(STORAGE_KEYS.SUBJECTS, JSON.stringify(INITIAL_SUBJECTS));
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.CHAPTERS)) {
+      localStorage.setItem(STORAGE_KEYS.CHAPTERS, JSON.stringify(INITIAL_CHAPTERS));
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.NOTES)) {
+      localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(INITIAL_NOTES));
+    } else {
+      // Purge any huge base64 data URLs in localStorage from past failed sessions
+      const existing = localStorage.getItem(STORAGE_KEYS.NOTES);
+      if (existing && existing.includes('data:application/pdf;base64')) {
+        try {
+          const parsed: Note[] = JSON.parse(existing);
+          const sanitized = parsed.map(n => ({
+            ...n,
+            fileURL: n.fileURL?.startsWith('data:') ? '' : n.fileURL
+          }));
+          localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(sanitized.slice(0, 50)));
+        } catch {
+          // ignore parsing error
+        }
+      }
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.REPORTS)) {
+      localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify([]));
+    }
+  } catch (err) {
+    console.warn("LocalStorage initialization warning:", err);
   }
 }
 
 initializeLocalStorage();
+
+/**
+ * Uploads a file directly to Supabase Storage ('notes' bucket) with auto-retry and progress simulation.
+ */
+async function uploadToSupabaseStorage(
+  supabase: any,
+  storagePath: string,
+  file: File,
+  contentType: string,
+  onProgress?: (progress: number) => void
+): Promise<string> {
+  const maxRetries = 2;
+  let lastError: any = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    let currentP = 32;
+    if (onProgress) onProgress(currentP);
+
+    // Smooth simulated visual progress during cloud transfer
+    const interval = setInterval(() => {
+      if (currentP < 86) {
+        currentP += Math.min(6, Math.max(2, Math.floor(Math.random() * 5) + 2));
+        if (currentP > 86) currentP = 86;
+        if (onProgress) onProgress(currentP);
+      }
+    }, 280);
+
+    try {
+      const { data, error } = await supabase.storage
+        .from('notes')
+        .upload(storagePath, file, {
+          cacheControl: '3600',
+          upsert: true,
+          contentType: contentType || 'application/pdf'
+        });
+
+      clearInterval(interval);
+
+      if (!error && data) {
+        const { data: pubData } = supabase.storage
+          .from('notes')
+          .getPublicUrl(storagePath);
+
+        if (pubData?.publicUrl) {
+          if (onProgress) onProgress(90);
+          return pubData.publicUrl;
+        }
+      }
+
+      lastError = error;
+      console.warn(`Supabase storage attempt ${attempt + 1} error:`, error);
+    } catch (err) {
+      clearInterval(interval);
+      lastError = err;
+      console.warn(`Supabase storage attempt ${attempt + 1} exception:`, err);
+    }
+
+    if (attempt < maxRetries) {
+      await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+    }
+  }
+
+  throw lastError || new Error('ক্লাউড স্টোরেজে ফাইল আপলোড করা যায়নি। আপনার ইন্টারনেট সংযোগ পরীক্ষা করুন।');
+}
 
 export const dataService = {
   // ================= SUBJECTS =================
@@ -272,6 +355,8 @@ export const dataService = {
     const noteId = `note-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     let fileURL = '';
 
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB maximum supported size
+
     // Convert image(s) (PNG/JPG/WEBP) to PDF automatically so everything on website is standardized as clean PDF
     let actualFile: File;
     let actualFileType: FileType = noteData.fileType;
@@ -285,9 +370,9 @@ export const dataService = {
         actualFile = file[0];
         actualFileType = (file[0].name.split('.').pop()?.toLowerCase() || 'pdf') as FileType;
       } else {
-        if (onProgress) onProgress(15);
+        if (onProgress) onProgress(10);
         actualFile = await convertImagesToPdf(file, noteData.title, (p) => {
-          if (onProgress) onProgress(15 + Math.round(p * 0.35));
+          if (onProgress) onProgress(10 + Math.round(p * 0.22));
         });
         actualFileType = 'pdf';
         actualPageCount = file.length;
@@ -297,49 +382,51 @@ export const dataService = {
       actualFileType = noteData.fileType;
       if (file.type.startsWith('image/') || ['jpg', 'jpeg', 'png', 'webp'].includes(file.name.split('.').pop()?.toLowerCase() || '')) {
         try {
-          if (onProgress) onProgress(20);
+          if (onProgress) onProgress(10);
           actualFile = await convertImageToPdf(file);
           actualFileType = 'pdf';
           actualPageCount = 1;
-        } catch (err) {
-          console.warn("Image to PDF conversion skipped, using original:", err);
+        } catch (err: any) {
+          console.warn("Image to PDF conversion warning:", err);
+          throw new Error(err?.message || 'ছবি থেকে PDF তৈরিতে সমস্যা হয়েছে।');
         }
       }
+    }
+
+    // Strict validation for 50MB limit
+    if (actualFile.size > MAX_FILE_SIZE) {
+      throw new Error(`ফাইলের সাইজ ${(actualFile.size / (1024 * 1024)).toFixed(1)} MB, যা সর্বোচ্চ অনুমোদিত সীমা (৫০ MB)-এর বেশি। ৫০ MB-এর কম সাইজের ফাইল নির্বাচন করুন।`);
     }
 
     const calculatedSize = `${(actualFile.size / (1024 * 1024)).toFixed(1)} MB`;
+    const mimeType = actualFile.type || (actualFileType === 'pdf' ? 'application/pdf' : 'application/octet-stream');
+    const fileExt = actualFile.name.includes('.')
+      ? actualFile.name.split('.').pop()?.toLowerCase() || 'pdf'
+      : actualFileType || 'pdf';
+    const rawBase = actualFile.name.substring(0, actualFile.name.lastIndexOf('.')) || actualFile.name;
+    const cleanBase = rawBase
+      .replace(/[^a-zA-Z0-9_\u0980-\u09FF-]/g, '_')
+      .slice(0, 35);
+    const storagePath = `${noteId}_${cleanBase || 'document'}.${fileExt}`;
 
-    // 1. Live Supabase Storage (Upload real file to Supabase public bucket)
+    // 1. Live Supabase Storage (Upload real binary file with auto-retry and progress)
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        if (onProgress) onProgress(30);
-        const storagePath = `${noteId}_${actualFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-
-        const { data: upData, error: upErr } = await supabase.storage
-          .from('notes')
-          .upload(storagePath, actualFile, {
-            cacheControl: '3600',
-            upsert: true
-          });
-
-        if (!upErr && upData) {
-          const { data: pubData } = supabase.storage
-            .from('notes')
-            .getPublicUrl(storagePath);
-          if (pubData?.publicUrl) {
-            fileURL = pubData.publicUrl;
-            if (onProgress) onProgress(80);
-          }
-        } else if (upErr) {
-          console.warn("Supabase bucket upload warning:", upErr);
-        }
-      } catch (err) {
-        console.warn("Supabase storage upload error:", err);
+        fileURL = await uploadToSupabaseStorage(
+          supabase,
+          storagePath,
+          actualFile,
+          mimeType,
+          onProgress
+        );
+      } catch (err: any) {
+        console.error("Supabase storage upload failed:", err);
+        throw new Error(err?.message || 'ক্লাউড সার্ভারে ফাইল আপলোড করা যায়নি। আপনার ইন্টারনেট সংযোগ চেক করুন।');
       }
     }
 
-    // 2. If live Firebase Storage is configured, upload the binary file
+    // 2. If live Firebase Storage is configured (and Supabase wasn't used)
     if (!fileURL && isFirebaseConfigured && storage) {
       try {
         const storageRef = ref(storage, `notes/${noteId}_${actualFile.name}`);
@@ -364,15 +451,10 @@ export const dataService = {
       }
     }
 
-    // 3. Fallback URL for client preview
+    // 3. Fallback preview URL only if no cloud storage is configured (offline development)
     if (!fileURL) {
-      fileURL = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => resolve(URL.createObjectURL(actualFile));
-        reader.readAsDataURL(actualFile);
-      });
-      if (onProgress) onProgress(100);
+      fileURL = URL.createObjectURL(actualFile);
+      if (onProgress) onProgress(90);
     }
 
     const newNote: Note = {
@@ -390,7 +472,7 @@ export const dataService = {
     // Save to Supabase 'notes' table with pending status for Admin moderation
     if (supabase) {
       try {
-        await supabase.from('notes').insert({
+        const insertPayload: any = {
           note_id: noteId,
           subject_id: noteData.subjectId,
           chapter_id: noteData.chapterId,
@@ -400,7 +482,6 @@ export const dataService = {
           roll_number: noteData.rollNumber || '',
           section: noteData.section || '',
           school_name: noteData.schoolName || '',
-          whatsapp_number: noteData.whatsappNumber || '',
           file_url: fileURL,
           file_type: actualFileType,
           file_size: newNote.fileSize,
@@ -408,7 +489,28 @@ export const dataService = {
           download_count: 0,
           status: 'pending',
           created_at: newNote.createdAt
-        });
+        };
+
+        // Try inserting with whatsapp_number if available; fall back gracefully if schema lacks the column
+        if (noteData.whatsappNumber) {
+          const { error: tryErr } = await supabase.from('notes').insert({
+            ...insertPayload,
+            whatsapp_number: noteData.whatsappNumber
+          });
+
+          if (tryErr) {
+            // Column may not exist in live Postgres schema; retry with standard payload
+            const { error: fallbackErr } = await supabase.from('notes').insert(insertPayload);
+            if (fallbackErr) {
+              console.error("Supabase notes fallback insert error:", fallbackErr);
+            }
+          }
+        } else {
+          const { error: insertErr } = await supabase.from('notes').insert(insertPayload);
+          if (insertErr) {
+            console.error("Supabase notes insert error:", insertErr);
+          }
+        }
       } catch (err) {
         console.warn("Supabase notes insert error:", err);
       }
@@ -422,10 +524,20 @@ export const dataService = {
       }
     }
 
-    const local = localStorage.getItem(STORAGE_KEYS.NOTES);
-    const notes: Note[] = local ? JSON.parse(local) : [];
-    notes.unshift(newNote);
-    localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(notes));
+    // Save locally without crashing on QuotaExceededError
+    try {
+      const local = localStorage.getItem(STORAGE_KEYS.NOTES);
+      const notes: Note[] = local ? JSON.parse(local) : [];
+      const noteForLocal: Note = {
+        ...newNote,
+        // Never store heavy blob or data URLs in localStorage
+        fileURL: newNote.fileURL.startsWith('blob:') || newNote.fileURL.startsWith('data:') ? '' : newNote.fileURL
+      };
+      notes.unshift(noteForLocal);
+      localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(notes.slice(0, 100)));
+    } catch (localErr) {
+      console.warn("LocalStorage caching skipped (quota limit):", localErr);
+    }
 
     // Send instant Telegram notification to Jahidul
     telegramService.notifyNoteUpload(newNote).catch((err) => {
