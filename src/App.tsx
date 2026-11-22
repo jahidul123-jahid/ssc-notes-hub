@@ -161,7 +161,14 @@ const AppContent: React.FC = () => {
             <Route path="/subjects" element={<SubjectsPage />} />
             <Route
               path="/subject/:subjectId"
-              element={<SubjectDetailsPage onOpenUpload={handleOpenUpload} />}
+              element={
+                <SubjectDetailsPage
+                  onOpenUpload={handleOpenUpload}
+                  onViewNote={handleViewNote}
+                  onDownloadNote={handleDownloadNote}
+                  onReportNote={handleReportNote}
+                />
+              }
             />
             <Route
               path="/subject/:subjectId/chapter/:chapterId"

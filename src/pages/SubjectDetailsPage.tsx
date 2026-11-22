@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Subject, Chapter } from '../types';
+import { Subject, Chapter, Note } from '../types';
 import { dataService } from '../services/dataService';
 import { dataEvents } from '../services/dataEvents';
+import { NoteCard } from '../components/NoteCard';
 import { useAudioReader } from '../context/AudioReaderContext';
 import { useLanguage } from '../context/LanguageContext';
 import {
@@ -12,19 +13,29 @@ import {
   ChevronRight,
   ArrowRight,
   Volume2,
-  Pause
+  Pause,
+  Sparkles
 } from 'lucide-react';
 
 interface SubjectDetailsPageProps {
   onOpenUpload: (subjectId?: string, chapterId?: string) => void;
+  onViewNote?: (note: Note) => void;
+  onDownloadNote?: (note: Note) => void;
+  onReportNote?: (note: Note) => void;
 }
 
-export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUpload }) => {
+export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({
+  onOpenUpload,
+  onViewNote,
+  onDownloadNote,
+  onReportNote
+}) => {
   const { subjectId } = useParams<{ subjectId: string }>();
   const { t, isBn } = useLanguage();
 
   const [subject, setSubject] = useState<Subject | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [subjectNotes, setSubjectNotes] = useState<Note[]>([]);
   const [activeTab, setActiveTab] = useState<'all' | 'prose' | 'poem' | 'sahapath'>('all');
   const [searchChapter, setSearchChapter] = useState('');
   const [loading, setLoading] = useState(true);
@@ -37,14 +48,16 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
       if (!subjectId) return;
       if (showLoading) setLoading(true);
       try {
-        const [allSubs, allChaps] = await Promise.all([
+        const [allSubs, allChaps, allNotes] = await Promise.all([
           dataService.getSubjects(),
-          dataService.getChapters(subjectId)
+          dataService.getChapters(subjectId),
+          dataService.getNotes('approved', subjectId)
         ]);
         if (!isMounted) return;
         const currentSub = allSubs.find(s => s.subjectId === subjectId) || null;
         setSubject(currentSub);
         setChapters(allChaps);
+        setSubjectNotes(allNotes);
 
         // If bangla-1st, default to prose tab
         if (subjectId === 'bangla-1st') {
@@ -112,6 +125,10 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
     return true;
   });
 
+  const generalNotes = subjectNotes.filter(
+    n => !n.chapterId || n.chapterId === 'bgs-general' || n.chapterId === 'general' || !chapters.some(c => c.chapterId === n.chapterId)
+  );
+
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
       {/* Breadcrumb Navigation */}
@@ -146,6 +163,42 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
           </button>
         </div>
       </div>
+
+      {/* Special Subject Guides / Notes (General notes not bound to a single chapter) */}
+      {generalNotes.length > 0 && (
+        <div className="bg-gradient-to-r from-amber-500/10 via-brand-50/40 to-amber-500/10 p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-amber-200/80 shadow-soft space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-amber-200/60">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-primaryText">
+                  {isBn ? 'শিক্ষার্থীদের জন্য বিশেষ সহায়িকা ও শর্ট টেকনিক' : 'Special Guides & Shortcuts'}
+                </h2>
+                <p className="text-xs text-secondaryText">
+                  {isBn ? 'অধ্যায় নির্দিষ্ট নয় — পরীক্ষার প্রস্তুতির জন্য অতি গুরুত্বপূর্ণ সহায়ক নোট' : 'Crucial subject notes and memorization shortcuts for students'}
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-800 self-start sm:self-auto">
+              {isBn ? `${generalNotes.length}টি বিশেষ নোট` : `${generalNotes.length} Special Note(s)`}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {generalNotes.map(n => (
+              <NoteCard
+                key={n.noteId}
+                note={n}
+                onView={onViewNote || (() => {})}
+                onDownload={onDownloadNote || (() => {})}
+                onReport={onReportNote}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Chapter Filter & Search Toolbar */}
       <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-cardBorder shadow-soft flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3.5 sm:gap-4">
