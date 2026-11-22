@@ -3,6 +3,7 @@ import { INITIAL_SUBJECTS, INITIAL_CHAPTERS, INITIAL_NOTES } from '../data/initi
 import { db, storage, isFirebaseConfigured } from '../firebase/config';
 import { getSupabaseClient } from '../supabase/config';
 import { telegramService } from './telegramService';
+import { googleSheetService } from './googleSheetService';
 import { convertImageToPdf, convertImagesToPdf } from '../utils/pdfConverter';
 import { dataEvents } from './dataEvents';
 import {
@@ -429,6 +430,11 @@ export const dataService = {
     // Send instant Telegram notification to Jahidul
     telegramService.notifyNoteUpload(newNote).catch((err) => {
       console.warn("Telegram note upload notification failed:", err);
+    });
+
+    // Send note upload details automatically to Google Sheet
+    googleSheetService.appendNoteRow(newNote).catch((err) => {
+      console.warn("Google Sheet note sync error:", err);
     });
 
     dataEvents.emit({ type: 'notes', action: 'create', id: newNote.noteId, data: newNote });

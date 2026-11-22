@@ -18,6 +18,11 @@ import {
   saveTelegramCredentials
 } from '../services/telegramService';
 import {
+  googleSheetService,
+  getGoogleSheetWebhookUrl,
+  saveGoogleSheetWebhookUrl
+} from '../services/googleSheetService';
+import {
   ShieldAlert,
   Lock,
   LogOut,
@@ -84,6 +89,11 @@ export const OwnerControlPage: React.FC = () => {
   const [tgChatId, setTgChatId] = useState(initialTgCreds.chatId);
   const [tgTestStatus, setTgTestStatus] = useState('');
   const [tgTesting, setTgTesting] = useState(false);
+
+  // Google Sheets integration state
+  const [sheetUrl, setSheetUrl] = useState(getGoogleSheetWebhookUrl);
+  const [sheetTesting, setSheetTesting] = useState(false);
+  const [sheetTestStatus, setSheetTestStatus] = useState('');
 
   // Add / Edit Subject State
   const [newSubName, setNewSubName] = useState('');
@@ -345,6 +355,22 @@ export const OwnerControlPage: React.FC = () => {
     const res = await telegramService.sendTestMessage();
     setTgTesting(false);
     setTgTestStatus(res.message);
+  };
+
+  const handleSaveGoogleSheet = (e: React.FormEvent) => {
+    e.preventDefault();
+    saveGoogleSheetWebhookUrl(sheetUrl);
+    setSystemMessage('Google Sheet লিংক সফলভাবে সংরক্ষিত হয়েছে!');
+    setTimeout(() => setSystemMessage(''), 3000);
+  };
+
+  const handleTestGoogleSheet = async () => {
+    setSheetTesting(true);
+    setSheetTestStatus('');
+    saveGoogleSheetWebhookUrl(sheetUrl);
+    const res = await googleSheetService.sendTestRow();
+    setSheetTesting(false);
+    setSheetTestStatus(res.message);
   };
 
   const handleResetDatabase = async () => {
@@ -1418,6 +1444,73 @@ export const OwnerControlPage: React.FC = () => {
                 >
                   <Save className="w-4 h-4" />
                   <span>টেলিগ্রাম সেটিংস সংরক্ষণ করুন</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* GOOGLE SHEETS AUTOMATIC SYNC CARD */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-cardBorder shadow-soft space-y-6">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                  <Database className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-primaryText">
+                    Google Sheets অটোমেটিক ডাটা সিঙ্ক
+                  </h2>
+                  <p className="text-xs text-secondaryText mt-0.5">
+                    শিক্ষার্থীরা নোট আপলোড করলেই তাদের সব তথ্য তারিখ ও সময়সহ সরাসরি আপনার গুগল শিটে স্বয়ংক্রিয়ভাবে জমা হবে।
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveGoogleSheet} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-primaryText mb-1.5">
+                  Google Apps Script Web App URL
+                </label>
+                <input
+                  type="url"
+                  value={sheetUrl}
+                  onChange={(e) => setSheetUrl(e.target.value)}
+                  placeholder="https://script.google.com/macros/s/AKfycb.../exec"
+                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder bg-slate-50 focus:bg-white focus:outline-none focus:border-emerald-500 font-mono"
+                />
+                <span className="text-[11px] text-secondaryText mt-1 block">
+                  আপনার গুগল শিটের Apps Script থেকে প্রাপ্ত Web App URL টি এখানে পেস্ট করুন।
+                </span>
+              </div>
+
+              {sheetTestStatus && (
+                <div className={`p-3.5 rounded-xl text-xs font-semibold ${
+                  sheetTestStatus.includes('সফল') 
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
+                    : 'bg-amber-50 text-amber-800 border border-amber-200'
+                }`}>
+                  {sheetTestStatus}
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleTestGoogleSheet}
+                  disabled={sheetTesting}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  <Send className="w-4 h-4 text-emerald-600" />
+                  <span>{sheetTesting ? 'পাঠানো হচ্ছে...' : 'শিটে টেস্ট ডাটা পাঠান'}</span>
+                </button>
+
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-soft transition-all cursor-pointer"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Google Sheet লিংক সংরক্ষণ করুন</span>
                 </button>
               </div>
             </form>

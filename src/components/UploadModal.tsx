@@ -337,19 +337,21 @@ export const UploadModal: React.FC<UploadModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-3.5 sm:p-5 border-b border-cardBorder flex items-center justify-between bg-white shrink-0">
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
+        <div className="p-4 sm:p-5 border-b border-cardBorder flex items-center justify-between bg-white shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
               <Upload className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-primaryText">{t('upload_modal_title')}</h2>
+              <h2 className="text-base sm:text-lg font-bold text-primaryText">
+                {isBn ? 'নোট আপলোড করুন' : 'Upload Note'}
+              </h2>
             </div>
           </div>
 
           <button
             onClick={handleResetAndClose}
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-secondaryText hover:text-primaryText hover:bg-slate-100 rounded-xl transition-colors active:scale-95"
+            className="w-9 h-9 flex items-center justify-center text-secondaryText hover:text-primaryText hover:bg-slate-100 rounded-xl transition-colors active:scale-95"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -365,7 +367,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
               </div>
               <h3 className="text-2xl font-bold text-primaryText">নোট সফলভাবে জমা দেওয়া হয়েছে</h3>
               <p className="text-sm text-secondaryText max-w-md mx-auto leading-relaxed">
-                আপনার নোটটি সফলভাবে সংরক্ষিত হয়েছে। অনুমোদনের পর এটি ওয়েবসাইটে প্রকাশিত হবে।
+                আপনার নোটটি সফলভাবে সংরক্ষিত হয়েছে। পর্যালোচনার পর এটি ওয়েবসাইটে প্রকাশিত হবে।
               </p>
               <div className="pt-4 flex justify-center">
                 <button
@@ -377,124 +379,91 @@ export const UploadModal: React.FC<UploadModalProps> = ({
               </div>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {errorMessage && (
-                <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs sm:text-sm flex items-center gap-2">
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs sm:text-sm flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{errorMessage}</span>
                 </div>
               )}
 
-              {/* Student Information */}
-              <div className="bg-white p-4 rounded-xl border border-cardBorder space-y-3">
-                <h4 className="text-xs font-bold text-brand-700 uppercase tracking-wider">
-                  শিক্ষার্থীর তথ্য
-                </h4>
-
+              {/* Form Content */}
+              <div className="bg-white p-4 sm:p-5 rounded-2xl border border-cardBorder space-y-3.5 shadow-2xs">
+                {/* 1. Name & Roll */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-primaryText mb-1">
-                      শিক্ষার্থীর পূর্ণ নাম *
+                    <label className="block text-xs font-semibold text-primaryText mb-1.5">
+                      আপনার নাম *
                     </label>
                     <input
                       type="text"
                       required
                       value={studentName}
-                      onChange={(e) => {
-                        // Prevent numbers from being entered in the name field
-                        const onlyLetters = e.target.value.replace(/[0-9০-৯]/g, '');
-                        setStudentName(onlyLetters);
-                      }}
+                      onChange={(e) => setStudentName(e.target.value)}
                       placeholder="যেমন: রাফসান আহমেদ"
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
+                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors"
                     />
-                    <span className="text-[11px] text-secondaryText mt-0.5 block">
-                      নামে শুধু অক্ষর গ্রহণযোগ্য (কোনো সংখ্যা নয়)
-                    </span>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-primaryText mb-1">
-                      রোল নম্বর
+                    <label className="block text-xs font-semibold text-primaryText mb-1.5">
+                      রোল নম্বর (ঐচ্ছিক)
                     </label>
                     <input
                       type="text"
                       inputMode="numeric"
                       value={rollNumber}
                       onChange={(e) => {
-                        // Prevent text/letters from being entered in roll number (only numbers allowed)
                         const onlyDigits = e.target.value.replace(/[^0-9০-৯]/g, '');
                         setRollNumber(onlyDigits);
                       }}
                       placeholder="যেমন: ১০১"
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white font-mono"
+                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors font-mono"
                     />
-                    <span className="text-[11px] text-secondaryText mt-0.5 block">
-                      শুধুমাত্র সংখ্যা (কোনো টেক্সট নয়)
-                    </span>
                   </div>
                 </div>
 
-                {/* WhatsApp Number Contact Field */}
-                <div className="p-3 bg-emerald-50/70 rounded-xl border border-emerald-200/90 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
-                      <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>হোয়াটসঅ্যাপ নম্বর (WhatsApp Number) *</span>
-                    </label>
-                    <span className="text-[10px] font-bold text-emerald-700 bg-white px-2 py-0.5 rounded-full border border-emerald-200 shadow-2xs">
-                      যোগাযোগের জন্য
-                    </span>
-                  </div>
-                  <input
-                    type="tel"
-                    required
-                    value={whatsappNumber}
-                    onChange={(e) => {
-                      const cleanDigits = e.target.value.replace(/[^0-9+]/g, '');
-                      setWhatsappNumber(cleanDigits);
-                    }}
-                    placeholder="যেমন: 017xxxxxxxx বা +88017xxxxxxxx"
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-emerald-300 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500 bg-white font-mono font-medium"
-                  />
-                  <p className="text-[11px] text-emerald-800 leading-tight">
-                    💡 নোটে কোনো সমস্যা বা সংশোধনের প্রয়োজন হলে অ্যাডমিন আপনার সাথে হোয়াটসঅ্যাপে যোগাযোগ করবে।
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* 2. WhatsApp & Group */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-primaryText mb-1">
-                      বিভাগ (Group) *
+                    <label className="block text-xs font-semibold text-primaryText mb-1.5">
+                      হোয়াটসঅ্যাপ নম্বর *
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      value={whatsappNumber}
+                      onChange={(e) => {
+                        const cleanDigits = e.target.value.replace(/[^0-9+]/g, '');
+                        setWhatsappNumber(cleanDigits);
+                      }}
+                      placeholder="017xxxxxxxx"
+                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-primaryText mb-1.5">
+                      বিভাগ *
                     </label>
                     <select
                       required
                       value={group}
                       onChange={(e) => setGroup(e.target.value)}
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white font-medium"
+                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors font-medium"
                     >
-                      <option value="বিজ্ঞান">বিজ্ঞান বিভাগ (Science)</option>
-                      <option value="মানবিক">মানবিক বিভাগ (Humanities)</option>
-                      <option value="ব্যবসায় শিক্ষা">ব্যবসায় শিক্ষা বিভাগ (Business Studies)</option>
+                      <option value="বিজ্ঞান">বিজ্ঞান বিভাগ</option>
+                      <option value="মানবিক">মানবিক বিভাগ</option>
+                      <option value="ব্যবসায় শিক্ষা">ব্যবসায় শিক্ষা বিভাগ</option>
                     </select>
                   </div>
+                </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-primaryText mb-1">
-                      শাখা (ঐচ্ছিক)
-                    </label>
-                    <input
-                      type="text"
-                      value={sectionName}
-                      onChange={(e) => setSectionName(e.target.value)}
-                      placeholder="যেমন: ক / খ / A"
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-primaryText mb-1">
-                      স্কুল / শিক্ষা প্রতিষ্ঠানের নাম *
+                {/* 3. School & Section */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-primaryText mb-1.5">
+                      স্কুল / শিক্ষাপ্রতিষ্ঠানের নাম *
                     </label>
                     <input
                       type="text"
@@ -502,28 +471,37 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                       value={schoolName}
                       onChange={(e) => setSchoolName(e.target.value)}
                       placeholder="যেমন: নবীনগর সরকারি পাইলট উচ্চ বিদ্যালয়"
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
+                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-primaryText mb-1.5">
+                      শাখা (ঐচ্ছিক)
+                    </label>
+                    <input
+                      type="text"
+                      value={sectionName}
+                      onChange={(e) => setSectionName(e.target.value)}
+                      placeholder="যেমন: ক / A"
+                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors"
                     />
                   </div>
                 </div>
-              </div>
 
-              {/* Subject & Chapter Selection */}
-              <div className="bg-white p-4 rounded-xl border border-cardBorder space-y-3">
-                <h4 className="text-xs font-bold text-brand-700 uppercase tracking-wider">
-                  বিষয় ও অধ্যায় নির্বাচন
-                </h4>
+                <div className="pt-2 border-t border-cardBorder/60" />
 
+                {/* 4. Subject & Chapter */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-primaryText mb-1">
+                    <label className="block text-xs font-semibold text-primaryText mb-1.5">
                       বিষয় *
                     </label>
                     <select
                       required
                       value={subjectId}
                       onChange={(e) => setSubjectId(e.target.value)}
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
+                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors font-medium"
                     >
                       <option value="">বিষয় নির্বাচন করুন</option>
                       {subjects.map((sub) => (
@@ -535,15 +513,15 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-primaryText mb-1">
-                      অধ্যায় / কবিতা / গদ্য *
+                    <label className="block text-xs font-semibold text-primaryText mb-1.5">
+                      অধ্যায় বা পাঠ *
                     </label>
                     <select
                       required
                       value={chapterId}
                       onChange={(e) => setChapterId(e.target.value)}
                       disabled={!subjectId}
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white disabled:bg-slate-100"
+                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors font-medium disabled:opacity-50"
                     >
                       <option value="">
                         {subjectId ? 'অধ্যায় বা পাঠ নির্বাচন করুন' : 'আগে বিষয় নির্বাচন করুন'}
@@ -555,40 +533,30 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                         </option>
                       ))}
                       <option value="other" className="font-bold text-brand-700 bg-brand-50">
-                        ✨ অন্যান্য (তালিকায় নেই / কাস্টম নোটের নাম)
+                        ✨ অন্যান্য (তালিকায় নেই)
                       </option>
                     </select>
 
                     {chapterId === 'other' && (
-                      <div className="mt-2.5 p-3 rounded-xl bg-amber-50/80 border border-amber-200 animate-fade-in space-y-1.5">
-                        <label className="block text-xs font-bold text-amber-900">
-                          অধ্যায় বা নোটের নাম লিখুন *
-                        </label>
+                      <div className="mt-2 animate-fade-in">
                         <input
                           type="text"
                           required
                           value={customChapterName}
                           onChange={(e) => setCustomChapterName(e.target.value)}
-                          placeholder="যেমন: মডেল টেস্ট / ফাইনাল সাজেশন / বিশেষ শর্টকাট টেকনিক"
-                          className="w-full px-3 py-2 text-sm rounded-lg border border-amber-300 focus:outline-none focus:border-brand-600 bg-white"
+                          placeholder="অধ্যায় বা নোটের নাম লিখুন"
+                          className="w-full px-3.5 py-2 text-sm rounded-xl border border-brand-300 focus:outline-none focus:border-brand-500 bg-white"
                         />
-                        <span className="text-[11px] text-amber-800 block">
-                          তালিকায় না থাকলে এখানে যে নামটি লিখবেন সেটিই ওয়েবসাইটে এই বিষয়ের অধ্যায় হিসেবে দেখাবে।
-                        </span>
                       </div>
                     )}
                   </div>
                 </div>
-              </div>
 
-              {/* Note Details & File Upload */}
-              <div className="bg-white p-4 rounded-xl border border-cardBorder space-y-3">
-                <h4 className="text-xs font-bold text-brand-700 uppercase tracking-wider">
-                  নোটের তথ্য ও ফাইল
-                </h4>
+                <div className="pt-2 border-t border-cardBorder/60" />
 
+                {/* 5. Note Title & Description */}
                 <div>
-                  <label className="block text-xs font-semibold text-primaryText mb-1">
+                  <label className="block text-xs font-semibold text-primaryText mb-1.5">
                     নোটের শিরোনাম *
                   </label>
                   <input
@@ -596,34 +564,29 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                     required
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="যেমন: গতির সকল গাণিতিক সূত্র ও শর্টকাট টেকনিক"
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
+                    placeholder="যেমন: গতির সকল গাণিতিক সূত্র ও শর্টকাট"
+                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors font-medium"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-primaryText mb-1">
-                    সংক্ষিপ্ত বিবরণ
+                  <label className="block text-xs font-semibold text-primaryText mb-1.5">
+                    সংক্ষিপ্ত বিবরণ (ঐচ্ছিক)
                   </label>
                   <textarea
                     rows={2}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="নোটটিতে কী কী অন্তর্ভুক্ত রয়েছে সংক্ষেপে লিখুন..."
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
+                    placeholder="নোট সম্পর্কে সংক্ষেপে কিছু লিখুন..."
+                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors resize-none"
                   />
                 </div>
 
-                {/* File Upload Area */}
+                {/* 6. File Upload Dropzone */}
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-semibold text-primaryText">
-                      নোটের ফাইল যুক্ত করুন *
-                    </label>
-                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                      যেকোনো সাইজ • যতখুশি পৃষ্ঠা/ছবি
-                    </span>
-                  </div>
+                  <label className="block text-xs font-semibold text-primaryText mb-1.5">
+                    নোটের ফাইল যুক্ত করুন *
+                  </label>
 
                   <input
                     type="file"
@@ -688,7 +651,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
                       <div className="text-[11px] text-brand-800 bg-white p-2.5 rounded-xl border border-brand-100 flex items-center justify-between">
                         <span>
-                          ✨ <strong>অটোমেটিক PDF:</strong> সব ছবি ক্রমানুসারে একত্রিত ও কম্প্রেস হয়ে একটি চমৎকার A4 PDF বই তৈরি হবে।
+                          ছবিগুলো ক্রমানুসারে একটি পরিষ্কার PDF ফাইলে রূপান্তর হবে।
                         </span>
                         <span className="font-bold shrink-0 ml-2">সাইজ: {fileSizeStr}</span>
                       </div>
@@ -715,17 +678,17 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                     /* Case 3: Empty Dropzone */
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-brand-200 hover:border-brand-500 rounded-2xl p-6 text-center cursor-pointer transition-colors bg-brand-50/20 hover:bg-brand-50/50 group"
+                      className="border-2 border-dashed border-cardBorder hover:border-brand-500 rounded-2xl p-6 text-center cursor-pointer transition-colors bg-slate-50/50 hover:bg-brand-50/30 group"
                     >
                       <div className="flex flex-col items-center gap-2">
-                        <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 group-hover:scale-110 flex items-center justify-center transition-transform shadow-soft">
-                          <Upload className="w-6 h-6" />
+                        <div className="w-11 h-11 rounded-2xl bg-brand-50 text-brand-600 group-hover:scale-105 flex items-center justify-center transition-transform">
+                          <Upload className="w-5 h-5" />
                         </div>
-                        <span className="text-sm font-bold text-primaryText">
-                          নোটের ফাইল বেছে নিন বা ছবিগুলো নির্বাচন করুন
+                        <span className="text-sm font-semibold text-primaryText">
+                          নোটের ফাইল বা ছবি নির্বাচন করুন
                         </span>
-                        <p className="text-xs text-secondaryText max-w-md">
-                          যেকোনো সাইজের <strong>PDF</strong> অথবা খাতার পাতার <strong>যতখুশি ছবি (PNG / JPG / WEBP)</strong> একসাথে নির্বাচন করুন। ছবিগুলো স্বয়ংক্রিয়ভাবে সাজানো PDF তৈরি হয়ে যাবে।
+                        <p className="text-xs text-secondaryText">
+                          PDF ফাইল অথবা খাতার একাধিক পাতার ছবি (JPG, PNG)
                         </p>
                       </div>
                     </div>

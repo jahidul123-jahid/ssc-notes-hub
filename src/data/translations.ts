@@ -100,7 +100,7 @@ export const translations: Record<Language, Record<string, string>> = {
     stop_player: "Close Player",
 
     // Upload Modal
-    upload_modal_title: "Share Study Note",
+    upload_modal_title: "Upload Note",
     upload_modal_sub: "Help fellow SSC students by sharing your handwritten notes or PDFs.",
     form_student_name: "Student Name",
     form_roll: "Roll Number",
@@ -219,7 +219,7 @@ export const translations: Record<Language, Record<string, string>> = {
     stop_player: "প্লেয়ার বন্ধ",
 
     // Upload Modal
-    upload_modal_title: "নোট শেয়ার করুন",
+    upload_modal_title: "নোট আপলোড করুন",
     upload_modal_sub: "আপনার পাঠ্যপুস্তকের সুন্দর নোট বা গাইড সহপাঠীদের সাথে শেয়ার করুন।",
     form_student_name: "শিক্ষার্থীর নাম",
     form_roll: "রোল নম্বর",
