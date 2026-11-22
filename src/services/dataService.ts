@@ -20,8 +20,8 @@ import {
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 const STORAGE_KEYS = {
-  SUBJECTS: 'ssc_hub_subjects_nctb_2027_v2',
-  CHAPTERS: 'ssc_hub_chapters_nctb_2027_v2',
+  SUBJECTS: 'ssc_hub_subjects_nctb_2027_v3',
+  CHAPTERS: 'ssc_hub_chapters_nctb_2027_v3',
   NOTES: 'ssc_hub_notes_nctb_2027_v2',
   REPORTS: 'ssc_hub_reports_nctb_2027_v2'
 };
@@ -29,12 +29,16 @@ const STORAGE_KEYS = {
 // Initialize LocalStorage with fresh NCTB verified data and clean notes
 function initializeLocalStorage() {
   try {
-    if (!localStorage.getItem(STORAGE_KEYS.SUBJECTS)) {
+    const cachedSubs = localStorage.getItem(STORAGE_KEYS.SUBJECTS);
+    if (!cachedSubs || JSON.parse(cachedSubs || '[]').length < INITIAL_SUBJECTS.length) {
       localStorage.setItem(STORAGE_KEYS.SUBJECTS, JSON.stringify(INITIAL_SUBJECTS));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.CHAPTERS)) {
+
+    const cachedChaps = localStorage.getItem(STORAGE_KEYS.CHAPTERS);
+    if (!cachedChaps || JSON.parse(cachedChaps || '[]').length < INITIAL_CHAPTERS.length) {
       localStorage.setItem(STORAGE_KEYS.CHAPTERS, JSON.stringify(INITIAL_CHAPTERS));
     }
+
     if (!localStorage.getItem(STORAGE_KEYS.NOTES)) {
       localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(INITIAL_NOTES));
     } else {

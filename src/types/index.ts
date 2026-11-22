@@ -1,4 +1,4 @@
-export type ChapterType = 'chapter' | 'prose' | 'poem' | 'grammar' | 'unit' | 'writing';
+export type ChapterType = 'chapter' | 'prose' | 'poem' | 'grammar' | 'unit' | 'writing' | 'sahapath';
 export type SubjectGroup = 'compulsory' | 'science' | 'humanities' | 'business' | 'optional';
 export type VerificationStatus = 'verified_nctb' | 'provisional' | 'unverified';
 

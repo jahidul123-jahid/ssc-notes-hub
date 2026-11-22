@@ -25,7 +25,7 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
 
   const [subject, setSubject] = useState<Subject | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [activeTab, setActiveTab] = useState<'all' | 'prose' | 'poem'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'prose' | 'poem' | 'sahapath'>('all');
   const [searchChapter, setSearchChapter] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -107,6 +107,7 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
     if (isBangla1st) {
       if (activeTab === 'prose') return c.chapterType === 'prose';
       if (activeTab === 'poem') return c.chapterType === 'poem';
+      if (activeTab === 'sahapath') return c.chapterType === 'sahapath';
     }
     return true;
   });
@@ -148,29 +149,51 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({ onOpenUp
 
       {/* Chapter Filter & Search Toolbar */}
       <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-cardBorder shadow-soft flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3.5 sm:gap-4">
-        {/* Prose / Poem Tabs for Bangla 1st Paper */}
+        {/* Prose / Poem / Sahapath / All Tabs for Bangla 1st Paper */}
         {isBangla1st ? (
-          <div className="grid grid-cols-2 sm:flex items-center p-1 bg-slate-100 rounded-xl">
+          <div className="grid grid-cols-2 sm:flex items-center p-1 bg-slate-100 rounded-xl gap-1">
             <button
               onClick={() => setActiveTab('prose')}
-              className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all min-h-[44px] flex items-center justify-center ${
+              className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all min-h-[40px] flex items-center justify-center ${
                 activeTab === 'prose'
                   ? 'bg-white text-brand-700 shadow-sm'
                   : 'text-secondaryText hover:text-primaryText'
               }`}
             >
-              {t('tab_prose')}
+              {t('tab_prose')} ({chapters.filter(c => c.chapterType === 'prose').length})
             </button>
 
             <button
               onClick={() => setActiveTab('poem')}
-              className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all min-h-[44px] flex items-center justify-center ${
+              className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all min-h-[40px] flex items-center justify-center ${
                 activeTab === 'poem'
                   ? 'bg-white text-brand-700 shadow-sm'
                   : 'text-secondaryText hover:text-primaryText'
               }`}
             >
-              {t('tab_poem')}
+              {t('tab_poem')} ({chapters.filter(c => c.chapterType === 'poem').length})
+            </button>
+
+            <button
+              onClick={() => setActiveTab('sahapath')}
+              className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all min-h-[40px] flex items-center justify-center ${
+                activeTab === 'sahapath'
+                  ? 'bg-white text-brand-700 shadow-sm'
+                  : 'text-secondaryText hover:text-primaryText'
+              }`}
+            >
+              {t('tab_sahapath')} ({chapters.filter(c => c.chapterType === 'sahapath').length})
+            </button>
+
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all min-h-[40px] flex items-center justify-center ${
+                activeTab === 'all'
+                  ? 'bg-white text-brand-700 shadow-sm'
+                  : 'text-secondaryText hover:text-primaryText'
+              }`}
+            >
+              {t('tab_all')} ({chapters.length})
             </button>
           </div>
         ) : (
