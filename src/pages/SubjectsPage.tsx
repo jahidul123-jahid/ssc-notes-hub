@@ -75,9 +75,6 @@ export const SubjectsPage: React.FC = () => {
           <h1 className="text-2xl sm:text-4xl font-extrabold text-primaryText">
             {t('subjects_page_title')}
           </h1>
-          <p className="text-sm text-secondaryText mt-1">
-            {t('subjects_page_subtitle')}
-          </p>
         </div>
 
         <div className="relative w-full sm:w-80">
