@@ -309,16 +309,19 @@ export const NoteViewerModal: React.FC<NoteViewerModalProps> = ({
                 </div>
 
                 <div>
-                  <span className="text-xs text-secondaryText block mb-0.5">স্কুল / শিক্ষাপ্রতিষ্ঠান</span>
-                  <span className="font-semibold text-primaryText">{note.schoolName || '—'}</span>
-                </div>
-
-                <div>
-                  <span className="text-xs text-secondaryText block mb-0.5">বিভাগ ও রোল</span>
+                  <span className="text-xs text-secondaryText block mb-0.5">বিভাগ</span>
                   <span className="font-semibold text-primaryText">
-                    {note.section || 'বিজ্ঞান বিভাগ'}{note.rollNumber ? ` • রোল: ${note.rollNumber}` : ''}
+                    {note.section || 'বিজ্ঞান বিভাগ'}
+                    {note.rollNumber && note.rollNumber !== 'প্রযোজ্য নয়' && note.rollNumber !== '—' ? ` • রোল: ${note.rollNumber}` : ''}
                   </span>
                 </div>
+
+                {note.schoolName && note.schoolName !== '—' && note.schoolName !== 'দেওয়া হয়নি' && (
+                  <div>
+                    <span className="text-xs text-secondaryText block mb-0.5">স্কুল / শিক্ষাপ্রতিষ্ঠান</span>
+                    <span className="font-semibold text-primaryText">{note.schoolName}</span>
+                  </div>
+                )}
 
                 <div>
                   <span className="text-xs text-secondaryText block mb-0.5">ফাইল সাইজ ও ফরম্যাট</span>

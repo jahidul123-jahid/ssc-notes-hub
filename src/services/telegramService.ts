@@ -360,13 +360,23 @@ export const telegramService = {
         `👉 <a href="${waUrl}"><b>শিক্ষার্থীকে WhatsApp এ মেসেজ দিন</b></a>\n`;
     }
 
+    let extraDetails = '';
+    if (note.section) {
+      extraDetails += `🏷️ <b>বিভাগ:</b> ${escapeHtml(note.section)}\n`;
+    }
+    if (note.schoolName && note.schoolName !== 'দেওয়া হয়নি' && note.schoolName !== '—') {
+      extraDetails += `🏫 <b>বিদ্যালয়:</b> ${escapeHtml(note.schoolName)}\n`;
+    }
+    if (note.rollNumber && note.rollNumber !== 'প্রযোজ্য নয়' && note.rollNumber !== '—') {
+      extraDetails += `🔢 <b>রোল:</b> ${escapeHtml(note.rollNumber)}\n`;
+    }
+
     const html = `📚 <b>নতুন নোট আপলোড হয়েছে!</b>\n\n` +
       `👤 <b>শিক্ষার্থীর নাম:</b> <b>${escapeHtml(note.studentName)}</b>\n` +
       waSection +
-      `🏫 <b>বিদ্যালয়:</b> ${escapeHtml(note.schoolName || 'দেওয়া হয়নি')}\n` +
-      `🏷️ <b>রোল/শাখা:</b> রোল: ${note.rollNumber || '—'}, শাখা: ${note.section || '—'}\n` +
+      extraDetails +
       `📖 <b>বিষয়:</b> <code>${escapeHtml(note.subjectId)}</code> (অধ্যায়: ${escapeHtml(note.chapterId)})\n` +
-      `📝 <b>নোটের নাম:</b> <b>${escapeHtml(note.title)}</b>\n` +
+      `📝 <b>নোটের শিরোনাম:</b> <b>${escapeHtml(note.title)}</b>\n` +
       (note.description ? `💬 <b>বিবরণ:</b> <i>${escapeHtml(note.description)}</i>\n` : '') +
       `📄 <b>ফাইল:</b> ${note.fileType.toUpperCase()} (${note.fileSize || 'Unknown'})\n` +
       `⏰ <b>সময়:</b> ${time}\n\n` +

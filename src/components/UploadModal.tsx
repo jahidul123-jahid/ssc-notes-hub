@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Upload, FileText, CheckCircle2, AlertCircle, Plus, Image as ImageIcon, MessageCircle } from 'lucide-react';
+import { X, Upload, FileText, CheckCircle2, AlertCircle, Plus, Image as ImageIcon, BookOpen } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Subject, Chapter, FileType } from '../types';
 import { dataService } from '../services/dataService';
@@ -24,16 +24,10 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 }) => {
   const { t, isBn } = useLanguage();
   const [studentName, setStudentName] = useState('');
-  const [rollNumber, setRollNumber] = useState('');
-  const [whatsappNumber, setWhatsappNumber] = useState('');
   const [group, setGroup] = useState('বিজ্ঞান');
-  const [sectionName, setSectionName] = useState('');
-  const [schoolName, setSchoolName] = useState('');
   const [subjectId, setSubjectId] = useState(initialSubjectId || '');
   const [chapterId, setChapterId] = useState(initialChapterId || '');
   const [customChapterName, setCustomChapterName] = useState('');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
 
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -85,6 +79,11 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   }, [subjectId, initialChapterId]);
 
   if (!isOpen) return null;
+
+  const selectedChapter = chapters.find(c => c.chapterId === chapterId);
+  const derivedTitle = chapterId === 'other'
+    ? (customChapterName.trim() || 'বিশেষ নোট')
+    : (selectedChapter ? selectedChapter.chapterName : '');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setErrorMessage('');
@@ -178,7 +177,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Guard against duplicate concurrent submissions
     if (loading) return;
     setErrorMessage('');
 
@@ -194,23 +192,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       setErrorMessage('দয়া করে সঠিক পূর্ণ নাম লিখুন।');
       return;
     }
-    if (rollNumber.trim() && !/^[0-9০-৯]+$/.test(rollNumber.trim())) {
-      setErrorMessage('রোল নম্বরে কোনো টেক্সট বা অক্ষর গ্রহণযোগ্য নয়। শুধুমাত্র সংখ্যা (যেমন: ১০১ বা 101) লিখুন।');
-      return;
-    }
-    if (!schoolName.trim()) {
-      setErrorMessage('দয়া করে আপনার স্কুলের নাম লিখুন।');
-      return;
-    }
-    const cleanPhone = whatsappNumber.replace(/[^0-9]/g, '');
-    if (!whatsappNumber.trim()) {
-      setErrorMessage('দয়া করে আপনার হোয়াটসঅ্যাপ নম্বর (WhatsApp Number) লিখুন।');
-      return;
-    }
-    if (cleanPhone.length < 10 || cleanPhone.length > 15) {
-      setErrorMessage('দয়া করে একটি সঠিক মোবাইল বা হোয়াটসঅ্যাপ নম্বর লিখুন (যেমন: 017xxxxxxxx)।');
-      return;
-    }
     if (!subjectId) {
       setErrorMessage('দয়া করে বিষয় নির্বাচন করুন।');
       return;
@@ -223,10 +204,16 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       setErrorMessage('দয়া করে আপনার অধ্যায় বা নোটের নামটি লিখুন।');
       return;
     }
-    if (!title.trim()) {
-      setErrorMessage('নোটের শিরোনাম লিখুন।');
+
+    const autoTitle = chapterId === 'other'
+      ? customChapterName.trim()
+      : (selectedChapter ? selectedChapter.chapterName : 'ক্লাস ১০ হ্যান্ডনোট');
+
+    if (!autoTitle) {
+      setErrorMessage('দয়া করে অধ্যায় নির্বাচন করুন।');
       return;
     }
+
     if (selectedFiles.length === 0) {
       setErrorMessage('দয়া করে নোটের ফাইল (PDF বা এক বা একাধিক ছবি) যুক্ত করুন।');
       return;
@@ -268,10 +255,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({
         }
       }
 
-      const formattedSection = sectionName.trim()
-        ? `${group} (${sectionName.trim()})`
-        : group;
-
       const isImages = selectedFiles.some(f =>
         f.type.startsWith('image/') ||
         ['jpg', 'jpeg', 'png', 'webp'].includes(f.name.split('.').pop()?.toLowerCase() || '')
@@ -285,14 +268,14 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       await dataService.uploadNote(
         {
           studentName: studentName.trim(),
-          rollNumber: rollNumber.trim() || 'প্রযোজ্য নয়',
-          section: formattedSection,
-          schoolName: schoolName.trim(),
-          whatsappNumber: whatsappNumber.trim(),
+          rollNumber: '',
+          section: `${group} বিভাগ`,
+          schoolName: '',
+          whatsappNumber: '',
           subjectId,
           chapterId: finalChapterId,
-          title: title.trim(),
-          description: description.trim() || 'শিক্ষার্থী কর্তৃক সরাসরি আপলোডকৃত ক্লাস ১০ হ্যান্ডনোট।',
+          title: autoTitle,
+          description: '',
           fileType: isImages ? 'pdf' : (selectedFiles[0].name.split('.').pop()?.toLowerCase() as FileType) || 'pdf',
           fileSize: fileSizeStr || '২.০ MB',
           pageCount: isImages ? selectedFiles.length : 1
@@ -337,13 +320,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const handleResetAndClose = () => {
     setIsSuccess(false);
     setStudentName('');
-    setRollNumber('');
-    setWhatsappNumber('');
     setGroup('বিজ্ঞান');
-    setSectionName('');
-    setSchoolName('');
-    setTitle('');
-    setDescription('');
     setCustomChapterName('');
     setSelectedFiles([]);
     setImagePreviews([]);
@@ -416,9 +393,9 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
               {/* Form Content */}
               <div className="bg-white p-4 sm:p-5 rounded-2xl border border-cardBorder space-y-3.5 shadow-2xs">
-                {/* 1. Name & Roll */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="sm:col-span-2">
+                {/* 1. Name & Group (বিভাগ) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
                     <label className="block text-xs font-semibold text-primaryText mb-1.5">
                       আপনার নাম *
                     </label>
@@ -428,48 +405,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                       value={studentName}
                       onChange={(e) => setStudentName(e.target.value)}
                       placeholder="যেমন: রাফসান আহমেদ"
-                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors"
+                      className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors"
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-primaryText mb-1.5">
-                      রোল নম্বর (ঐচ্ছিক)
-                    </label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={rollNumber}
-                      onChange={(e) => {
-                        const onlyDigits = e.target.value.replace(/[^0-9০-৯]/g, '');
-                        setRollNumber(onlyDigits);
-                      }}
-                      placeholder="যেমন: ১০১"
-                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors font-mono"
-                    />
-                  </div>
-                </div>
-
-                {/* 2. WhatsApp & Group */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-primaryText mb-1.5">
-                      হোয়াটসঅ্যাপ নম্বর *
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      value={whatsappNumber}
-                      onChange={(e) => {
-                        const cleanDigits = e.target.value.replace(/[^0-9+]/g, '');
-                        setWhatsappNumber(cleanDigits);
-                      }}
-                      placeholder="017xxxxxxxx"
-                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors font-mono"
-                    />
-                    <span className="text-[11px] text-secondaryText mt-1 block">
-                      নোটে কোনো সমস্যা থাকলে যাতে আপনার সাথে যোগাযোগ করা যায়
-                    </span>
                   </div>
 
                   <div>
@@ -480,7 +417,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                       required
                       value={group}
                       onChange={(e) => setGroup(e.target.value)}
-                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors font-medium"
+                      className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors font-medium"
                     >
                       <option value="বিজ্ঞান">বিজ্ঞান বিভাগ</option>
                       <option value="মানবিক">মানবিক বিভাগ</option>
@@ -489,39 +426,9 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                   </div>
                 </div>
 
-                {/* 3. School & Section */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-primaryText mb-1.5">
-                      স্কুল / শিক্ষাপ্রতিষ্ঠানের নাম *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={schoolName}
-                      onChange={(e) => setSchoolName(e.target.value)}
-                      placeholder="যেমন: নবীনগর সরকারি পাইলট উচ্চ বিদ্যালয়"
-                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-primaryText mb-1.5">
-                      শাখা (ঐচ্ছিক)
-                    </label>
-                    <input
-                      type="text"
-                      value={sectionName}
-                      onChange={(e) => setSectionName(e.target.value)}
-                      placeholder="যেমন: ক / A"
-                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors"
-                    />
-                  </div>
-                </div>
-
                 <div className="pt-2 border-t border-cardBorder/60" />
 
-                {/* 4. Subject & Chapter */}
+                {/* 2. Subject & Chapter */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-primaryText mb-1.5">
@@ -531,7 +438,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                       required
                       value={subjectId}
                       onChange={(e) => setSubjectId(e.target.value)}
-                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors font-medium"
+                      className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors font-medium"
                     >
                       <option value="">বিষয় নির্বাচন করুন</option>
                       {subjects.map((sub) => (
@@ -551,7 +458,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                       value={chapterId}
                       onChange={(e) => setChapterId(e.target.value)}
                       disabled={!subjectId}
-                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors font-medium disabled:opacity-50"
+                      className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors font-medium disabled:opacity-50"
                     >
                       <option value="">
                         {subjectId ? 'অধ্যায় বা পাঠ নির্বাচন করুন' : 'আগে বিষয় নির্বাচন করুন'}
@@ -582,37 +489,22 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-cardBorder/60" />
-
-                {/* 5. Note Title & Description */}
-                <div>
-                  <label className="block text-xs font-semibold text-primaryText mb-1.5">
-                    নোটের শিরোনাম *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="যেমন: গতির সকল গাণিতিক সূত্র ও শর্টকাট"
-                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors font-medium"
-                  />
+                {/* 3. Auto-derived Note Title Display */}
+                <div className="p-3 bg-brand-50/60 rounded-xl border border-brand-100 flex items-start gap-2.5">
+                  <div className="w-6 h-6 rounded-lg bg-brand-100 text-brand-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <BookOpen className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[11px] font-semibold text-brand-700 block">
+                      নোটের শিরোনাম (অধ্যায়ের নাম অনুযায়ী স্বয়ংক্রিয়ভাবে নির্ধারিত হবে):
+                    </span>
+                    <span className="text-sm font-bold text-primaryText block truncate mt-0.5">
+                      {derivedTitle || (subjectId ? 'অধ্যায় নির্বাচন করুন' : 'বিষয় ও অধ্যায় নির্বাচন করুন')}
+                    </span>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-primaryText mb-1.5">
-                    সংক্ষিপ্ত বিবরণ (ঐচ্ছিক)
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="নোট সম্পর্কে সংক্ষেপে কিছু লিখুন..."
-                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors resize-none"
-                  />
-                </div>
-
-                {/* 6. File Upload Dropzone */}
+                {/* 4. File Upload Dropzone */}
                 <div>
                   <label className="block text-xs font-semibold text-primaryText mb-1.5">
                     নোটের ফাইল যুক্ত করুন *
