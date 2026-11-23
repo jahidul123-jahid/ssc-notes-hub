@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Upload, ShieldAlert, ArrowRight, Globe, ChevronRight } from 'lucide-react';
+import { Menu, X, Upload, ShieldAlert, Globe, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -103,36 +103,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
 
   return (
     <>
-      {/* Top Announcement Bar with Safe Area Support */}
-      <div className="bg-brand-700 text-white text-[11px] sm:text-xs font-semibold py-2 px-3 sm:px-4 shadow-sm select-none">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-          <Link
-            to="/about"
-            className="flex items-center gap-1.5 hover:text-amber-200 transition-colors mx-auto sm:mx-0 group text-center sm:text-left min-w-0"
-          >
-            <span className="truncate">
-              {t('top_announcement')}
-            </span>
-            <ArrowRight className="w-3.5 h-3.5 inline shrink-0 group-hover:translate-x-1 transition-transform" />
-          </Link>
-
-          {/* Top Corner Language Quick Switcher */}
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={toggleLanguage}
-              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/15 hover:bg-white/25 text-white text-[10px] font-bold transition-all active:scale-95 border border-white/20 touch-manipulation"
-              title={language === 'en' ? 'বাংলায় পরিবর্তন করুন' : 'Switch to English'}
-              aria-label="Toggle language"
-            >
-              <Globe className="w-3 h-3 text-amber-300" />
-              <span className={language === 'en' ? 'text-amber-300 font-extrabold' : 'opacity-70'}>EN</span>
-              <span className="opacity-40">|</span>
-              <span className={language === 'bn' ? 'text-amber-300 font-extrabold' : 'opacity-70'}>বাং</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
       <header
         ref={headerRef}
         className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-cardBorder shadow-sm transition-all duration-200"
