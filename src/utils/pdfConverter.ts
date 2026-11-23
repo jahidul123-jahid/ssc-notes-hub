@@ -6,12 +6,13 @@ import { jsPDF } from 'jspdf';
  */
 function compressImageToDataUrl(
   img: HTMLImageElement,
-  maxDimension: number = 2048,
-  quality: number = 0.88
+  maxDimension: number = 2560,
+  quality: number = 0.90
 ): { dataUrl: string; width: number; height: number } {
   let width = img.naturalWidth || img.width || 1200;
   let height = img.naturalHeight || img.height || 1600;
 
+  // Only downscale if the image exceeds ultra-high resolution limit (2560px)
   if (width > maxDimension || height > maxDimension) {
     if (width > height) {
       height = Math.round((height * maxDimension) / width);
@@ -71,8 +72,14 @@ function loadImageFile(file: File): Promise<HTMLImageElement> {
 }
 
 /**
- * Converts multiple image Files (PNG, JPG, JPEG, WEBP) to a standardized multi-page PDF.
- * Preserves high text legibility while compressing photo files for seamless uploads.
+ * Converts multiple image Files (PNG, JPG, JPEG, WEBP) to an optimized, dynamic-sized PDF.
+ * Eliminates unnecessary white margins by tailoring each PDF page's dimensions to the
+ * exact aspect ratio of each uploaded image.
+ *
+ * - Zero left/right/top/bottom margins.
+ * - Full page utilization without stretching or distorting image proportions.
+ * - Preserves high text sharpness for handwritten notes, equations, and diagrams.
+ * - Handles portrait, landscape, and mixed orientations seamlessly.
  */
 export async function convertImagesToPdf(
   imageFiles: File[],
@@ -83,10 +90,10 @@ export async function convertImagesToPdf(
     throw new Error('PDF তৈরির জন্য কোনো ছবি পাওয়া যায়নি।');
   }
 
-  // Standard A4 dimensions in points: 595.28 x 841.89
-  const a4Width = 595.28;
-  const a4Height = 841.89;
-  const margin = 14;
+  // Standard reference dimensions in points (pt):
+  // 595.28 pt for standard portrait width, 841.89 pt for landscape width
+  const STANDARD_PORTRAIT_WIDTH = 595.28;
+  const STANDARD_LANDSCAPE_WIDTH = 841.89;
 
   let pdf: jsPDF | null = null;
   const total = imageFiles.length;
@@ -100,35 +107,28 @@ export async function convertImagesToPdf(
       const { dataUrl, width, height } = compressImageToDataUrl(img);
 
       const isLandscape = width > height;
-      const pageWidth = isLandscape ? a4Height : a4Width;
-      const pageHeight = isLandscape ? a4Width : a4Height;
 
-      const maxTargetWidth = pageWidth - margin * 2;
-      const maxTargetHeight = pageHeight - margin * 2;
-
-      const widthRatio = maxTargetWidth / width;
-      const heightRatio = maxTargetHeight / height;
-      const scale = Math.min(widthRatio, heightRatio, 1);
-
-      const finalWidth = width * scale;
-      const finalHeight = height * scale;
-
-      const x = (pageWidth - finalWidth) / 2;
-      const y = (pageHeight - finalHeight) / 2;
+      // Calculate dynamic PDF page dimensions that match the EXACT aspect ratio of the image.
+      // This eliminates all empty left, right, top, and bottom white gutters.
+      const baseWidth = isLandscape ? STANDARD_LANDSCAPE_WIDTH : STANDARD_PORTRAIT_WIDTH;
+      const pageWidth = baseWidth;
+      const pageHeight = Number(((baseWidth * height) / width).toFixed(2));
+      const orientation = isLandscape ? 'landscape' : 'portrait';
 
       if (i === 0) {
         pdf = new jsPDF({
-          orientation: isLandscape ? 'landscape' : 'portrait',
+          orientation,
           unit: 'pt',
-          format: 'a4',
+          format: [pageWidth, pageHeight],
           compress: true
         });
       } else if (pdf) {
-        pdf.addPage('a4', isLandscape ? 'landscape' : 'portrait');
+        pdf.addPage([pageWidth, pageHeight], orientation);
       }
 
       if (pdf) {
-        pdf.addImage(dataUrl, 'JPEG', x, y, finalWidth, finalHeight, undefined, 'FAST');
+        // Place the image at (0, 0) spanning the entire page dimensions (100% full coverage, 0 margins)
+        pdf.addImage(dataUrl, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
       }
     } finally {
       if (img) {
@@ -156,7 +156,7 @@ export async function convertImagesToPdf(
 }
 
 /**
- * Converts a single image File (PNG, JPG, JPEG, WEBP) to a standard PDF File.
+ * Converts a single image File (PNG, JPG, JPEG, WEBP) to an optimized, perfectly-fitted PDF File.
  */
 export async function convertImageToPdf(imageFile: File): Promise<File> {
   return convertImagesToPdf([imageFile]);
