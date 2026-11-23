@@ -83,9 +83,10 @@ export const OwnerControlPage: React.FC = () => {
   const [supabaseSaveStatus, setSupabaseSaveStatus] = useState<'idle' | 'saving' | 'connected' | 'error'>('idle');
   const [copiedSql, setCopiedSql] = useState(false);
 
-  // Telegram Bot configuration state
+  // Telegram Bot configuration state (Dual Dedicated Bots: Visitor Bot & Note Upload Bot)
   const initialTgCreds = getTelegramCredentials();
   const [tgToken, setTgToken] = useState(initialTgCreds.botToken);
+  const [tgUploadToken, setTgUploadToken] = useState(initialTgCreds.uploadBotToken);
   const [tgChatId, setTgChatId] = useState(initialTgCreds.chatId);
   const [tgTestStatus, setTgTestStatus] = useState('');
   const [tgTesting, setTgTesting] = useState(false);
@@ -343,16 +344,16 @@ export const OwnerControlPage: React.FC = () => {
 
   const handleSaveTelegramConfig = (e: React.FormEvent) => {
     e.preventDefault();
-    saveTelegramCredentials(tgToken, tgChatId);
-    setSystemMessage('টেলিগ্রাম বট কনফিগারেশন সংরক্ষিত হয়েছে!');
+    saveTelegramCredentials(tgToken, tgChatId, tgUploadToken);
+    setSystemMessage('উভয় টেলিগ্রাম বটের কনফিগারেশন সংরক্ষিত হয়েছে!');
     setTimeout(() => setSystemMessage(''), 3000);
   };
 
-  const handleTestTelegramAlert = async () => {
+  const handleTestTelegramAlert = async (type: 'visitor' | 'upload' = 'visitor') => {
     setTgTesting(true);
     setTgTestStatus('');
-    saveTelegramCredentials(tgToken, tgChatId);
-    const res = await telegramService.sendTestMessage();
+    saveTelegramCredentials(tgToken, tgChatId, tgUploadToken);
+    const res = await telegramService.sendTestMessage(type);
     setTgTesting(false);
     setTgTestStatus(res.message);
   };
@@ -1342,49 +1343,72 @@ export const OwnerControlPage: React.FC = () => {
             </form>
           </div>
 
-          {/* TELEGRAM BOT NOTIFICATIONS CARD */}
+          {/* TELEGRAM DUAL BOT NOTIFICATIONS CARD */}
           <div className="bg-white p-6 sm:p-8 rounded-3xl border border-cardBorder shadow-soft space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-cardBorder/60">
               <div>
                 <h2 className="text-xl font-bold text-primaryText flex items-center gap-2">
                   <Bell className="w-5 h-5 text-sky-500" />
-                  <span>টেলিগ্রাম ইনস্ট্যান্ট নোটিফিকেশন বট</span>
+                  <span>টেলিগ্রাম পৃথক নোটিফিকেশন বট সিস্টেম (Dual Bots)</span>
                 </h2>
                 <p className="text-xs sm:text-sm text-secondaryText mt-1">
-                  কেউ ওয়েবসাইটে ঢুকলে অথবা নতুন নোট আপলোড করলে সাথে সাথে আপনার টেলিগ্রামে মেসেজ ও বিস্তারিত নোটিফিকেশন চলে আসবে।
+                  আপনার নির্দেশনা অনুযায়ী ভিজিটর এবং নোট আপলোডের জন্য সম্পূর্ণ পৃথক ২টি ডেডিকেটেড বট সক্রিয় রয়েছে।
                 </p>
               </div>
 
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-50 border border-sky-200 text-sky-700 text-xs font-bold">
-                <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
-                <span>বট সক্রিয় (@note_book_note_bot)</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-sky-700 text-xs font-bold">
+                  <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+                  <span>ভিজিটর বট: @note_book_note_bot</span>
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>আপলোড বট: @note_submit_bot</span>
+                </div>
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-sky-50/60 border border-sky-100 space-y-2">
-              <h4 className="text-xs font-bold text-sky-900 flex items-center gap-1.5">
-                <span>💡 টেলিগ্রাম সতর্কতা পেতে শেষ ১টি ধাপ:</span>
-              </h4>
-              <p className="text-xs text-sky-800 leading-relaxed">
-                টেলিগ্রাম সিকিউরিটির নিয়মানুযায়ী, যেকোনো নতুন বট মেসেজ পাঠানো শুরু করার আগে আপনার একবার বটটিতে গিয়ে <b>START</b> চাপতে হয়। 
-                আপনার টেলিগ্রামে যান এবং সার্চ বক্সে লিখুন: <b className="font-mono bg-white px-2 py-0.5 rounded border border-sky-200">@note_book_note_bot</b> অথবা{' '}
-                <a 
-                  href="https://t.me/note_book_note_bot" 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="font-bold underline text-sky-700 hover:text-sky-900"
-                >
-                  t.me/note_book_note_bot
-                </a>{' '}
-                লিংকে গিয়ে <b>START</b> চাপুন।
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-2xl bg-sky-50/60 border border-sky-100 space-y-1.5">
+                <h4 className="text-xs font-bold text-sky-900 flex items-center gap-1.5">
+                  <span>🌐 ১. ভিজিটর নোটিফিকেশন বট</span>
+                </h4>
+                <p className="text-xs text-sky-800 leading-relaxed">
+                  কেউ ওয়েবসাইটে ঢুকলে শুধুমাত্র এই বটের মধ্যে ভিজিটরের ডিভাইস, আইপি ও লোকেশন এলার্ট আসবে। বট লিঙ্ক:{' '}
+                  <a 
+                    href="https://t.me/note_book_note_bot" 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="font-bold underline text-sky-700 hover:text-sky-900"
+                  >
+                    @note_book_note_bot
+                  </a>
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-100 space-y-1.5">
+                <h4 className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
+                  <span>📚 ২. নোট আপলোড অ্যালার্ট বট</span>
+                </h4>
+                <p className="text-xs text-emerald-800 leading-relaxed">
+                  কোনো শিক্ষার্থী নোট আপলোড করলে শুধুমাত্র এই বটে মেসেজ যাবে। মেসেজ পেতে একবার বটে গিয়ে START চাপুন:{' '}
+                  <a 
+                    href="https://t.me/note_submit_bot" 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="font-bold underline text-emerald-700 hover:text-emerald-900"
+                  >
+                    @note_submit_bot
+                  </a>
+                </p>
+              </div>
             </div>
 
             <form onSubmit={handleSaveTelegramConfig} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-primaryText mb-1.5">
-                    Telegram Bot Token
+                    ভিজিটর বট টোকেন (Visitor Bot Token)
                   </label>
                   <input
                     type="text"
@@ -1395,13 +1419,30 @@ export const OwnerControlPage: React.FC = () => {
                     className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder bg-slate-50 focus:bg-white focus:outline-none focus:border-sky-500 font-mono"
                   />
                   <span className="text-[11px] text-secondaryText mt-1 block">
-                    BotFather থেকে প্রাপ্ত বট এপিআই টোকেন
+                    ভিজিটর অ্যালার্ট (@note_book_note_bot)
                   </span>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-primaryText mb-1.5">
-                    Your Telegram Chat ID
+                    নোট আপলোড বট টোকেন (Upload Bot Token)
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={tgUploadToken}
+                    onChange={(e) => setTgUploadToken(e.target.value)}
+                    placeholder="9259492359:AAEZe..."
+                    className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder bg-slate-50 focus:bg-white focus:outline-none focus:border-emerald-500 font-mono"
+                  />
+                  <span className="text-[11px] text-secondaryText mt-1 block">
+                    নোট আপলোড অ্যালার্ট (@note_submit_bot)
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-primaryText mb-1.5">
+                    আপনার Telegram Chat ID
                   </label>
                   <input
                     type="text"
@@ -1412,7 +1453,7 @@ export const OwnerControlPage: React.FC = () => {
                     className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder bg-slate-50 focus:bg-white focus:outline-none focus:border-sky-500 font-mono"
                   />
                   <span className="text-[11px] text-secondaryText mt-1 block">
-                    আপনার ব্যক্তিগত টেলিগ্রাম আইডি (যেখানে নোটিফিকেশন আসবে)
+                    আপনার ব্যক্তিগত টেলিগ্রাম আইডি
                   </span>
                 </div>
               </div>
@@ -1428,15 +1469,27 @@ export const OwnerControlPage: React.FC = () => {
               )}
 
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={handleTestTelegramAlert}
-                  disabled={tgTesting}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-bold transition-colors disabled:opacity-50"
-                >
-                  <Send className="w-4 h-4 text-sky-600" />
-                  <span>{tgTesting ? 'মেসেজ পাঠানো হচ্ছে...' : 'টেলিগ্রাম টেস্ট মেসেজ পাঠান'}</span>
-                </button>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => handleTestTelegramAlert('visitor')}
+                    disabled={tgTesting}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-bold transition-colors disabled:opacity-50"
+                  >
+                    <Send className="w-4 h-4 text-sky-600" />
+                    <span>{tgTesting ? 'পরীক্ষা চলছে...' : 'ভিজিটর বট টেস্ট করুন'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleTestTelegramAlert('upload')}
+                    disabled={tgTesting}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-bold transition-colors disabled:opacity-50"
+                  >
+                    <Send className="w-4 h-4 text-emerald-600" />
+                    <span>{tgTesting ? 'পরীক্ষা চলছে...' : 'আপলোড বট টেস্ট করুন'}</span>
+                  </button>
+                </div>
 
                 <button
                   type="submit"

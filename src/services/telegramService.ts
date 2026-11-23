@@ -1,50 +1,66 @@
 // ==========================================================
 // SSC Note Box — Telegram Real-time Notification Service
-// Sends rich alerts to Owner (Jahidul) for:
-// 1. New website visitors with comprehensive device & location data
-// 2. Students uploading notes (with download/view link)
-// 3. User reports & system activities
+// Dedicated Dual Bot System:
+// 1. Visitor Alert Bot (@note_book_note_bot) — Notifies on website visits
+// 2. Note Upload Bot (@note_submit_bot) — Notifies on student note uploads
 // ==========================================================
 
-const DEFAULT_TG_BOT_TOKEN = '9085137422:AAEL2cARMm8261zH30awUJHQm_lfmmOdlSY';
+const DEFAULT_TG_BOT_TOKEN = '9085137422:AAEL2cARMm8261zH30awUJHQm_lfmmOdlSY'; // Visitor Bot
+const DEFAULT_TG_UPLOAD_BOT_TOKEN = '9259492359:AAEZeBBh-eLKp4tGPLiaH5Q-KSoNW8GXK_Y'; // Note Upload Bot
 const DEFAULT_TG_CHAT_ID = '5856234447';
 
 export const TG_STORAGE_KEYS = {
-  TOKEN: 'ssc_hub_tg_token',
+  TOKEN: 'ssc_hub_tg_token', // Visitor Bot Token
+  UPLOAD_TOKEN: 'ssc_hub_tg_upload_token', // Note Upload Bot Token
   CHAT_ID: 'ssc_hub_tg_chat_id',
   VISITOR_SESSION: 'ssc_hub_tg_visitor_notified_v2',
   VISIT_COUNTER: 'ssc_hub_visitor_counter_v1'
 };
 
-export function getTelegramCredentials(): { botToken: string; chatId: string } {
+export function getTelegramCredentials(): {
+  botToken: string;
+  uploadBotToken: string;
+  chatId: string;
+} {
   const envToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN || '';
+  const envUploadToken = import.meta.env.VITE_TELEGRAM_UPLOAD_BOT_TOKEN || '';
   const envChatId = import.meta.env.VITE_TELEGRAM_CHAT_ID || '';
 
   const localToken = typeof window !== 'undefined' ? localStorage.getItem(TG_STORAGE_KEYS.TOKEN) || '' : '';
+  const localUploadToken = typeof window !== 'undefined' ? localStorage.getItem(TG_STORAGE_KEYS.UPLOAD_TOKEN) || '' : '';
   const localChatId = typeof window !== 'undefined' ? localStorage.getItem(TG_STORAGE_KEYS.CHAT_ID) || '' : '';
 
   const botToken = localToken.trim() || envToken.trim() || DEFAULT_TG_BOT_TOKEN;
+  const uploadBotToken = localUploadToken.trim() || envUploadToken.trim() || DEFAULT_TG_UPLOAD_BOT_TOKEN;
   const chatId = localChatId.trim() || envChatId.trim() || DEFAULT_TG_CHAT_ID;
 
-  return { botToken, chatId };
+  return { botToken, uploadBotToken, chatId };
 }
 
-export function saveTelegramCredentials(botToken: string, chatId: string): void {
+export function saveTelegramCredentials(botToken: string, chatId: string, uploadBotToken?: string): void {
   if (typeof window !== 'undefined') {
     localStorage.setItem(TG_STORAGE_KEYS.TOKEN, botToken.trim());
     localStorage.setItem(TG_STORAGE_KEYS.CHAT_ID, chatId.trim());
+    if (uploadBotToken !== undefined) {
+      localStorage.setItem(TG_STORAGE_KEYS.UPLOAD_TOKEN, uploadBotToken.trim());
+    }
   }
 }
 
-// Low-level sender via Telegram Bot API
-async function sendTelegramMessage(htmlText: string): Promise<boolean> {
-  const { botToken, chatId } = getTelegramCredentials();
-  if (!botToken || !chatId) {
-    return false;
+// Low-level sender via Telegram Bot API with botType support ('visitor' | 'upload')
+async function sendTelegramMessage(
+  htmlText: string,
+  botType: 'visitor' | 'upload' = 'visitor'
+): Promise<{ ok: boolean; description?: string }> {
+  const { botToken, uploadBotToken, chatId } = getTelegramCredentials();
+  const tokenToUse = botType === 'upload' ? uploadBotToken : botToken;
+
+  if (!tokenToUse || !chatId) {
+    return { ok: false, description: 'টোকেন অথবা চ্যাট আইডি কনফিগার করা নেই' };
   }
 
   try {
-    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    const url = `https://api.telegram.org/bot${tokenToUse}/sendMessage`;
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -58,10 +74,10 @@ async function sendTelegramMessage(htmlText: string): Promise<boolean> {
     });
 
     const data = await res.json();
-    return data.ok === true;
-  } catch (err) {
+    return { ok: data.ok === true, description: data.description };
+  } catch (err: any) {
     console.warn("Telegram notification error:", err);
-    return false;
+    return { ok: false, description: err?.message || 'নেটওয়ার্ক এরর' };
   }
 }
 
@@ -192,24 +208,39 @@ function detectNetwork(): string {
 }
 
 export const telegramService = {
-  // Test bot connectivity
-  async sendTestMessage(): Promise<{ ok: boolean; message: string }> {
+  // Test bot connectivity (visitor or upload bot)
+  async sendTestMessage(botType: 'visitor' | 'upload' = 'visitor'): Promise<{ ok: boolean; message: string }> {
     const time = getFormattedTime();
+    const botName = botType === 'upload' ? 'নোট আপলোড বট (@note_submit_bot)' : 'ভিজিটর ট্র্যাকিং বট (@note_book_note_bot)';
     const html = `✅ <b>SSC Note Box — টেস্ট নোটিফিকেশন</b>\n\n` +
-      `জাহিদুল ইসলাম, আপনার টেলিগ্রাম বট সফলভাবে কানেক্ট হয়েছে!\n` +
+      `জাহিদুল ইসলাম, আপনার ${botName} সফলভাবে কানেক্ট হয়েছে!\n` +
       `⏰ <b>সময়:</b> ${time}\n` +
       `🌐 <b>স্ট্যাটাস:</b> সক্রিয় (Active)`;
 
-    const ok = await sendTelegramMessage(html);
+    const res = await sendTelegramMessage(html, botType);
+    if (res.ok) {
+      return {
+        ok: true,
+        message: `সফলভাবে ${botName}-এ টেস্ট মেসেজ পাঠানো হয়েছে!`
+      };
+    }
+
+    if (res.description?.includes('chat not found')) {
+      const botLink = botType === 'upload' ? 'https://t.me/note_submit_bot' : 'https://t.me/note_book_note_bot';
+      const botUser = botType === 'upload' ? '@note_submit_bot' : '@note_book_note_bot';
+      return {
+        ok: false,
+        message: `মেসেজ পাঠানো যায়নি কারণ টেলিগ্রামে এই বটটি এখনো শুরু করা হয়নি। দয়া করে Telegram-এ যান: ${botUser} (${botLink}) এবং START চাপুন।`
+      };
+    }
+
     return {
-      ok,
-      message: ok 
-        ? "সফলভাবে টেলিগ্রামে মেসেজ পাঠানো হয়েছে!" 
-        : "মেসেজ পাঠানো যায়নি। নিশ্চিত করুন আপনি Telegram-এ বটটিতে গিয়ে /start চাপ দিয়েছেন।"
+      ok: false,
+      message: `মেসেজ পাঠানো যায়নি: ${res.description || 'টোকেন বা সংযোগ চেক করুন'}`
     };
   },
 
-  // 1. Rich visitor notification matching the exact requested layout
+  // 1. Rich visitor notification — sends ONLY to the Visitor Alert Bot (@note_book_note_bot)
   async notifyVisitor(): Promise<void> {
     if (typeof window === 'undefined') return;
 
@@ -296,10 +327,10 @@ export const telegramService = {
       `🌍 <b>Timezone:</b> ${timezone}\n` +
       `🔁 <b>Visits:</b> ${visitCount}`;
 
-    sendTelegramMessage(html);
+    sendTelegramMessage(html, 'visitor');
   },
 
-  // 2. Notify Owner when a student uploads a note
+  // 2. Notify Owner when a student uploads a note — sends ONLY to Note Upload Bot (@note_submit_bot)
   async notifyNoteUpload(note: {
     title: string;
     studentName: string;
@@ -341,7 +372,7 @@ export const telegramService = {
       `⏰ <b>সময়:</b> ${time}\n\n` +
       `🔗 <a href="${note.fileURL}"><b>নোটের ফাইল দেখুন / ডাউনলোড করুন</b></a>`;
 
-    sendTelegramMessage(html);
+    sendTelegramMessage(html, 'upload');
   },
 
   // 3. Notify Owner when someone submits a report
@@ -361,7 +392,7 @@ export const telegramService = {
       (report.reporterName ? `👤 <b>রিপোর্টার:</b> ${escapeHtml(report.reporterName)} (${escapeHtml(report.reporterContact || '')})\n` : '') +
       `⏰ <b>সময়:</b> ${time}`;
 
-    sendTelegramMessage(html);
+    sendTelegramMessage(html, 'upload');
   },
 
   // 4. Notify Owner when Owner panel is accessed
@@ -374,7 +405,7 @@ export const telegramService = {
       `📱 <b>ডিভাইস:</b> ${device}\n` +
       `⏰ <b>সময়:</b> ${time}`;
 
-    sendTelegramMessage(html);
+    sendTelegramMessage(html, 'upload');
   }
 };
 
