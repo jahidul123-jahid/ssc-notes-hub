@@ -126,7 +126,7 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({
   });
 
   const generalNotes = subjectNotes.filter(
-    n => !n.chapterId || n.chapterId === 'bgs-general' || n.chapterId === 'general' || !chapters.some(c => c.chapterId === n.chapterId)
+    n => subject.subjectId === 'bgs' && (n.chapterId === 'bgs-general' || n.chapterId === 'general')
   );
 
   return (
