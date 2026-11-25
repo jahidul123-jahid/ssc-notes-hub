@@ -80,7 +80,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
 
   const handleAdminClick = () => {
     setIsOpen(false);
-    navigate('/owner-control');
+    navigate('/jahidul-secret-panel-2026?key=786');
   };
 
   const navLinks = [
@@ -161,16 +161,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
                 <span>{t('nav_upload')}</span>
               </button>
 
-              {/* Owner Admin Access Button - ONLY visible to logged-in Owner */}
+              {/* Owner Admin Access Button - ONLY visible to logged-in Owner on their trusted device */}
               {isOwner && (
                 <button
                   type="button"
                   onClick={handleAdminClick}
-                  className="p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer shadow-sm hover:scale-105 active:scale-95 bg-purple-100/90 text-brand-700 border-brand-300 ring-2 ring-brand-400/20 touch-manipulation"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border transition-all min-h-[44px] cursor-pointer shadow-soft hover:scale-105 active:scale-95 bg-purple-100/90 hover:bg-purple-200 text-brand-700 border-brand-300 ring-2 ring-brand-400/20 font-bold text-xs touch-manipulation"
                   title="মালিক / অ্যাডমিন ড্যাশবোর্ড"
                   aria-label="Owner Control Panel"
                 >
-                  <ShieldAlert className="w-5 h-5" />
+                  <ShieldAlert className="w-4 h-4 text-brand-600" />
+                  <span>এডমিন প্যানেল</span>
                 </button>
               )}
             </div>
@@ -188,16 +189,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
                 <span>{language === 'en' ? 'EN' : 'বাং'}</span>
               </button>
 
-              {/* Mobile Admin Panel Quick Shield Button - ONLY visible to logged-in Owner */}
+              {/* Mobile Admin Panel Quick Button - ONLY visible to logged-in Owner */}
               {isOwner && (
                 <button
                   type="button"
                   onClick={handleAdminClick}
-                  className="w-10 h-10 flex items-center justify-center rounded-xl border transition-all active:scale-95 cursor-pointer bg-purple-100 text-brand-700 border-brand-300 touch-manipulation"
+                  className="h-10 px-2.5 flex items-center justify-center gap-1 text-xs font-bold rounded-xl border transition-all active:scale-95 cursor-pointer bg-purple-100 hover:bg-purple-200 text-brand-700 border-brand-300 touch-manipulation shadow-xs"
                   title="মালিক / অ্যাডমিন ড্যাশবোর্ড"
                   aria-label="Owner Control Panel"
                 >
-                  <ShieldAlert className="w-5 h-5 shrink-0" />
+                  <ShieldAlert className="w-3.5 h-3.5 shrink-0 text-brand-600" />
+                  <span className="text-[11px] font-extrabold">এডমিন</span>
                 </button>
               )}
 
