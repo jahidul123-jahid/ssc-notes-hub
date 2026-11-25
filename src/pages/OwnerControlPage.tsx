@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { dataService } from '../services/dataService';
 import { dataEvents } from '../services/dataEvents';
@@ -56,6 +56,19 @@ import {
 
 export const OwnerControlPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Stealth Camouflage: If key is not present and gate not unlocked, show disguised 404 page
+  const secretKeyParam = searchParams.get('key') || searchParams.get('access') || searchParams.get('pass');
+  const [isSecretUnlocked, setIsSecretUnlocked] = useState<boolean>(() => {
+    return (
+      secretKeyParam === '786' ||
+      secretKeyParam === 'jahidul' ||
+      sessionStorage.getItem('ssc_vault_gate_unlocked') === 'true'
+    );
+  });
+  const [camouflageClicks, setCamouflageClicks] = useState<number>(0);
+
   const {
     isOwner,
     ownerName,
@@ -472,6 +485,57 @@ export const OwnerControlPage: React.FC = () => {
       loadDashboardData();
     }
   };
+
+  const handleCamouflageClick = () => {
+    const nextCount = camouflageClicks + 1;
+    setCamouflageClicks(nextCount);
+    if (nextCount >= 3) {
+      setCamouflageClicks(0);
+      const code = window.prompt('মালিকের সিক্রেট অ্যাক্সেস কোড লিখুন:');
+      if (code === '786' || code === 'admin123' || code === 'jahidul') {
+        sessionStorage.setItem('ssc_vault_gate_unlocked', 'true');
+        setIsSecretUnlocked(true);
+      } else if (code) {
+        alert('ভুল সিক্রেট কোড!');
+      }
+    }
+  };
+
+  // ================= 0. CAMOUFLAGE / DISGUISED 404 VIEW FOR UNAUTHORIZED VISITORS =================
+  if (!isOwner && !isSecretUnlocked) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center px-4 py-16 text-center">
+        <div className="max-w-md w-full bg-white p-8 sm:p-10 rounded-3xl border border-cardBorder shadow-soft space-y-5">
+          <div className="w-16 h-16 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mx-auto shadow-soft">
+            <BookOpen className="w-8 h-8" />
+          </div>
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={handleCamouflageClick}
+              className="text-4xl font-black text-brand-600 cursor-default select-none transition-colors focus:outline-none"
+            >
+              404
+            </button>
+            <h2 className="text-xl font-bold text-primaryText">পৃষ্ঠাটি খুঁজে পাওয়া যায়নি</h2>
+          </div>
+          <p className="text-xs sm:text-sm text-secondaryText leading-relaxed">
+            আপনি যে পেজটি খুঁজছেন তা স্থানান্তরিত হয়েছে অথবা মুছে ফেলা হয়েছে।
+          </p>
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-500 to-violetAccent text-white font-bold px-6 py-2.5 rounded-xl shadow-soft text-sm cursor-pointer"
+            >
+              <Home className="w-4 h-4" />
+              <span>মূল পাতায় ফিরে যান</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ================= 1. UNAUTHENTICATED / OWNER LOGIN VIEW =================
   if (!isOwner) {
