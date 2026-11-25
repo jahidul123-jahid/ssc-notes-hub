@@ -32,14 +32,15 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Storage keys
-const SESSION_KEY = 'ssc_hub_secure_admin_session_v2';
+const SESSION_KEY = 'ssc_hub_secure_admin_session_persistent_v1';
 const RATE_LIMIT_KEY = 'ssc_hub_admin_rate_limit_v2';
 const PENDING_2FA_KEY = 'ssc_hub_pending_2fa_v2';
 const TOTP_SECRET_KEY = 'ssc_hub_totp_secret_v1';
 const TOTP_ENABLED_KEY = 'ssc_hub_totp_enabled_v1';
+const VAULT_GATE_KEY = 'ssc_vault_gate_unlocked';
 
-// Inactivity timeout: 20 minutes (in ms)
-const INACTIVITY_TIMEOUT_MS = 20 * 60 * 1000;
+// Persistent Device Session: 365 days (1 year duration)
+const PERSISTENT_SESSION_DURATION_MS = 365 * 24 * 60 * 60 * 1000;
 // Maximum failed attempts before lockout
 const MAX_FAILED_ATTEMPTS = 5;
 // Lockout duration: 15 minutes (in ms)
@@ -101,10 +102,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify({ attempts, lockUntil }));
   }, []);
 
-  // Validate active session on mount & enforce 20-minute sliding inactivity expiration
+  // Validate active session on mount & enforce persistent device login (365 days)
   const validateSession = useCallback(() => {
     try {
-      const raw = sessionStorage.getItem(SESSION_KEY);
+      const raw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
       if (!raw) {
         setIsOwner(false);
         setLoading(false);
@@ -114,8 +115,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const session: AdminSession = JSON.parse(raw);
       const now = Date.now();
 
-      // Check if session timed out due to inactivity
-      if (now - session.lastActive > INACTIVITY_TIMEOUT_MS || now > session.expiresAt) {
+      // Check if 1-year session expired
+      if (now > session.expiresAt) {
+        localStorage.removeItem(SESSION_KEY);
         sessionStorage.removeItem(SESSION_KEY);
         setIsOwner(false);
         setLoading(false);
@@ -124,9 +126,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       // Update sliding activity timestamp
       session.lastActive = now;
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
       setIsOwner(true);
     } catch {
+      localStorage.removeItem(SESSION_KEY);
       sessionStorage.removeItem(SESSION_KEY);
       setIsOwner(false);
     } finally {
@@ -139,12 +142,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     validateSession();
 
     const handleUserActivity = () => {
-      const raw = sessionStorage.getItem(SESSION_KEY);
+      const raw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
       if (raw) {
         try {
           const session: AdminSession = JSON.parse(raw);
           session.lastActive = Date.now();
-          sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+          localStorage.setItem(SESSION_KEY, JSON.stringify(session));
         } catch {
           // ignore
         }
@@ -155,8 +158,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     window.addEventListener('keydown', handleUserActivity);
     window.addEventListener('click', handleUserActivity);
 
-    // Periodic check every 30 seconds for auto logout
-    const interval = setInterval(validateSession, 30000);
+    // Periodic check every minute
+    const interval = setInterval(validateSession, 60000);
 
     return () => {
       window.removeEventListener('mousemove', handleUserActivity);
@@ -194,8 +197,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // ignore
       }
     }
+    localStorage.removeItem(SESSION_KEY);
     sessionStorage.removeItem(SESSION_KEY);
     sessionStorage.removeItem(PENDING_2FA_KEY);
+    localStorage.removeItem(VAULT_GATE_KEY);
+    sessionStorage.removeItem(VAULT_GATE_KEY);
     setIsOwner(false);
   }, []);
 
@@ -353,13 +359,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       token,
       loginTime: now,
       lastActive: now,
-      expiresAt: now + (24 * 60 * 60 * 1000)
+      expiresAt: now + PERSISTENT_SESSION_DURATION_MS
     };
 
+    // Store in both localStorage (permanent on device) and sessionStorage
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    localStorage.setItem(VAULT_GATE_KEY, 'true');
     setIsOwner(true);
 
-    telegramService.notifyAdminAccess(`✅ সফল এডমিন লগইন: ${normalizedEmail}`).catch(() => {});
+    telegramService.notifyAdminAccess(`✅ সফল এডমিন লগইন (ডিভাইস পারসিস্টেন্ট সেশন সক্রিয়): ${normalizedEmail}`).catch(() => {});
 
     return { success: true };
   };
@@ -379,10 +388,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         token,
         loginTime: now,
         lastActive: now,
-        expiresAt: now + (24 * 60 * 60 * 1000)
+        expiresAt: now + PERSISTENT_SESSION_DURATION_MS
       };
 
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      localStorage.setItem(VAULT_GATE_KEY, 'true');
       setIsOwner(true);
       telegramService.notifyAdminAccess(`✅ সফল এডমিন লগইন (মাস্টার ব্যাকআপ পিন ব্যবহার করে): ${OWNER_CONFIG.email}`).catch(() => {});
       return { success: true };
@@ -427,10 +438,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         token,
         loginTime: now,
         lastActive: now,
-        expiresAt: now + (24 * 60 * 60 * 1000)
+        expiresAt: now + PERSISTENT_SESSION_DURATION_MS
       };
 
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      localStorage.setItem(VAULT_GATE_KEY, 'true');
       setIsOwner(true);
 
       // Send successful login security alert to Owner's Telegram

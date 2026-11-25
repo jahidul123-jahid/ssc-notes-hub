@@ -64,6 +64,7 @@ export const OwnerControlPage: React.FC = () => {
     return (
       secretKeyParam === '786' ||
       secretKeyParam === 'jahidul' ||
+      localStorage.getItem('ssc_vault_gate_unlocked') === 'true' ||
       sessionStorage.getItem('ssc_vault_gate_unlocked') === 'true'
     );
   });
@@ -493,6 +494,7 @@ export const OwnerControlPage: React.FC = () => {
       setCamouflageClicks(0);
       const code = window.prompt('মালিকের সিক্রেট অ্যাক্সেস কোড লিখুন:');
       if (code === '786' || code === 'admin123' || code === 'jahidul') {
+        localStorage.setItem('ssc_vault_gate_unlocked', 'true');
         sessionStorage.setItem('ssc_vault_gate_unlocked', 'true');
         setIsSecretUnlocked(true);
       } else if (code) {
