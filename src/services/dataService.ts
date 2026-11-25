@@ -348,12 +348,29 @@ export const dataService = {
             };
           });
 
-          // Seamlessly merge curated INITIAL_NOTES so all 13 physics chapters are ALWAYS visible & downloadable
+          // Seamlessly merge curated INITIAL_NOTES so all physics and chemistry chapters are ALWAYS visible & downloadable
           const existingIds = new Set(list.map(n => n.noteId));
           for (const initNote of INITIAL_NOTES) {
             if (!existingIds.has(initNote.noteId)) {
               list.push(initNote);
+              existingIds.add(initNote.noteId);
             }
+          }
+
+          // Also include any locally created pending notes so Admin can see them immediately on this device
+          try {
+            const local = localStorage.getItem(STORAGE_KEYS.NOTES);
+            if (local) {
+              const localNotes: Note[] = JSON.parse(local);
+              for (const ln of localNotes) {
+                if (ln.status === 'pending' && !existingIds.has(ln.noteId)) {
+                  list.push(ln);
+                  existingIds.add(ln.noteId);
+                }
+              }
+            }
+          } catch {
+            // ignore
           }
         }
       } catch (err) {
