@@ -194,8 +194,10 @@ const AppContent: React.FC = () => {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
 
-            {/* Private Owner Admin Panel - Hidden Route */}
+            {/* Private Owner Admin Panel - Hidden Routes */}
             <Route path="/owner-control" element={<OwnerControlPage />} />
+            <Route path="/admin" element={<OwnerControlPage />} />
+            <Route path="/owner" element={<OwnerControlPage />} />
 
             {/* 404 Route */}
             <Route path="*" element={<NotFoundPage />} />
