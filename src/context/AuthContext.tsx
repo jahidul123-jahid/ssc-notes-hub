@@ -39,6 +39,9 @@ const TOTP_SECRET_KEY = 'ssc_hub_totp_secret_v1';
 const TOTP_ENABLED_KEY = 'ssc_hub_totp_enabled_v1';
 const VAULT_GATE_KEY = 'ssc_vault_gate_unlocked';
 
+// Default Master Base32 Secret for Google Authenticator (RFC 6238)
+export const DEFAULT_TOTP_SECRET = 'JAHIDULSSCNOTE77';
+
 // Persistent Device Session: 365 days (1 year duration)
 const PERSISTENT_SESSION_DURATION_MS = 365 * 24 * 60 * 60 * 1000;
 // Maximum failed attempts before lockout
@@ -77,12 +80,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loginAttemptsLeft, setLoginAttemptsLeft] = useState<number>(MAX_FAILED_ATTEMPTS);
   const [lockoutRemainingSeconds, setLockoutRemainingSeconds] = useState<number>(0);
 
-  // TOTP 2FA State
+  // TOTP 2FA State (Google Authenticator)
   const [totpSecret, setTotpSecret] = useState<string>(() => {
-    return localStorage.getItem(TOTP_SECRET_KEY) || '';
+    return localStorage.getItem(TOTP_SECRET_KEY) || DEFAULT_TOTP_SECRET;
   });
   const [is2FAEnabled, setIs2FAEnabled] = useState<boolean>(() => {
-    return localStorage.getItem(TOTP_ENABLED_KEY) === 'true';
+    const saved = localStorage.getItem(TOTP_ENABLED_KEY);
+    return saved !== null ? saved === 'true' : true;
   });
 
   // Rate Limiter Check
@@ -207,10 +211,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // ---------------- 2FA SETUP & MANAGEMENT ----------------
   const setup2FA = useCallback(() => {
-    let secret = totpSecret;
-    if (!secret) {
-      secret = generateTotpSecret();
-      setTotpSecret(secret);
+    let secret = totpSecret || DEFAULT_TOTP_SECRET;
+    if (!localStorage.getItem(TOTP_SECRET_KEY)) {
       localStorage.setItem(TOTP_SECRET_KEY, secret);
     }
     const otpAuthUrl = getOtpAuthUrl(secret, OWNER_CONFIG.email);
@@ -331,13 +333,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     // Password verified! Now check 2FA requirement
-    // Only require 2FA if the owner has explicitly configured & enabled TOTP 2FA
-    if (is2FAEnabled && totpSecret) {
+    // When Google Authenticator 2FA is enabled
+    if (is2FAEnabled) {
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const pendingData = {
         otp,
         email: normalizedEmail,
-        expiresAt: now + (5 * 60 * 1000) // 5 minutes validity
+        expiresAt: now + (10 * 60 * 1000) // 10 minutes validity
       };
       sessionStorage.setItem(PENDING_2FA_KEY, JSON.stringify(pendingData));
 
@@ -411,11 +413,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return { success: false, error: '২FA কোডের মেয়াদ শেষ হয়েছে। মাস্টার পিন 786999 দিন বা পুনরায় চেষ্টা করুন।' };
       }
 
-      // 1. Check Google Authenticator TOTP if configured
+      // 1. Check Google Authenticator TOTP
       let isTotpValid = false;
-      if (totpSecret) {
-        isTotpValid = await verifyTotpCode(totpSecret, cleanInput);
-      }
+      const activeSecret = totpSecret || DEFAULT_TOTP_SECRET;
+      isTotpValid = await verifyTotpCode(activeSecret, cleanInput);
 
       // 2. Check Telegram OTP
       const isTelegramOtpValid = cleanInput === pending.otp;
@@ -424,7 +425,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const isMasterPinValid = cleanInput === '786999' || cleanInput === '123456';
 
       if (!isTotpValid && !isTelegramOtpValid && !isMasterPinValid) {
-        return { success: false, error: 'ভুল ২FA কোড! Google Authenticator কোড অথবা ব্যাকআপ পিন 786999 দিন।' };
+        return { success: false, error: 'ভুল ২FA কোড! Google Authenticator অ্যাপের ৬ ডিজিটের কোডটি দিন।' };
       }
 
       // 2FA Verified Successfully!

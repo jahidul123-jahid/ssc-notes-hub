@@ -91,6 +91,7 @@ export const OwnerControlPage: React.FC = () => {
   const [loginError, setLoginError] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
   const [step2FA, setStep2FA] = useState(false);
+  const [showQrHelp, setShowQrHelp] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [verifyingOtp, setVerifyingOtp] = useState(false);
 
@@ -586,15 +587,57 @@ export const OwnerControlPage: React.FC = () => {
           {step2FA ? (
             <form onSubmit={handleVerifyOtp} className="space-y-4">
               <div className="p-3 bg-violet-50 border border-violet-200 rounded-2xl text-violet-900 text-xs text-center space-y-1">
-                <p className="font-extrabold text-sm text-violet-700">🔐 ২FA অথেনটিকেশন যাচাইকরণ</p>
+                <p className="font-extrabold text-sm text-violet-700">🔐 Google Authenticator ২FA যাচাইকরণ</p>
                 <p className="text-[11px] text-violet-600">
-                  আপনার <strong>Google Authenticator</strong> অ্যাপের ৬ ডিজিটের কোড অথবা আপনার <strong>Telegram</strong> বটে পাঠানো কোডটি নিচে দিন:
+                  আপনার <strong>Google Authenticator</strong> অ্যাপের প্রতি ৩০ সেকেন্ডে বদলে যাওয়া ৬ ডিজিটের কোডটি দিন:
                 </p>
               </div>
 
+              {/* QR Code Setup Helper Toggle */}
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowQrHelp(!showQrHelp)}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-xl border border-indigo-200 transition-all cursor-pointer"
+                >
+                  <span>{showQrHelp ? '✕ QR কোড লুকান' : '📱 QR কোড স্ক্যান করুন / সেটআপ কি দেখুন'}</span>
+                </button>
+              </div>
+
+              {showQrHelp && (
+                <div className="p-4 bg-slate-50 border border-cardBorder rounded-2xl text-center space-y-3">
+                  <p className="text-xs font-bold text-primaryText">
+                    মোবাইলের Google Authenticator দিয়ে এই QR কোডটি স্ক্যান করুন:
+                  </p>
+                  <div className="p-3 bg-white rounded-2xl border border-cardBorder shadow-soft inline-block mx-auto">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('otpauth://totp/SSC%20Note%20Box:jahidulislamg.b.123@gmail.com?secret=JAHIDULSSCNOTE77&issuer=SSC%20Note%20Box&algorithm=SHA1&digits=6&period=30')}`}
+                      alt="Google Authenticator QR Code"
+                      className="w-44 h-44 mx-auto"
+                    />
+                  </div>
+                  <div className="bg-white p-2.5 rounded-xl border border-cardBorder text-left space-y-1">
+                    <span className="text-[11px] font-semibold text-secondaryText block">ম্যানুয়াল সেটআপ কি (Secret Key):</span>
+                    <div className="flex items-center justify-between font-mono font-bold text-xs text-brand-700">
+                      <span>JAHIDULSSCNOTE77</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopySecret('JAHIDULSSCNOTE77')}
+                        className="text-[11px] text-brand-600 hover:underline cursor-pointer font-sans"
+                      >
+                        {copiedSecret ? 'কপি হয়েছে!' : 'কপি করুন'}
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-secondaryText leading-relaxed">
+                    অ্যাপে যোগ করার পর যে ৬ ডিজিটের কোডটি আসবে তা নিচে দিন।
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-bold text-primaryText mb-1 text-center">
-                  ৬ ডিজিটের ২FA কোড লিখুন
+                  ৬ ডিজিটের অথেনটিকেশন কোড লিখুন
                 </label>
                 <input
                   type="text"
