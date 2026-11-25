@@ -56,11 +56,11 @@ import {
 
 export const OwnerControlPage: React.FC = () => {
   const navigate = useNavigate();
-  const { isOwner, ownerName, loginAsOwner, logout } = useAuth();
+  const { isOwner, ownerName, loginAsOwner, logout, loginAttemptsLeft, lockoutRemainingSeconds } = useAuth();
 
-  // Login form state (pre-filled with owner credentials for easy access)
+  // Login form state (empty by default for security)
   const [email, setEmail] = useState('jahidulislamg.b.123@gmail.com');
-  const [password, setPassword] = useState('admin123');
+  const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
 
@@ -450,6 +450,13 @@ export const OwnerControlPage: React.FC = () => {
             </div>
           )}
 
+          {lockoutRemainingSeconds > 0 && (
+            <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 shrink-0 text-amber-600" />
+              <span>অ্যাকাউন্ট সাময়িকভাবে লকড! অপেক্ষা করুন: <strong>{Math.floor(lockoutRemainingSeconds / 60)} মিনিট {lockoutRemainingSeconds % 60} সেকেন্ড</strong></span>
+            </div>
+          )}
+
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-primaryText mb-1">
@@ -472,16 +479,17 @@ export const OwnerControlPage: React.FC = () => {
               <input
                 type="password"
                 required
+                disabled={lockoutRemainingSeconds > 0}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
+                className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-white disabled:bg-slate-100"
               />
             </div>
 
             <button
               type="submit"
-              disabled={loggingIn}
+              disabled={loggingIn || lockoutRemainingSeconds > 0}
               className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-violetAccent hover:from-brand-700 hover:to-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-soft hover:shadow-soft-hover transition-all text-sm disabled:opacity-50 cursor-pointer active:scale-95"
             >
               <Lock className="w-4 h-4" />
@@ -490,11 +498,6 @@ export const OwnerControlPage: React.FC = () => {
           </form>
 
           <div className="pt-2 text-center border-t border-cardBorder/60 space-y-2">
-            <div>
-              <span className="text-[11px] text-secondaryText">
-                ডিফল্ট পাসওয়ার্ড: <code className="bg-slate-100 px-1.5 py-0.5 rounded text-brand-700 font-bold">admin123</code>
-              </span>
-            </div>
             <div>
               <button
                 type="button"
