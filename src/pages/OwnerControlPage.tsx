@@ -56,7 +56,20 @@ import {
 
 export const OwnerControlPage: React.FC = () => {
   const navigate = useNavigate();
-  const { isOwner, ownerName, loginAsOwner, logout, loginAttemptsLeft, lockoutRemainingSeconds, verify2FA } = useAuth();
+  const {
+    isOwner,
+    ownerName,
+    loginAsOwner,
+    logout,
+    loginAttemptsLeft,
+    lockoutRemainingSeconds,
+    verify2FA,
+    totpSecret,
+    is2FAEnabled,
+    setup2FA,
+    enable2FA,
+    disable2FA
+  } = useAuth();
 
   // Login form state (empty by default for security)
   const [email, setEmail] = useState('jahidulislamg.b.123@gmail.com');
@@ -66,6 +79,12 @@ export const OwnerControlPage: React.FC = () => {
   const [step2FA, setStep2FA] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [verifyingOtp, setVerifyingOtp] = useState(false);
+
+  // 2FA TOTP setup state
+  const [totpSetupData, setTotpSetupData] = useState<{ secret: string; otpAuthUrl: string; qrCodeUrl: string } | null>(null);
+  const [totpVerificationInput, setTotpVerificationInput] = useState('');
+  const [totpMessage, setTotpMessage] = useState('');
+  const [copiedSecret, setCopiedSecret] = useState(false);
 
   // Active dashboard tab
   const [activeTab, setActiveTab] = useState<'pending' | 'activeNotes' | 'curriculum' | 'reports' | 'system'>('pending');
@@ -214,6 +233,30 @@ export const OwnerControlPage: React.FC = () => {
     if (!res.success) {
       setLoginError(res.error || 'ভুল ২FA কোড।');
     }
+  };
+
+  const handleStartTotpSetup = () => {
+    const data = setup2FA();
+    setTotpSetupData(data);
+    setTotpMessage('');
+  };
+
+  const handleConfirmTotp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const res = await enable2FA(totpVerificationInput);
+    if (res.success) {
+      setTotpMessage('✅ Google Authenticator ২FA সফলভাবে সক্রিয় হয়েছে!');
+      setTotpSetupData(null);
+      setTotpVerificationInput('');
+    } else {
+      setTotpMessage(res.error || 'ভুল কোড!');
+    }
+  };
+
+  const handleCopySecret = (secretText: string) => {
+    navigator.clipboard.writeText(secretText);
+    setCopiedSecret(true);
+    setTimeout(() => setCopiedSecret(false), 2500);
   };
 
   // Note actions
@@ -477,9 +520,9 @@ export const OwnerControlPage: React.FC = () => {
           {step2FA ? (
             <form onSubmit={handleVerifyOtp} className="space-y-4">
               <div className="p-3 bg-violet-50 border border-violet-200 rounded-2xl text-violet-900 text-xs text-center space-y-1">
-                <p className="font-extrabold text-sm text-violet-700">🔐 ২FA ভেরিফিকেশন কোড পাঠানো হয়েছে</p>
+                <p className="font-extrabold text-sm text-violet-700">🔐 ২FA অথেনটিকেশন যাচাইকরণ</p>
                 <p className="text-[11px] text-violet-600">
-                  আপনার ব্যক্তিগত <strong>Telegram</strong> বটে ৬ ডিজিটের একটি ওয়ান-টাইম কোড পাঠানো হয়েছে। কোডটি নিচে দিন:
+                  আপনার <strong>Google Authenticator</strong> অ্যাপের ৬ ডিজিটের কোড অথবা আপনার <strong>Telegram</strong> বটে পাঠানো কোডটি নিচে দিন:
                 </p>
               </div>
 
@@ -1351,9 +1394,147 @@ export const OwnerControlPage: React.FC = () => {
         </div>
       )}
 
-      {/* ================= TAB 5: SUPABASE & FIREBASE CLOUD SETUP ================= */}
+      {/* ================= TAB 5: SYSTEM & SECURITY SETUP ================= */}
       {activeTab === 'system' && (
         <div className="space-y-8">
+          {/* GOOGLE AUTHENTICATOR (2FA) SETUP CARD */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-indigo-200 shadow-soft space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-cardBorder">
+              <div>
+                <h2 className="text-xl font-bold text-primaryText flex items-center gap-2">
+                  <ShieldAlert className="w-5 h-5 text-indigo-600" />
+                  <span>গুগল অথেন্টিকেটর (Google Authenticator 2FA) সিকিউরিটি</span>
+                </h2>
+                <p className="text-xs sm:text-sm text-secondaryText mt-1">
+                  আপনার মোবাইল ফোনের Google Authenticator বা Microsoft Authenticator অ্যাপ দিয়ে স্ক্যান করে অতিরিক্ত নিরাপত্তা স্তর চালু করুন।
+                </p>
+              </div>
+
+              <div className="shrink-0">
+                {is2FAEnabled ? (
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>২FA সম্পূর্ণ সক্রিয় (Protected)</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    <span>২FA নিষ্ক্রিয়</span>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {totpMessage && (
+              <div className="p-3.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                {totpMessage}
+              </div>
+            )}
+
+            {!is2FAEnabled && !totpSetupData && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100">
+                <div className="text-xs text-indigo-900">
+                  <p className="font-bold">Google Authenticator ২FA সেটআপ করতে চান?</p>
+                  <p className="text-secondaryText text-[11px] mt-0.5">লগইন করার সময় পাসওয়ার্ডের পর মোবাইল অ্যাপের ৬ ডিজিটের কোড প্রয়োজন হবে।</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleStartTotpSetup}
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-soft transition-all shrink-0 cursor-pointer"
+                >
+                  QR কোড দেখুন ও সেটআপ শুরু করুন
+                </button>
+              </div>
+            )}
+
+            {totpSetupData && !is2FAEnabled && (
+              <div className="p-6 rounded-2xl bg-slate-50 border border-cardBorder space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                  <div className="flex flex-col items-center text-center space-y-3">
+                    <div className="p-3 bg-white rounded-2xl border border-cardBorder shadow-soft">
+                      <img
+                        src={totpSetupData.qrCodeUrl}
+                        alt="Google Authenticator QR Code"
+                        className="w-48 h-48 rounded-xl object-contain"
+                      />
+                    </div>
+                    <span className="text-xs text-secondaryText font-medium">
+                      📱 আপনার মোবাইলের <strong>Google Authenticator</strong> অ্যাপ দিয়ে এই QR কোডটি স্ক্যান করুন
+                    </span>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-primaryText mb-1">
+                        ম্যানুয়াল এন্ট্রি সিক্রেট কি (Secret Key):
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 px-3 py-2 text-xs font-mono bg-white rounded-xl border border-cardBorder font-bold text-brand-700 break-all select-all">
+                          {totpSetupData.secret}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={() => handleCopySecret(totpSetupData.secret)}
+                          className="px-3 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-xs font-bold text-primaryText flex items-center gap-1 shrink-0 cursor-pointer"
+                        >
+                          {copiedSecret ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                          <span>{copiedSecret ? 'কপি হয়েছে' : 'কপি'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleConfirmTotp} className="space-y-3">
+                      <label className="block text-xs font-bold text-primaryText">
+                        অ্যাপের ৬ ডিজিটের কোডটি লিখে কনফার্ম করুন:
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          required
+                          maxLength={6}
+                          value={totpVerificationInput}
+                          onChange={(e) => setTotpVerificationInput(e.target.value.replace(/[^0-9]/g, ''))}
+                          placeholder="123456"
+                          className="flex-1 px-3.5 py-2 text-sm font-mono tracking-widest text-center font-bold rounded-xl border border-cardBorder bg-white focus:outline-none focus:border-indigo-500"
+                        />
+                        <button
+                          type="submit"
+                          disabled={totpVerificationInput.length < 6}
+                          className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs disabled:opacity-50 cursor-pointer"
+                        >
+                          সক্রিয় করুন
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {is2FAEnabled && (
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200">
+                <div className="text-xs text-emerald-900">
+                  <p className="font-extrabold flex items-center gap-1.5">
+                    <CheckCircle className="w-4 h-4 text-emerald-600" />
+                    <span>Google Authenticator আপনার অ্যাকাউন্টে সক্রিয় আছে</span>
+                  </p>
+                  <p className="text-[11px] text-emerald-700 mt-0.5">লগইন করার সময় আপনার ফোনের ৬ ডিজিটের কোড প্রয়োজন হবে।</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm('আপনি কি নিশ্চিত যে ২FA নিষ্ক্রিয় করতে চান?')) {
+                      disable2FA();
+                      setTotpMessage('২FA নিষ্ক্রিয় করা হয়েছে।');
+                    }
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs cursor-pointer"
+                >
+                  নিষ্ক্রিয় করুন
+                </button>
+              </div>
+            )}
+          </div>
           {/* CLOUDFLARE (D1 & R2) INTEGRATION CARD */}
           <div className="bg-white p-6 sm:p-8 rounded-3xl border border-orange-200 shadow-soft space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-cardBorder">
