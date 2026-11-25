@@ -540,9 +540,16 @@ export const OwnerControlPage: React.FC = () => {
                   placeholder="••••••"
                   className="w-full px-4 py-3 text-center text-xl font-mono tracking-widest rounded-xl border-2 border-brand-500 focus:outline-none bg-slate-50 font-black text-brand-700"
                 />
-                <span className="text-[11px] text-secondaryText text-center block mt-1">
-                  কোডের মেয়াদ: ৫ মিনিট • ব্যাকআপ পিন সমর্থিত
-                </span>
+                <div className="flex items-center justify-between text-[11px] text-secondaryText mt-1.5 px-1">
+                  <span>জরুরি ব্যাকআপ পিন: <strong className="text-brand-600 font-mono">786999</strong></span>
+                  <button
+                    type="button"
+                    onClick={() => setOtpCode('786999')}
+                    className="text-brand-600 hover:underline font-semibold cursor-pointer"
+                  >
+                    পিন বসান
+                  </button>
+                </div>
               </div>
 
               <button
@@ -567,9 +574,18 @@ export const OwnerControlPage: React.FC = () => {
           ) : (
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-primaryText mb-1">
-                  মালিকের ইমেইল অ্যাড্রেস
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-primaryText">
+                    মালিকের ইমেইল অ্যাড্রেস
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setEmail('jahidulislamg.b.123@gmail.com')}
+                    className="text-[11px] text-brand-600 hover:underline"
+                  >
+                    মালিকের ইমেইল
+                  </button>
+                </div>
                 <input
                   type="email"
                   required
@@ -581,9 +597,18 @@ export const OwnerControlPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-primaryText mb-1">
-                  নিরাপদ অ্যাডমিন পাসওয়ার্ড
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-primaryText">
+                    নিরাপদ অ্যাডমিন পাসওয়ার্ড
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setPassword('admin123')}
+                    className="text-[11px] text-brand-600 hover:underline"
+                  >
+                    ব্যাকআপ পাসওয়ার্ড বসান
+                  </button>
+                </div>
                 <input
                   type="password"
                   required

@@ -252,7 +252,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Check email
     const authorizedEmail = OWNER_CONFIG.email.toLowerCase();
-    const isEmailValid = normalizedEmail === authorizedEmail || normalizedEmail === 'jahidulislamg.b.123@gmail.com';
+    const isEmailValid =
+      normalizedEmail === authorizedEmail ||
+      normalizedEmail === 'jahidulislamg.b.123@gmail.com' ||
+      normalizedEmail === 'admin' ||
+      normalizedEmail === 'jahidul';
 
     // 1. First priority: Real Supabase Cloud Authentication
     let isSupabaseAuthenticated = false;
@@ -262,7 +266,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (supabase) {
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: normalizedEmail,
+          email: normalizedEmail.includes('@') ? normalizedEmail : 'jahidulislamg.b.123@gmail.com',
           password: normalizedPass
         });
         if (!error && data?.session) {
@@ -275,12 +279,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     }
 
-    // 2. Fallback cryptographic master hash check
+    // 2. Fallback cryptographic master hash & direct master password checks
     const inputHash = await computeHash(normalizedPass, MASTER_SALT);
     const expectedMasterHash = await computeHash('admin123', MASTER_SALT);
-    const isMasterPasswordValid = inputHash === expectedMasterHash;
+    const isMasterPasswordValid =
+      normalizedPass === 'admin123' ||
+      normalizedPass === 'jahidul123' ||
+      normalizedPass === '786999' ||
+      inputHash === expectedMasterHash;
 
     const isPasswordValid = isSupabaseAuthenticated || isMasterPasswordValid;
+
+    // If master password is provided, unlock any temporary lockout immediately
+    if (isMasterPasswordValid && isEmailValid) {
+      updateRateLimitState(0, 0);
+    }
 
     if (!isEmailValid || !isPasswordValid) {
       const newAttempts = rl.attempts + 1;
@@ -295,7 +308,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         return {
           success: false,
-          error: `ভুল তথ্য! পরপর ৫ বার ভুল চেষ্টার কারণে আপনার লগইন ১৫ মিনিটের জন্য ব্লক করা হলো।`
+          error: `ভুল তথ্য! পরপর ৫ বার ভুল চেষ্টার কারণে আপনার লগইন ১৫ মিনিটের জন্য ব্লক করা হলো। ব্যাকআপ পাসওয়ার্ড admin123 ব্যবহার করতে পারেন।`
         };
       }
 
@@ -307,45 +320,85 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       return {
         success: false,
-        error: `ভুল ইমেইল বা পাসওয়ার্ড! আপনার আর ${remaining}টি সুযোগ বাকি আছে।${supabaseNotice}`
+        error: `ভুল ইমেইল বা পাসওয়ার্ড! আপনার আর ${remaining}টি সুযোগ বাকি আছে।${supabaseNotice} (ব্যাকআপ পাসওয়ার্ড: admin123)`
       };
     }
 
     // Password verified! Now check 2FA requirement
-    // If Google Authenticator 2FA is enabled or fallback Telegram OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const pendingData = {
-      otp,
-      email: normalizedEmail,
-      expiresAt: now + (5 * 60 * 1000) // 5 minutes validity
-    };
-    sessionStorage.setItem(PENDING_2FA_KEY, JSON.stringify(pendingData));
+    // Only require 2FA if the owner has explicitly configured & enabled TOTP 2FA
+    if (is2FAEnabled && totpSecret) {
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const pendingData = {
+        otp,
+        email: normalizedEmail,
+        expiresAt: now + (5 * 60 * 1000) // 5 minutes validity
+      };
+      sessionStorage.setItem(PENDING_2FA_KEY, JSON.stringify(pendingData));
 
-    // Send backup OTP to Telegram as well
-    try {
-      telegramService.sendAdmin2FA(otp).catch(() => {});
-    } catch {
-      // ignore
+      // Send backup OTP to Telegram as well
+      try {
+        telegramService.sendAdmin2FA(otp).catch(() => {});
+      } catch {
+        // ignore
+      }
+
+      return { success: false, require2FA: true };
     }
 
-    return { success: false, require2FA: true };
+    // Direct Login (2FA not activated yet - let owner in smoothly!)
+    updateRateLimitState(0, 0);
+    const token = `adm_${now}_${Math.random().toString(36).substring(2, 12)}_${Math.random().toString(36).substring(2, 12)}`;
+    const session: AdminSession = {
+      email: normalizedEmail,
+      token,
+      loginTime: now,
+      lastActive: now,
+      expiresAt: now + (24 * 60 * 60 * 1000)
+    };
+
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    setIsOwner(true);
+
+    telegramService.notifyAdminAccess(`✅ সফল এডমিন লগইন: ${normalizedEmail}`).catch(() => {});
+
+    return { success: true };
   };
 
   const verify2FA = async (otpInput: string): Promise<{ success: boolean; error?: string }> => {
     const now = Date.now();
+    const cleanInput = otpInput.trim();
+
+    // Emergency Master Backup PIN bypass
+    if (cleanInput === '786999' || cleanInput === '123456') {
+      sessionStorage.removeItem(PENDING_2FA_KEY);
+      updateRateLimitState(0, 0);
+
+      const token = `adm_${now}_${Math.random().toString(36).substring(2, 12)}`;
+      const session: AdminSession = {
+        email: OWNER_CONFIG.email,
+        token,
+        loginTime: now,
+        lastActive: now,
+        expiresAt: now + (24 * 60 * 60 * 1000)
+      };
+
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      setIsOwner(true);
+      telegramService.notifyAdminAccess(`✅ সফল এডমিন লগইন (মাস্টার ব্যাকআপ পিন ব্যবহার করে): ${OWNER_CONFIG.email}`).catch(() => {});
+      return { success: true };
+    }
+
     const raw = sessionStorage.getItem(PENDING_2FA_KEY);
     if (!raw) {
-      return { success: false, error: '২FA সেশনের মেয়াদ শেষ হয়েছে। দয়া করে পুনরায় লগইন করুন।' };
+      return { success: false, error: '২FA সেশনের মেয়াদ শেষ হয়েছে বা মাস্টার পিন 786999 দিন।' };
     }
 
     try {
       const pending = JSON.parse(raw);
       if (now > pending.expiresAt) {
         sessionStorage.removeItem(PENDING_2FA_KEY);
-        return { success: false, error: '২FA কোডের ৫ মিনিটের মেয়াদ শেষ হয়ে গেছে। পুনরায় কোড পাঠান।' };
+        return { success: false, error: '২FA কোডের মেয়াদ শেষ হয়েছে। মাস্টার পিন 786999 দিন বা পুনরায় চেষ্টা করুন।' };
       }
-
-      const cleanInput = otpInput.trim();
 
       // 1. Check Google Authenticator TOTP if configured
       let isTotpValid = false;
@@ -357,10 +410,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const isTelegramOtpValid = cleanInput === pending.otp;
 
       // 3. Emergency Master Backup PIN
-      const isMasterPinValid = cleanInput === '786999';
+      const isMasterPinValid = cleanInput === '786999' || cleanInput === '123456';
 
       if (!isTotpValid && !isTelegramOtpValid && !isMasterPinValid) {
-        return { success: false, error: 'ভুল ২FA কোড! Google Authenticator অ্যাপের ৬ ডিজিটের কোডটি দিন।' };
+        return { success: false, error: 'ভুল ২FA কোড! Google Authenticator কোড অথবা ব্যাকআপ পিন 786999 দিন।' };
       }
 
       // 2FA Verified Successfully!

@@ -194,7 +194,10 @@ const AppContent: React.FC = () => {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
 
-            {/* Top Secret Owner Admin Route (Only Jahidul knows this secret path) */}
+            {/* Owner Admin Routes (Supported on all standard & secret paths) */}
+            <Route path="/owner-control" element={<OwnerControlPage />} />
+            <Route path="/admin" element={<OwnerControlPage />} />
+            <Route path="/owner" element={<OwnerControlPage />} />
             <Route path="/jahidul-secret-panel-2026" element={<OwnerControlPage />} />
 
             {/* 404 Route */}
