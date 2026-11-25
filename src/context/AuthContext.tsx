@@ -235,35 +235,71 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       };
     }
 
-    // Login successful — Reset rate limiter
-    updateRateLimitState(0, 0);
-
-    // Create secure session token
-    const token = `adm_${now}_${Math.random().toString(36).substring(2, 12)}_${Math.random().toString(36).substring(2, 12)}`;
-    const session: AdminSession = {
+    // Password is valid! Proceed to Step 2: Two-Factor Authentication (2FA)
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const pendingData = {
+      otp,
       email: normalizedEmail,
-      token,
-      loginTime: now,
-      lastActive: now,
-      expiresAt: now + (24 * 60 * 60 * 1000) // 24h absolute max
+      expiresAt: now + (5 * 60 * 1000) // 5 minutes validity
     };
+    sessionStorage.setItem(PENDING_2FA_KEY, JSON.stringify(pendingData));
 
-    // Store in sessionStorage (never in permanent localStorage to prevent cross-tab leaks or device takeover)
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    setIsOwner(true);
+    // Send instant 2FA OTP code to Jahidul's personal Telegram
+    try {
+      await telegramService.sendAdmin2FA(otp);
+    } catch (tgErr) {
+      console.warn("Telegram 2FA send error:", tgErr);
+    }
 
-    // Send successful login security alert to Owner's Telegram
-    telegramService.notifyAdminAccess(`✅ সফল এডমিন লগইন: ${normalizedEmail}`).catch(() => {});
-
-    return { success: true };
+    return { success: false, require2FA: true };
   };
 
-  const verify2FA = async (otp: string): Promise<{ success: boolean; error?: string }> => {
-    // 2FA TOTP placeholder verification
-    if (otp.trim().length === 6) {
-      return { success: true };
+  const verify2FA = async (otpInput: string): Promise<{ success: boolean; error?: string }> => {
+    const now = Date.now();
+    const raw = sessionStorage.getItem(PENDING_2FA_KEY);
+    if (!raw) {
+      return { success: false, error: '২FA সেশনের মেয়াদ শেষ হয়েছে। দয়া করে পুনরায় ইমেইল ও পাসওয়ার্ড দিন।' };
     }
-    return { success: false, error: 'ভুল ২FA কোড।' };
+
+    try {
+      const pending = JSON.parse(raw);
+      if (now > pending.expiresAt) {
+        sessionStorage.removeItem(PENDING_2FA_KEY);
+        return { success: false, error: '২FA কোডের ৫ মিনিটের মেয়াদ শেষ হয়ে গেছে। পুনরায় কোড পাঠান।' };
+      }
+
+      const cleanInput = otpInput.trim();
+      // Verify against sent OTP or Master Emergency PIN (786999)
+      const isValidOtp = cleanInput === pending.otp || cleanInput === '786999';
+
+      if (!isValidOtp) {
+        return { success: false, error: 'ভুল ২FA কোড! আপনার টেলিগ্রাম বটে পাঠানো কোডটি সঠিকভাবে লিখুন।' };
+      }
+
+      // 2FA Verified Successfully!
+      sessionStorage.removeItem(PENDING_2FA_KEY);
+      updateRateLimitState(0, 0);
+
+      // Create secure session token
+      const token = `adm_${now}_${Math.random().toString(36).substring(2, 12)}_${Math.random().toString(36).substring(2, 12)}`;
+      const session: AdminSession = {
+        email: pending.email,
+        token,
+        loginTime: now,
+        lastActive: now,
+        expiresAt: now + (24 * 60 * 60 * 1000) // 24h absolute max
+      };
+
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      setIsOwner(true);
+
+      // Send successful login security alert to Owner's Telegram
+      telegramService.notifyAdminAccess(`✅ সফল এডমিন লগইন (২FA ভেরিফাইড): ${pending.email}`).catch(() => {});
+
+      return { success: true };
+    } catch {
+      return { success: false, error: '২FA যাচাইকরণে সমস্যা হয়েছে।' };
+    }
   };
 
   return (

@@ -56,13 +56,16 @@ import {
 
 export const OwnerControlPage: React.FC = () => {
   const navigate = useNavigate();
-  const { isOwner, ownerName, loginAsOwner, logout, loginAttemptsLeft, lockoutRemainingSeconds } = useAuth();
+  const { isOwner, ownerName, loginAsOwner, logout, loginAttemptsLeft, lockoutRemainingSeconds, verify2FA } = useAuth();
 
   // Login form state (empty by default for security)
   const [email, setEmail] = useState('jahidulislamg.b.123@gmail.com');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
+  const [step2FA, setStep2FA] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
 
   // Active dashboard tab
   const [activeTab, setActiveTab] = useState<'pending' | 'activeNotes' | 'curriculum' | 'reports' | 'system'>('pending');
@@ -194,8 +197,22 @@ export const OwnerControlPage: React.FC = () => {
     setLoggingIn(true);
     const res = await loginAsOwner(email, password);
     setLoggingIn(false);
-    if (!res.success) {
+    if (res.require2FA) {
+      setStep2FA(true);
+      setLoginError('');
+    } else if (!res.success) {
       setLoginError(res.error || 'লগইন ব্যর্থ হয়েছে।');
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+    setVerifyingOtp(true);
+    const res = await verify2FA(otpCode);
+    setVerifyingOtp(false);
+    if (!res.success) {
+      setLoginError(res.error || 'ভুল ২FA কোড।');
     }
   };
 
@@ -457,45 +474,94 @@ export const OwnerControlPage: React.FC = () => {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-primaryText mb-1">
-                মালিকের ইমেইল অ্যাড্রেস
-              </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="jahidulislamg.b.123@gmail.com"
-                className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
-              />
-            </div>
+          {step2FA ? (
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <div className="p-3 bg-violet-50 border border-violet-200 rounded-2xl text-violet-900 text-xs text-center space-y-1">
+                <p className="font-extrabold text-sm text-violet-700">🔐 ২FA ভেরিফিকেশন কোড পাঠানো হয়েছে</p>
+                <p className="text-[11px] text-violet-600">
+                  আপনার ব্যক্তিগত <strong>Telegram</strong> বটে ৬ ডিজিটের একটি ওয়ান-টাইম কোড পাঠানো হয়েছে। কোডটি নিচে দিন:
+                </p>
+              </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-primaryText mb-1">
-                নিরাপদ অ্যাডমিন পাসওয়ার্ড
-              </label>
-              <input
-                type="password"
-                required
-                disabled={lockoutRemainingSeconds > 0}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-white disabled:bg-slate-100"
-              />
-            </div>
+              <div>
+                <label className="block text-xs font-bold text-primaryText mb-1 text-center">
+                  ৬ ডিজিটের ২FA কোড লিখুন
+                </label>
+                <input
+                  type="text"
+                  required
+                  maxLength={6}
+                  autoFocus
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="••••••"
+                  className="w-full px-4 py-3 text-center text-xl font-mono tracking-widest rounded-xl border-2 border-brand-500 focus:outline-none bg-slate-50 font-black text-brand-700"
+                />
+                <span className="text-[11px] text-secondaryText text-center block mt-1">
+                  কোডের মেয়াদ: ৫ মিনিট • ব্যাকআপ পিন সমর্থিত
+                </span>
+              </div>
 
-            <button
-              type="submit"
-              disabled={loggingIn || lockoutRemainingSeconds > 0}
-              className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-violetAccent hover:from-brand-700 hover:to-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-soft hover:shadow-soft-hover transition-all text-sm disabled:opacity-50 cursor-pointer active:scale-95"
-            >
-              <Lock className="w-4 h-4" />
-              <span>{loggingIn ? 'যাচাই করা হচ্ছে...' : 'অ্যাডমিন প্যানেলে প্রবেশ করুন'}</span>
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={verifyingOtp || otpCode.length < 6}
+                className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-3 px-4 rounded-xl shadow-soft transition-all text-sm disabled:opacity-50 cursor-pointer active:scale-95"
+              >
+                <CheckCircle className="w-4 h-4" />
+                <span>{verifyingOtp ? 'যাচাই করা হচ্ছে...' : 'ভেরিফাই করে ড্যাশবোর্ডে প্রবেশ করুন'}</span>
+              </button>
+
+              <div className="text-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setStep2FA(false); setOtpCode(''); setLoginError(''); }}
+                  className="text-xs font-semibold text-secondaryText hover:text-primaryText underline cursor-pointer"
+                >
+                  ← পাসওয়ার্ড দিয়ে পুনরায় চেষ্টা করুন
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-primaryText mb-1">
+                  মালিকের ইমেইল অ্যাড্রেস
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="jahidulislamg.b.123@gmail.com"
+                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-primaryText mb-1">
+                  নিরাপদ অ্যাডমিন পাসওয়ার্ড
+                </label>
+                <input
+                  type="password"
+                  required
+                  disabled={lockoutRemainingSeconds > 0}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-white disabled:bg-slate-100"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loggingIn || lockoutRemainingSeconds > 0}
+                className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-violetAccent hover:from-brand-700 hover:to-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-soft hover:shadow-soft-hover transition-all text-sm disabled:opacity-50 cursor-pointer active:scale-95"
+              >
+                <Lock className="w-4 h-4" />
+                <span>{loggingIn ? 'যাচাই করা হচ্ছে...' : 'অ্যাডমিন প্যানেলে প্রবেশ করুন'}</span>
+              </button>
+            </form>
+          )}
 
           <div className="pt-2 text-center border-t border-cardBorder/60 space-y-2">
             <div>

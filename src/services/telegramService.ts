@@ -416,6 +416,19 @@ export const telegramService = {
       `⏰ <b>সময়:</b> ${time}`;
 
     sendTelegramMessage(html, 'upload');
+  },
+
+  // 5. Send 2FA One-Time Passcode (OTP) directly to Jahidul's Telegram
+  async sendAdmin2FA(otp: string): Promise<{ ok: boolean; description?: string }> {
+    const time = getFormattedTime();
+    const html = `🔐 <b>SSC Note Box — অ্যাডমিন ২FA ওয়ান-টাইম লগইন কোড</b>\n\n` +
+      `আপনার গোপন সিকিউরিটি কোড:\n` +
+      `👉 <b><code>${otp}</code></b> 👈\n\n` +
+      `⏱️ <b>মেয়াদ:</b> ৫ মিনিট\n` +
+      `⏰ <b>সময়:</b> ${time}\n\n` +
+      `⚠️ <i>সতর্কতা: এই কোডটি কাউকে বলবেন না। আপনি লগইন চেষ্টা না করে থাকলে সাথে সাথে সতর্ক হোন।</i>`;
+
+    return sendTelegramMessage(html, 'upload');
   }
 };
 
