@@ -40,22 +40,29 @@ function initializeLocalStorage() {
       localStorage.setItem(STORAGE_KEYS.CHAPTERS, JSON.stringify(INITIAL_CHAPTERS));
     }
 
-    if (!localStorage.getItem(STORAGE_KEYS.NOTES)) {
+    const existing = localStorage.getItem(STORAGE_KEYS.NOTES);
+    if (!existing) {
       localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(INITIAL_NOTES));
     } else {
-      // Purge any huge base64 data URLs in localStorage from past failed sessions
-      const existing = localStorage.getItem(STORAGE_KEYS.NOTES);
-      if (existing && existing.includes('data:application/pdf;base64')) {
-        try {
-          const parsed: Note[] = JSON.parse(existing);
+      try {
+        const parsed: Note[] = JSON.parse(existing);
+        const existingIds = new Set(parsed.map(n => n.noteId));
+        let changed = false;
+        for (const initNote of INITIAL_NOTES) {
+          if (!existingIds.has(initNote.noteId)) {
+            parsed.push(initNote);
+            changed = true;
+          }
+        }
+        if (changed || existing.includes('data:application/pdf;base64')) {
           const sanitized = parsed.map(n => ({
             ...n,
             fileURL: n.fileURL?.startsWith('data:') ? '' : n.fileURL
           }));
-          localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(sanitized.slice(0, 50)));
-        } catch {
-          // ignore parsing error
+          localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(sanitized));
         }
+      } catch {
+        localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(INITIAL_NOTES));
       }
     }
     if (!localStorage.getItem(STORAGE_KEYS.REPORTS)) {
@@ -301,14 +308,22 @@ export const dataService = {
           sbQuery = sbQuery.eq('chapter_id', chapterId);
         }
         const { data, error } = await sbQuery.order('created_at', { ascending: false });
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           list = data.map((row: any) => {
             let title = row.title;
-            // Rename previously uploaded physics notes to have 'হ্যান্ড মেকিং'
+            // Rename previously uploaded physics & chemistry notes to have 'হ্যান্ড মেকিং' if they don't have it
             if (
               (row.subject_id === 'physics' || row.subject_id === 'sub-physics-2027') &&
               !title.includes('সফট কপি') &&
               !title.includes('হ্যান্ড মেকিং')
+            ) {
+              title = `${title} - হ্যান্ড মেকিং`;
+            }
+            if (
+              (row.subject_id === 'chemistry' || row.subject_id === 'sub-chemistry-2027') &&
+              !title.includes('সফট কপি') &&
+              !title.includes('হ্যান্ড মেকিং') &&
+              !title.includes('হ্যান্ডনোট')
             ) {
               title = `${title} - হ্যান্ড মেকিং`;
             }

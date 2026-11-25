@@ -34,3 +34,13 @@ cloudflare-backend/node_modules
 cloudflare-backend/.wrangler
 backup/supabase_live_export/storage_files
 
+# Local generated PDFs & scratch build tools
+*.pdf
+chapter*.html
+generate_chapter*.cjs
+build_chapters_*.cjs
+source_notes/
+public/notes/
+test*
+
+
