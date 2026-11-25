@@ -85,8 +85,8 @@ export const OwnerControlPage: React.FC = () => {
     disable2FA
   } = useAuth();
 
-  // Login form state (empty by default for security)
-  const [email, setEmail] = useState('jahidulislamg.b.123@gmail.com');
+  // Login form state (completely empty by default for privacy & security)
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
@@ -681,50 +681,34 @@ export const OwnerControlPage: React.FC = () => {
               </div>
             </form>
           ) : (
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-semibold text-primaryText">
-                    মালিকের ইমেইল অ্যাড্রেস
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setEmail('jahidulislamg.b.123@gmail.com')}
-                    className="text-[11px] text-brand-600 hover:underline"
-                  >
-                    মালিকের ইমেইল
-                  </button>
-                </div>
+                <label className="block text-xs font-semibold text-primaryText mb-1">
+                  মালিকের ইমেইল অ্যাড্রেস
+                </label>
                 <input
                   type="email"
                   required
+                  autoComplete="off"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="jahidulislamg.b.123@gmail.com"
+                  placeholder="আপনার অনুমোদিত ইমেইল দিন"
                   className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-white"
                 />
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-semibold text-primaryText">
-                    নিরাপদ অ্যাডমিন পাসওয়ার্ড
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setPassword('admin123')}
-                    className="text-[11px] text-brand-600 hover:underline"
-                  >
-                    ব্যাকআপ পাসওয়ার্ড বসান
-                  </button>
-                </div>
+                <label className="block text-xs font-semibold text-primaryText mb-1">
+                  নিরাপদ অ্যাডমিন পাসওয়ার্ড
+                </label>
                 <input
                   type="password"
                   required
+                  autoComplete="new-password"
                   disabled={lockoutRemainingSeconds > 0}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
+                  placeholder="পাসওয়ার্ড লিখুন"
                   className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-white disabled:bg-slate-100"
                 />
               </div>
