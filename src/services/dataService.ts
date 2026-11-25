@@ -2,6 +2,7 @@ import { Subject, Chapter, Note, Report, WebsiteStats, NoteStatus, FileType } fr
 import { INITIAL_SUBJECTS, INITIAL_CHAPTERS, INITIAL_NOTES } from '../data/initialData';
 import { db, storage, isFirebaseConfigured } from '../firebase/config';
 import { getSupabaseClient } from '../supabase/config';
+import { cloudflareService, isCloudflareConfigured } from './cloudflareService';
 import { telegramService } from './telegramService';
 import { googleSheetService } from './googleSheetService';
 import { convertImageToPdf, convertImagesToPdf } from '../utils/pdfConverter';
@@ -273,6 +274,18 @@ export const dataService = {
   async getNotes(status: NoteStatus | 'all' = 'approved', subjectId?: string, chapterId?: string): Promise<Note[]> {
     let list: Note[] = [];
 
+    // 0. Top priority: Cloudflare D1 Database (when configured)
+    if (isCloudflareConfigured()) {
+      try {
+        const cfList = await cloudflareService.getNotes(status, subjectId, chapterId);
+        if (cfList && cfList.length > 0) {
+          return cfList;
+        }
+      } catch (err) {
+        console.warn("Cloudflare getNotes fallback:", err);
+      }
+    }
+
     // 1. First priority: Live Supabase Cloud Database (everyone sees uploads from any device)
     const supabase = getSupabaseClient();
     if (supabase) {
@@ -347,6 +360,14 @@ export const dataService = {
   },
 
   async getNoteById(noteId: string): Promise<Note | null> {
+    if (isCloudflareConfigured()) {
+      try {
+        const cfNote = await cloudflareService.getNoteById(noteId);
+        if (cfNote) return cfNote;
+      } catch (err) {
+        console.warn("Cloudflare getNoteById fallback:", err);
+      }
+    }
     const all = await this.getNotes('all');
     return all.find(n => n.noteId === noteId) || null;
   },
@@ -416,6 +437,20 @@ export const dataService = {
       .slice(0, 35);
     const storagePath = `${noteId}_${cleanBase || 'document'}.${fileExt}`;
 
+    // 0. Cloudflare R2 Storage (Primary when Cloudflare is configured)
+    if (isCloudflareConfigured()) {
+      try {
+        if (onProgress) onProgress(35);
+        const r2Res = await cloudflareService.uploadFile(actualFile, storagePath);
+        if (r2Res?.fileUrl) {
+          fileURL = r2Res.fileUrl;
+          if (onProgress) onProgress(85);
+        }
+      } catch (cfErr) {
+        console.warn("Cloudflare R2 upload fallback:", cfErr);
+      }
+    }
+
     // 1. Live Supabase Storage (Upload real binary file with auto-retry and progress)
     const supabase = getSupabaseClient();
     if (supabase) {
@@ -475,6 +510,15 @@ export const dataService = {
       status: 'pending',
       downloadCount: 0
     };
+
+    // Save to Cloudflare D1 database (Primary when Cloudflare is configured)
+    if (isCloudflareConfigured()) {
+      try {
+        await cloudflareService.createNote(newNote);
+      } catch (cfInsertErr) {
+        console.warn("Cloudflare D1 note insert fallback:", cfInsertErr);
+      }
+    }
 
     // Save to Supabase 'notes' table with pending status for Admin moderation
     if (supabase) {
@@ -562,6 +606,14 @@ export const dataService = {
   },
 
   async updateNoteStatus(noteId: string, status: NoteStatus): Promise<void> {
+    if (isCloudflareConfigured()) {
+      try {
+        await cloudflareService.updateNoteStatus(noteId, status);
+      } catch (err) {
+        console.warn("Cloudflare updateNoteStatus fallback:", err);
+      }
+    }
+
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
@@ -589,6 +641,14 @@ export const dataService = {
   },
 
   async updateNote(noteId: string, updates: Partial<Note>): Promise<void> {
+    if (isCloudflareConfigured()) {
+      try {
+        await cloudflareService.updateNote(noteId, updates);
+      } catch (err) {
+        console.warn("Cloudflare updateNote fallback:", err);
+      }
+    }
+
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
@@ -622,6 +682,14 @@ export const dataService = {
   },
 
   async deleteNote(noteId: string): Promise<void> {
+    if (isCloudflareConfigured()) {
+      try {
+        await cloudflareService.deleteNote(noteId);
+      } catch (err) {
+        console.warn("Cloudflare deleteNote fallback:", err);
+      }
+    }
+
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
@@ -649,6 +717,15 @@ export const dataService = {
   },
 
   async incrementDownload(noteId: string): Promise<number> {
+    if (isCloudflareConfigured()) {
+      try {
+        const cfCount = await cloudflareService.incrementDownload(noteId);
+        if (cfCount) return cfCount;
+      } catch (err) {
+        console.warn("Cloudflare incrementDownload fallback:", err);
+      }
+    }
+
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
@@ -693,6 +770,14 @@ export const dataService = {
       status: 'pending'
     };
 
+    if (isCloudflareConfigured()) {
+      try {
+        await cloudflareService.submitReport(report);
+      } catch (cfErr) {
+        console.warn("Cloudflare submitReport fallback:", cfErr);
+      }
+    }
+
     if (isFirebaseConfigured && db) {
       try {
         await setDoc(doc(db, 'reports', reportId), report);
@@ -717,6 +802,15 @@ export const dataService = {
   },
 
   async getReports(): Promise<Report[]> {
+    if (isCloudflareConfigured()) {
+      try {
+        const cfReports = await cloudflareService.getReports();
+        if (cfReports && cfReports.length > 0) return cfReports;
+      } catch (err) {
+        console.warn("Cloudflare getReports fallback:", err);
+      }
+    }
+
     if (isFirebaseConfigured && db) {
       try {
         const snap = await getDocs(collection(db, 'reports'));
@@ -732,6 +826,14 @@ export const dataService = {
   },
 
   async resolveReport(reportId: string, status: 'resolved' | 'dismissed'): Promise<void> {
+    if (isCloudflareConfigured()) {
+      try {
+        await cloudflareService.resolveReport(reportId, status);
+      } catch (err) {
+        console.warn("Cloudflare resolveReport fallback:", err);
+      }
+    }
+
     if (isFirebaseConfigured && db) {
       try {
         await updateDoc(doc(db, 'reports', reportId), { status });

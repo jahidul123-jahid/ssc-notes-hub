@@ -23,6 +23,11 @@ import {
   saveGoogleSheetWebhookUrl
 } from '../services/googleSheetService';
 import {
+  getCloudflareApiUrl,
+  saveCloudflareApiUrl,
+  isCloudflareConfigured
+} from '../services/cloudflareService';
+import {
   ShieldAlert,
   Lock,
   LogOut,
@@ -75,6 +80,11 @@ export const OwnerControlPage: React.FC = () => {
   const [searchNotesText, setSearchNotesText] = useState('');
   const [copiedRules, setCopiedRules] = useState<'firestore' | 'storage' | null>(null);
   const [systemMessage, setSystemMessage] = useState('');
+
+  // Cloudflare live configuration state
+  const [cfApiUrl, setCfApiUrl] = useState(getCloudflareApiUrl);
+  const [cfTestStatus, setCfTestStatus] = useState<'idle' | 'testing' | 'connected' | 'error'>('idle');
+  const [cfMessage, setCfMessage] = useState('');
 
   // Supabase live configuration state
   const initialSupabaseCreds = getSupabaseCredentials();
@@ -312,6 +322,26 @@ export const OwnerControlPage: React.FC = () => {
     navigator.clipboard.writeText(type === 'firestore' ? FIRESTORE_RULES : STORAGE_RULES);
     setCopiedRules(type);
     setTimeout(() => setCopiedRules(null), 2500);
+  };
+
+  const handleSaveCloudflareConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    saveCloudflareApiUrl(cfApiUrl);
+    setCfTestStatus('testing');
+    try {
+      const res = await fetch(`${cfApiUrl.trim()}/api/health`);
+      if (res.ok) {
+        setCfTestStatus('connected');
+        setCfMessage('ক্লাউডফ্লেয়ার (Cloudflare D1 & R2) ব্যাকএন্ড সফলভাবে সংযুক্ত হয়েছে!');
+      } else {
+        setCfTestStatus('error');
+        setCfMessage('ক্লাউডফ্লেয়ার ব্যাকএন্ড সাড়া দিচ্ছে না (স্ট্যাটাস: ' + res.status + ')');
+      }
+    } catch (err: any) {
+      setCfTestStatus('error');
+      setCfMessage('ত্রুটি: ' + (err.message || 'ক্লাউডফ্লেয়ার ব্যাকএন্ডের সাথে সংযোগ করা যায়নি।'));
+    }
+    setTimeout(() => setCfMessage(''), 5000);
   };
 
   const handleSaveSupabaseConfig = async (e: React.FormEvent) => {
@@ -1255,6 +1285,69 @@ export const OwnerControlPage: React.FC = () => {
       {/* ================= TAB 5: SUPABASE & FIREBASE CLOUD SETUP ================= */}
       {activeTab === 'system' && (
         <div className="space-y-8">
+          {/* CLOUDFLARE (D1 & R2) INTEGRATION CARD */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-orange-200 shadow-soft space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-cardBorder">
+              <div>
+                <h2 className="text-xl font-bold text-primaryText flex items-center gap-2">
+                  <Database className="w-5 h-5 text-orange-600" />
+                  <span>ক্লাউডফ্লেয়ার (Cloudflare D1 & R2) হাই-স্পিড ব্যাকএন্ড</span>
+                </h2>
+                <p className="text-xs sm:text-sm text-secondaryText mt-1">
+                  Cloudflare Workers, D1 Database এবং R2 Object Storage দিয়ে চালিত আল্ট্রা-ফাস্ট ও সিকিউর ব্যাকএন্ড।
+                </p>
+              </div>
+
+              <div className="shrink-0">
+                {cfApiUrl ? (
+                  <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold ${cfTestStatus === 'connected' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-orange-50 text-orange-700 border border-orange-200'}`}>
+                    <span className={`w-2 h-2 rounded-full ${cfTestStatus === 'connected' ? 'bg-emerald-500' : 'bg-orange-500'} animate-pulse`} />
+                    <span>{cfTestStatus === 'connected' ? 'ক্লাউডফ্লেয়ার সংযুক্ত' : 'কনফিগার করা আছে'}</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                    <span className="w-2 h-2 rounded-full bg-slate-400" />
+                    <span>কনফিগার করা নেই</span>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {cfMessage && (
+              <div className={`p-3.5 rounded-xl text-xs font-semibold ${cfTestStatus === 'connected' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
+                {cfMessage}
+              </div>
+            )}
+
+            {/* Cloudflare Configuration Form */}
+            <form onSubmit={handleSaveCloudflareConfig} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-primaryText mb-1.5">
+                  Cloudflare Worker API URL *
+                </label>
+                <div className="flex flex-col sm:flex-row gap-2.5">
+                  <input
+                    type="url"
+                    value={cfApiUrl}
+                    onChange={(e) => setCfApiUrl(e.target.value)}
+                    placeholder="https://ssc-notebox-api.your-name.workers.dev"
+                    className="flex-1 px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder bg-slate-50 focus:bg-white focus:outline-none focus:border-orange-500 font-mono"
+                  />
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>সংরক্ষণ ও সংযোগ পরীক্ষা</span>
+                  </button>
+                </div>
+                <span className="text-[11px] text-secondaryText mt-1.5 block">
+                  Cloudflare Workers এ ডিপ্লয় করা API-এর লিংক প্রদান করুন (যেমন: https://ssc-notebox-api.workers.dev)
+                </span>
+              </div>
+            </form>
+          </div>
+
           {/* SUPABASE LIVE CLOUD INTEGRATION CARD */}
           <div className="bg-white p-6 sm:p-8 rounded-3xl border border-cardBorder shadow-soft space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-cardBorder">

@@ -28,3 +28,9 @@ download_*.cjs
 *.njsproj
 *.sln
 *.sw?
+
+# Cloudflare & Backups
+cloudflare-backend/node_modules
+cloudflare-backend/.wrangler
+backup/supabase_live_export/storage_files
+
