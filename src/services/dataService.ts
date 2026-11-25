@@ -302,25 +302,44 @@ export const dataService = {
         }
         const { data, error } = await sbQuery.order('created_at', { ascending: false });
         if (!error && data && data.length > 0) {
-          list = data.map((row: any) => ({
-            noteId: row.note_id,
-            subjectId: row.subject_id,
-            chapterId: row.chapter_id,
-            title: row.title,
-            description: row.description || '',
-            studentName: row.student_name,
-            rollNumber: row.roll_number || '',
-            section: row.section || '',
-            schoolName: row.school_name || '',
-            whatsappNumber: row.whatsapp_number || row.whatsappNumber || '',
-            fileURL: row.file_url,
-            fileType: row.file_type,
-            fileSize: row.file_size || '',
-            pageCount: row.page_count || 1,
-            downloadCount: row.download_count || 0,
-            status: row.status as NoteStatus,
-            createdAt: row.created_at
-          }));
+          list = data.map((row: any) => {
+            let title = row.title;
+            // Rename previously uploaded physics notes to have 'হ্যান্ড মেকিং'
+            if (
+              (row.subject_id === 'physics' || row.subject_id === 'sub-physics-2027') &&
+              !title.includes('সফট কপি') &&
+              !title.includes('হ্যান্ড মেকিং')
+            ) {
+              title = `${title} - হ্যান্ড মেকিং`;
+            }
+            return {
+              noteId: row.note_id,
+              subjectId: row.subject_id,
+              chapterId: row.chapter_id,
+              title,
+              description: row.description || '',
+              studentName: row.student_name,
+              rollNumber: row.roll_number || '',
+              section: row.section || '',
+              schoolName: row.school_name || '',
+              whatsappNumber: row.whatsapp_number || row.whatsappNumber || '',
+              fileURL: row.file_url,
+              fileType: row.file_type,
+              fileSize: row.file_size || '',
+              pageCount: row.page_count || 1,
+              downloadCount: row.download_count || 0,
+              status: row.status as NoteStatus,
+              createdAt: row.created_at
+            };
+          });
+
+          // Seamlessly merge curated INITIAL_NOTES so all 13 physics chapters are ALWAYS visible & downloadable
+          const existingIds = new Set(list.map(n => n.noteId));
+          for (const initNote of INITIAL_NOTES) {
+            if (!existingIds.has(initNote.noteId)) {
+              list.push(initNote);
+            }
+          }
         }
       } catch (err) {
         console.warn("Supabase getNotes fallback:", err);
@@ -342,7 +361,14 @@ export const dataService = {
     // 3. Fallback: LocalStorage & Default Verified Curriculum notes
     if (list.length === 0) {
       const local = localStorage.getItem(STORAGE_KEYS.NOTES);
-      list = local ? JSON.parse(local) : INITIAL_NOTES;
+      const localNotes: Note[] = local ? JSON.parse(local) : [];
+      const idSet = new Set(localNotes.map(n => n.noteId));
+      for (const initNote of INITIAL_NOTES) {
+        if (!idSet.has(initNote.noteId)) {
+          localNotes.push(initNote);
+        }
+      }
+      list = localNotes;
     }
 
     // Filter out deleted notes
