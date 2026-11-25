@@ -408,8 +408,11 @@ export const dataService = {
       ? actualFile.name.split('.').pop()?.toLowerCase() || 'pdf'
       : actualFileType || 'pdf';
     const rawBase = actualFile.name.substring(0, actualFile.name.lastIndexOf('.')) || actualFile.name;
+    // Supabase Storage only accepts ASCII-safe keys — strip all non-ASCII (Bengali etc.)
     const cleanBase = rawBase
-      .replace(/[^a-zA-Z0-9_\u0980-\u09FF-]/g, '_')
+      .replace(/[^a-zA-Z0-9_-]/g, '_')   // keep only ASCII letters, digits, underscore, hyphen
+      .replace(/_+/g, '_')               // collapse multiple underscores
+      .replace(/^_|_$/g, '')             // trim leading/trailing underscores
       .slice(0, 35);
     const storagePath = `${noteId}_${cleanBase || 'document'}.${fileExt}`;
 
