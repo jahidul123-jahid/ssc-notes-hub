@@ -43,7 +43,7 @@ export const AIAudioPlayer: React.FC = () => {
     <aside
       role="region"
       aria-label="AI Audio Player"
-      className="fixed bottom-3 sm:bottom-6 right-2 sm:right-6 left-2 sm:left-auto z-40 sm:w-96 max-w-full pb-safe animate-slide-up"
+      className="fixed bottom-20 sm:bottom-6 right-2 sm:right-6 left-2 sm:left-auto z-40 sm:w-96 max-w-full pb-safe animate-slide-up"
     >
       <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-brand-200/80 shadow-2xl overflow-hidden transition-all duration-300">
         {/* Top Accent Gradient Bar */}

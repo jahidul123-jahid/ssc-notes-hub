@@ -3610,5 +3610,41 @@ export const INITIAL_NOTES: Note[] = [
     downloadCount: 0,
     status: 'approved',
     createdAt: '2026-11-26T04:10:00.000Z'
+  },
+  {
+    noteId: 'note-bgs-ch05-hardcopy',
+    subjectId: 'bgs',
+    chapterId: 'bgs-chap-05',
+    title: '৫ম অধ্যায়: বাংলাদেশের নদ-নদী ও প্রাকৃতিক সম্পদ — মূল হার্ড কপি (হাতে লেখা)',
+    description: 'বাংলাদেশ ও বিশ্বপরিচয় ৫ম অধ্যায় (বাংলাদেশের নদ-নদী ও প্রাকৃতিক সম্পদ) মূল স্ক্যানকৃত সম্পূর্ণ ১৭ পৃষ্ঠার হাতে লেখা হার্ড কপি নোট।',
+    studentName: 'Jahidul Islam (মালিক)',
+    rollNumber: 'মালিক',
+    section: 'বিজ্ঞান',
+    schoolName: 'SSC Note Box',
+    fileURL: '/notes/bgs_ch05_hard_copy.pdf',
+    fileType: 'pdf',
+    fileSize: '1.8 MB',
+    pageCount: 17,
+    downloadCount: 0,
+    status: 'approved',
+    createdAt: '2026-11-26T04:10:00.000Z'
+  },
+  {
+    noteId: 'note-bgs-ch05-handmaking',
+    subjectId: 'bgs',
+    chapterId: 'bgs-chap-05',
+    title: '৫ম অধ্যায়: বাংলাদেশের নদ-নদী ও প্রাকৃতিক সম্পদ — সফট কপি',
+    description: 'বাংলাদেশ ও বিশ্বপরিচয় ৫ম অধ্যায় (বাংলাদেশের নদ-নদী ও প্রাকৃতিক সম্পদ) নদী মানচিত্র, শাখা-উপনদী ও নির্ভুল টাইপড সম্পূর্ণ সফট কপি নোট।',
+    studentName: 'Jahidul Islam (মালিক)',
+    rollNumber: 'মালিক',
+    section: 'বিজ্ঞান',
+    schoolName: 'SSC Note Box',
+    fileURL: '/notes/bgs_ch05_bangladesher_nodnodi_o_sompod.pdf',
+    fileType: 'pdf',
+    fileSize: '0.8 MB',
+    pageCount: 8,
+    downloadCount: 0,
+    status: 'approved',
+    createdAt: '2026-11-26T04:10:00.000Z'
   }
 ];

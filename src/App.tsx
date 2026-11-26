@@ -5,6 +5,7 @@ import { AudioReaderProvider } from './context/AudioReaderContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
+import { MobileBottomNav } from './components/MobileBottomNav';
 import { ScrollRestorationManager } from './components/ScrollRestorationManager';
 import { AIAudioPlayer } from './components/AIAudioPlayer';
 import { NoteViewerModal } from './components/NoteViewerModal';
@@ -154,7 +155,7 @@ const AppContent: React.FC = () => {
       <Header onOpenUpload={() => handleOpenUpload()} />
 
       {/* Main Page Routing */}
-      <main className="flex-1">
+      <main className="flex-1 pb-20 md:pb-0">
         <Routes>
             <Route
               path="/"
@@ -243,6 +244,9 @@ const AppContent: React.FC = () => {
 
       {/* Global Footer */}
       <Footer />
+
+      {/* Mobile Sticky Bottom Navigation (Appears exclusively on mobile screens) */}
+      <MobileBottomNav />
 
       {/* Floating Global AI Audio Player */}
       <AIAudioPlayer />
