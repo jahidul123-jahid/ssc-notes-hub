@@ -8,6 +8,7 @@ export interface Env {
   ADMIN_PASSWORD?: string;
   SESSION_SECRET?: string;
   PUBLIC_URL?: string;
+  GEMINI_API_KEY?: string;
 }
 
 const app = new Hono<{ Bindings: Env }>();
@@ -374,6 +375,303 @@ app.post('/api/auth/logout', async (c) => {
     }
   }
   return c.json({ success: true, message: 'Logged out successfully' });
+});
+
+// -------------------------------------------------------------
+// ONLINE EXAMINATIONS & QUIZ ENGINE
+// -------------------------------------------------------------
+app.get('/api/exams', async (c) => {
+  const subjectId = c.req.query('subject_id');
+  const examType = c.req.query('exam_type');
+
+  let query = 'SELECT * FROM exams WHERE is_published = 1';
+  const params: any[] = [];
+
+  if (subjectId) {
+    query += ' AND subject_id = ?';
+    params.push(subjectId);
+  }
+  if (examType) {
+    query += ' AND exam_type = ?';
+    params.push(examType);
+  }
+
+  query += ' ORDER BY created_at DESC';
+
+  try {
+    const { results } = await c.env.DB.prepare(query).bind(...params).all();
+    return c.json({ success: true, data: results });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+app.get('/api/exams/:id', async (c) => {
+  const examId = c.req.param('id');
+  const includeAnswers = c.req.query('answers') === 'true';
+
+  try {
+    const exam = await c.env.DB.prepare('SELECT * FROM exams WHERE exam_id = ?').bind(examId).first();
+    if (!exam) {
+      return c.json({ success: false, error: 'Exam not found' }, 404);
+    }
+
+    const { results: qRows } = await c.env.DB.prepare(
+      'SELECT * FROM questions WHERE exam_id = ? ORDER BY created_at ASC'
+    ).bind(examId).all();
+
+    const questions = qRows.map((q: any) => ({
+      questionId: q.question_id,
+      examId: q.exam_id,
+      subjectId: q.subject_id,
+      chapterId: q.chapter_id,
+      questionText: q.question_text,
+      options: JSON.parse(q.options_json || '[]'),
+      correctOption: includeAnswers ? q.correct_option : undefined,
+      explanation: includeAnswers ? q.explanation : undefined,
+      marks: q.marks || 1
+    }));
+
+    return c.json({
+      success: true,
+      data: {
+        ...exam,
+        questions
+      }
+    });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// Server-Side Exam Submission & Verified Grading (Prevents Cheating / Tampering)
+app.post('/api/exams/:id/submit', async (c) => {
+  const examId = c.req.param('id');
+  try {
+    const body = await c.req.json();
+    const studentName = (body.student_name || 'Anonymous Student').trim();
+    const studentRoll = (body.student_roll || '').trim();
+    const userAnswers: Record<string, number> = body.answers || {};
+    const timeTakenSeconds = Number(body.time_taken_seconds) || 0;
+
+    const exam = await c.env.DB.prepare('SELECT * FROM exams WHERE exam_id = ?').bind(examId).first();
+    if (!exam) {
+      return c.json({ success: false, error: 'Exam not found' }, 404);
+    }
+
+    const { results: qRows } = await c.env.DB.prepare(
+      'SELECT * FROM questions WHERE exam_id = ?'
+    ).bind(examId).all();
+
+    let correctCount = 0;
+    let incorrectCount = 0;
+    let unansweredCount = 0;
+    let totalScore = 0;
+    const negativeMark = Number((exam as any).negative_mark) || 0.25;
+
+    const reviewQuestions = qRows.map((q: any) => {
+      const qId = q.question_id;
+      const selected = userAnswers[qId];
+      const correct = Number(q.correct_option);
+      const marks = Number(q.marks) || 1;
+
+      let isCorrect = false;
+      if (selected === undefined || selected === null) {
+        unansweredCount++;
+      } else if (Number(selected) === correct) {
+        correctCount++;
+        totalScore += marks;
+        isCorrect = true;
+      } else {
+        incorrectCount++;
+        totalScore -= negativeMark;
+      }
+
+      return {
+        questionId: qId,
+        questionText: q.question_text,
+        options: JSON.parse(q.options_json || '[]'),
+        selectedOption: selected,
+        correctOption: correct,
+        isCorrect,
+        explanation: q.explanation || ''
+      };
+    });
+
+    const finalScore = Math.max(0, Number(totalScore.toFixed(2)));
+    const totalMarks = Number((exam as any).total_marks) || qRows.length;
+    const percentage = Math.round((finalScore / totalMarks) * 100);
+    const passMarks = Number((exam as any).pass_marks) || Math.round(totalMarks * 0.4);
+    const isPassed = finalScore >= passMarks;
+
+    const attemptId = `attempt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const now = new Date().toISOString();
+
+    await c.env.DB.prepare(`
+      INSERT INTO exam_attempts (
+        attempt_id, exam_id, exam_title, subject_id, student_name, student_roll,
+        score, total_marks, correct_count, incorrect_count, unanswered_count,
+        percentage, is_passed, time_taken_seconds, answers_json, completed_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      attemptId,
+      examId,
+      (exam as any).title,
+      (exam as any).subject_id,
+      studentName,
+      studentRoll,
+      finalScore,
+      totalMarks,
+      correctCount,
+      incorrectCount,
+      unansweredCount,
+      percentage,
+      isPassed ? 1 : 0,
+      timeTakenSeconds,
+      JSON.stringify(userAnswers),
+      now
+    ).run();
+
+    return c.json({
+      success: true,
+      data: {
+        attemptId,
+        examId,
+        examTitle: (exam as any).title,
+        score: finalScore,
+        totalMarks,
+        correctCount,
+        incorrectCount,
+        unansweredCount,
+        percentage,
+        isPassed,
+        timeTakenSeconds,
+        completedAt: now,
+        reviewQuestions
+      }
+    });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// -------------------------------------------------------------
+// STUDENT COMMUNITY (ACADEMIC Q&A)
+// -------------------------------------------------------------
+app.get('/api/community/posts', async (c) => {
+  const subjectId = c.req.query('subject_id');
+  let query = 'SELECT * FROM community_posts WHERE status != "removed"';
+  const params: any[] = [];
+
+  if (subjectId) {
+    query += ' AND subject_id = ?';
+    params.push(subjectId);
+  }
+
+  query += ' ORDER BY created_at DESC LIMIT 50';
+
+  try {
+    const { results } = await c.env.DB.prepare(query).bind(...params).all();
+    return c.json({ success: true, data: results });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+app.post('/api/community/posts', async (c) => {
+  try {
+    const body = await c.req.json();
+    const postId = `post-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const now = new Date().toISOString();
+
+    await c.env.DB.prepare(`
+      INSERT INTO community_posts (
+        post_id, subject_id, chapter_id, author_name, author_school,
+        title, content, tags_json, upvotes, comment_count, status, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 'active', ?)
+    `).bind(
+      postId,
+      body.subject_id,
+      body.chapter_id || '',
+      body.author_name || 'SSC Student',
+      body.author_school || '',
+      body.title,
+      body.content,
+      JSON.stringify(body.tags || []),
+      now
+    ).run();
+
+    return c.json({ success: true, post_id: postId }, 201);
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// -------------------------------------------------------------
+// SECURE AI STUDY ASSISTANT (GEMINI PRO / FLASH INTEGRATION)
+// -------------------------------------------------------------
+app.post('/api/ai/chat', async (c) => {
+  try {
+    const body = await c.req.json();
+    const prompt = body.prompt || body.message;
+    const history = body.history || [];
+    const apiKey = c.env.GEMINI_API_KEY;
+
+    if (!prompt) {
+      return c.json({ success: false, error: 'Prompt is required' }, 400);
+    }
+
+    const systemInstruction = `You are "SSC Note Box AI Study Assistant", an expert, empathetic, highly knowledgeable SSC Academic Tutor for Class 9 and 10 students in Bangladesh following the NCTB curriculum.
+Key Guidelines:
+1. Always communicate in clean, respectful, encouraging Bangla (বাংলা).
+2. For Mathematics and Physics, solve problems step-by-step with clear formulas, units, and Bengali explanations.
+3. For Chemistry, explain chemical equations, atomic structure, and reactions clearly.
+4. For English, explain grammar rules with examples relevant to SSC board exams.
+5. For Creative Questions (CQ), guide students on the 4 tiers: ক (জ্ঞানমূলক - ১), খ (অনুধাবনমূলক - ২), গ (প্রয়োগমূলক - ৩), ঘ (উচ্চতর দক্ষতা - ৪).
+6. Never answer inappropriate, harmful, or non-educational questions. Always keep focus on SSC academic success.`;
+
+    // Forward to Gemini API securely from worker
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    const contents = [
+      ...history.map((h: any) => ({
+        role: h.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: h.content }]
+      })),
+      {
+        role: 'user',
+        parts: [{ text: prompt }]
+      }
+    ];
+
+    const response = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemInstruction }] },
+        contents,
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1500
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      return c.json({
+        success: true,
+        reply: `দুঃখিত, বর্তমানে এআই সার্ভার সাময়িক ব্যস্ত রয়েছে। তবে আপনার প্রশ্নের উত্তর খুব শীঘ্রই স্বাভাবিক হবে। আপনার পাঠ্যবই বা অধ্যায়ভিত্তিক নোটসগুলো স্টাডি করুন। (Error: ${response.status})`
+      });
+    }
+
+    const data: any = await response.json();
+    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'কোনো উত্তর পাওয়া যায়নি। পুনরায় চেষ্টা করুন।';
+
+    return c.json({ success: true, reply });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
 });
 
 export default app;

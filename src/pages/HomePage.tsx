@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Hero } from '../components/Hero';
 import { SubjectCard } from '../components/SubjectCard';
 import { NoteCard } from '../components/NoteCard';
+import { ExamCountdownBanner } from '../components/ExamCountdownBanner';
+import { StudyPlannerWidget } from '../components/StudyPlannerWidget';
 import { Subject, Note } from '../types';
 import { dataService } from '../services/dataService';
 import { dataEvents } from '../services/dataEvents';
@@ -74,6 +76,11 @@ export const HomePage: React.FC<HomePageProps> = ({
         onScrollToSubjects={handleScrollToSubjects}
       />
 
+      {/* SSC Exam Live Countdown Banner */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <ExamCountdownBanner />
+      </section>
+
       {/* Main Subjects Section */}
       <section ref={subjectsSectionRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4 mb-8">
@@ -109,6 +116,30 @@ export const HomePage: React.FC<HomePageProps> = ({
             ))}
           </div>
         )}
+      </section>
+
+      {/* Daily Study Planner & Smart AI Hub */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <StudyPlannerWidget />
+          </div>
+          <div className="bg-gradient-to-br from-emerald-600 to-teal-800 rounded-3xl p-6 text-white shadow-soft flex flex-col justify-between space-y-4">
+            <div className="space-y-2">
+              <span className="text-xs bg-white/20 px-2.5 py-1 rounded-full font-bold">24/7 লাইভ অ্যাসিস্ট্যান্ট</span>
+              <h3 className="text-xl font-black">SSC AI স্টাডি টিউটর</h3>
+              <p className="text-xs text-emerald-100 leading-relaxed">
+                গণিত, বিজ্ঞান ও ইংরেজির যেকোনো কঠিন টপিক বা অংক বুঝতে তাৎক্ষণিক সহায়তা নাও এআই টিউটরের কাছে।
+              </p>
+            </div>
+            <Link
+              to="/ai-tutor"
+              className="w-full py-3 bg-white text-emerald-800 hover:bg-emerald-50 text-center rounded-xl font-bold text-xs shadow-md transition-all"
+            >
+              এআই টিউটরের সাথে কথা বলুন →
+            </Link>
+          </div>
+        </div>
       </section>
 
       {/* Recent Notes Showcase */}

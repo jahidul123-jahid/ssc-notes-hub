@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Upload, ShieldAlert, Globe, ChevronRight } from 'lucide-react';
+import { Menu, X, Upload, ShieldAlert, Globe, ChevronRight, Bell } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { NotificationCenterModal } from './NotificationCenterModal';
 
 interface HeaderProps {
   onOpenUpload: () => void;
@@ -10,6 +11,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const [headerBottom, setHeaderBottom] = useState<number>(56);
   const headerRef = useRef<HTMLElement>(null);
   const location = useLocation();
@@ -85,10 +87,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
 
   const navLinks = [
     { name: t('nav_home'), path: '/' },
-    { name: t('nav_subjects'), path: '/subjects' },
-    { name: t('nav_search'), path: '/search' },
-    { name: t('nav_about'), path: '/about' },
-    { name: t('nav_contact'), path: '/contact' },
+    { name: 'রিসোর্স সেন্টার', path: '/resources' },
+    { name: 'পরীক্ষা', path: '/exams' },
+    { name: 'কমিউনিটি', path: '/community' },
+    { name: 'AI টিউটর', path: '/ai-tutor' },
+    { name: 'ড্যাশবোর্ড', path: '/dashboard' },
   ];
 
   const handleLinkClick = () => {
@@ -152,6 +155,18 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
                 <span className={language === 'bn' ? 'text-brand-600 font-extrabold' : 'text-secondaryText'}>বাংলা</span>
               </button>
 
+              {/* Notification Center Bell */}
+              <button
+                onClick={() => setNotifOpen(true)}
+                className="relative p-2.5 rounded-xl border border-cardBorder bg-slate-50 hover:bg-slate-100 text-slate-700 transition-all active:scale-95 touch-manipulation"
+                title="নোটিফিকেশন সেন্টার"
+                aria-label="Notifications"
+              >
+                <Bell className="w-4 h-4 text-slate-700" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-600 rounded-full" />
+              </button>
+
               {/* Upload CTA */}
               <button
                 onClick={onOpenUpload}
@@ -202,6 +217,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
                   <span className="text-[11px] font-extrabold">এডমিন</span>
                 </button>
               )}
+
+              {/* Mobile Notification Button */}
+              <button
+                onClick={() => setNotifOpen(true)}
+                className="relative w-10 h-10 flex items-center justify-center rounded-xl border border-cardBorder bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors active:scale-95"
+                title="নোটিফিকেশন"
+                aria-label="Notifications"
+              >
+                <Bell className="w-4 h-4 text-slate-700" />
+                <span className="absolute top-2 right-2 w-2 h-2 bg-emerald-600 rounded-full" />
+              </button>
 
               {/* Mobile Upload Note Button */}
               <button
@@ -332,6 +358,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
           </nav>
         </div>
       </div>
+
+      {/* Notification Center Modal */}
+      <NotificationCenterModal isOpen={notifOpen} onClose={() => setNotifOpen(false)} />
     </>
   );
 };

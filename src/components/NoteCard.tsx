@@ -56,11 +56,39 @@ export const NoteCard: React.FC<NoteCardProps> = ({
         className="p-5 pb-4 cursor-pointer select-none"
       >
         <div className="flex items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-brand-50 text-brand-700 border border-brand-200/80">
               <FileText className="w-3 h-3" />
               <span>{getFileTypeLabel(note.fileType)}</span>
             </span>
+
+            {note.resourceType && note.resourceType !== 'note' && (
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                note.resourceType === 'board_question'
+                  ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                  : note.resourceType === 'cq'
+                  ? 'bg-purple-50 text-purple-800 border border-purple-200'
+                  : note.resourceType === 'mcq_sheet'
+                  ? 'bg-sky-50 text-sky-800 border border-sky-200'
+                  : note.resourceType === 'suggestion'
+                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                  : 'bg-indigo-50 text-indigo-800 border border-indigo-200'
+              }`}>
+                {note.resourceType === 'board_question' && 'বোর্ড প্রশ্ন'}
+                {note.resourceType === 'cq' && 'সৃজনশীল (CQ)'}
+                {note.resourceType === 'mcq_sheet' && 'MCQ শিট'}
+                {note.resourceType === 'suggestion' && 'সাজেশন'}
+                {note.resourceType === 'model_test' && 'মডেল টেস্ট'}
+                {note.resourceType === 'textbook' && 'পাঠ্যবই'}
+              </span>
+            )}
+
+            {note.boardName && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded-md">
+                {note.boardName} {note.boardYear || ''}
+              </span>
+            )}
+
             {note.downloadCount !== undefined && note.downloadCount > 0 && (
               <span className="text-[11px] font-medium text-secondaryText flex items-center gap-0.5">
                 <Download className="w-3 h-3 text-slate-400" />

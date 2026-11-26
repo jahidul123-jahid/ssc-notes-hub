@@ -17,6 +17,14 @@ import { ChapterDetailsPage } from './pages/ChapterDetailsPage';
 import { SearchNotesPage } from './pages/SearchNotesPage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
+import { ResourceCenterPage } from './pages/ResourceCenterPage';
+import { ExamListPage } from './pages/ExamListPage';
+import { ExamTakingPage } from './pages/ExamTakingPage';
+import { ExamResultPage } from './pages/ExamResultPage';
+import { StudentDashboardPage } from './pages/StudentDashboardPage';
+import { CommunityPage } from './pages/CommunityPage';
+import { AITutorPage } from './pages/AITutorPage';
+import { AIAssistantWidget } from './components/AIAssistantWidget';
 import { OwnerControlPage } from './pages/OwnerControlPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { Subject, Chapter, Note } from './types';
@@ -194,6 +202,33 @@ const AppContent: React.FC = () => {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
 
+            {/* Study Resource Center */}
+            <Route
+              path="/resources"
+              element={
+                <ResourceCenterPage
+                  onOpenUpload={handleOpenUpload}
+                  onViewNote={handleViewNote}
+                  onDownloadNote={handleDownloadNote}
+                  onReportNote={handleReportNote}
+                />
+              }
+            />
+
+            {/* Online Examination System */}
+            <Route path="/exams" element={<ExamListPage />} />
+            <Route path="/exams/:examId" element={<ExamTakingPage />} />
+            <Route path="/exams/:examId/result" element={<ExamResultPage />} />
+
+            {/* Student Dashboard */}
+            <Route path="/dashboard" element={<StudentDashboardPage />} />
+
+            {/* Student Community */}
+            <Route path="/community" element={<CommunityPage />} />
+
+            {/* AI Study Assistant */}
+            <Route path="/ai-tutor" element={<AITutorPage />} />
+
             {/* Owner Admin Secret Gateway (Public routes like /admin and /owner are removed and 404) */}
             <Route path="/jahidul-secret-panel-2026" element={<OwnerControlPage />} />
 
@@ -207,6 +242,9 @@ const AppContent: React.FC = () => {
 
       {/* Floating Global AI Audio Player */}
       <AIAudioPlayer />
+
+      {/* Floating 24/7 AI Study Assistant Widget */}
+      <AIAssistantWidget />
 
       {/* Interactive Note Viewer Modal */}
       <NoteViewerModal

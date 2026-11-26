@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Upload, FileText, CheckCircle2, AlertCircle, Plus, Image as ImageIcon, BookOpen } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { Subject, Chapter, FileType } from '../types';
+import { Subject, Chapter, FileType, ResourceType } from '../types';
 import { dataService } from '../services/dataService';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -28,6 +28,9 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const [subjectId, setSubjectId] = useState(initialSubjectId || '');
   const [chapterId, setChapterId] = useState(initialChapterId || '');
   const [customChapterName, setCustomChapterName] = useState('');
+  const [resourceType, setResourceType] = useState<ResourceType>('note');
+  const [boardName, setBoardName] = useState('ঢাকা বোর্ড');
+  const [boardYear, setBoardYear] = useState('2024');
 
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -276,6 +279,9 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           chapterId: finalChapterId,
           title: autoTitle,
           description: '',
+          resourceType,
+          boardName: resourceType === 'board_question' ? boardName : undefined,
+          boardYear: resourceType === 'board_question' ? boardYear : undefined,
           fileType: isImages ? 'pdf' : (selectedFiles[0].name.split('.').pop()?.toLowerCase() as FileType) || 'pdf',
           fileSize: fileSizeStr || '২.০ MB',
           pageCount: isImages ? selectedFiles.length : 1
@@ -424,6 +430,77 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                       <option value="ব্যবসায় শিক্ষা">ব্যবসায় শিক্ষা বিভাগ</option>
                     </select>
                   </div>
+                </div>
+
+                <div className="pt-2 border-t border-cardBorder/60" />
+
+                {/* 1.5 Resource Type & Category */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-primaryText mb-1.5">
+                      রিসোর্সের ধরন *
+                    </label>
+                    <select
+                      value={resourceType}
+                      onChange={(e) => setResourceType(e.target.value as ResourceType)}
+                      className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors font-medium"
+                    >
+                      <option value="note">হ্যান্ডনোট / ক্লাস নোট</option>
+                      <option value="board_question">বোর্ড প্রশ্ন ও উত্তর</option>
+                      <option value="cq">সৃজনশীল প্রশ্ন (CQ)</option>
+                      <option value="mcq_sheet">MCQ প্রস্তুতি শিট</option>
+                      <option value="suggestion">অধ্যায়ভিত্তিক স্পেশাল সাজেশন</option>
+                      <option value="model_test">মডেল টেস্ট প্রশ্নপত্র</option>
+                    </select>
+                  </div>
+
+                  {resourceType === 'board_question' ? (
+                    <div>
+                      <label className="block text-xs font-semibold text-primaryText mb-1.5">
+                        শিক্ষা বোর্ড ও সাল *
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <select
+                          value={boardName}
+                          onChange={(e) => setBoardName(e.target.value)}
+                          className="w-full px-2.5 py-2.5 text-xs rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 font-medium"
+                        >
+                          <option value="ঢাকা বোর্ড">ঢাকা বোর্ড</option>
+                          <option value="চট্টগ্রাম বোর্ড">চট্টগ্রাম বোর্ড</option>
+                          <option value="রাজশাহী বোর্ড">রাজশাহী বোর্ড</option>
+                          <option value="কুমিল্লা বোর্ড">কুমিল্লা বোর্ড</option>
+                          <option value="যশোর বোর্ড">যশোর বোর্ড</option>
+                          <option value="বরিশাল বোর্ড">বরিশাল বোর্ড</option>
+                          <option value="সিলেট বোর্ড">সিলেট বোর্ড</option>
+                          <option value="দিনাজপুর বোর্ড">দিনাজপুর বোর্ড</option>
+                          <option value="ময়মনসিংহ বোর্ড">ময়মনসিংহ বোর্ড</option>
+                          <option value="সকল বোর্ড">সকল বোর্ড</option>
+                        </select>
+                        <select
+                          value={boardYear}
+                          onChange={(e) => setBoardYear(e.target.value)}
+                          className="w-full px-2.5 py-2.5 text-xs rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 font-medium"
+                        >
+                          <option value="2025">২০২৫</option>
+                          <option value="2024">২০২৪</option>
+                          <option value="2023">২০২৩</option>
+                          <option value="2022">২০২২</option>
+                          <option value="2020">২০২০</option>
+                        </select>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-xs font-semibold text-primaryText mb-1.5">
+                        কাভার্ড টপিক / বিবরণ (ঐচ্ছিক)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="যেমন: সম্পূর্ণ অধ্যায়ের সংক্ষিপ্ত ব্যাখ্যা"
+                        className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-cardBorder focus:outline-none focus:border-brand-500 bg-slate-50/50 focus:bg-white transition-colors"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-2 border-t border-cardBorder/60" />
