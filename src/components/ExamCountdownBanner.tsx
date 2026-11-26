@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Clock, Calendar, Sparkles, Flame } from 'lucide-react';
 
 export const ExamCountdownBanner: React.FC = () => {
-  // Approximate SSC Examination Date (Mid-February)
-  const targetDate = new Date('2027-02-15T09:00:00+06:00').getTime();
+  // SSC Examination Target Date (180 days remaining)
+  const targetDate = new Date('2027-05-26T00:00:00+06:00').getTime();
 
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
