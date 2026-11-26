@@ -36,66 +36,66 @@ export const ExamCountdownBanner: React.FC = () => {
   return (
     <div
       id="exam-countdown"
-      className="relative overflow-hidden bg-gradient-to-br from-[#0c1933]/95 via-[#0e1f3d]/95 to-[#0b152a]/95 dark:from-[#060d1a]/95 dark:to-[#091326]/95 rounded-3xl p-5 sm:p-7 text-white shadow-soft border border-sky-500/25 backdrop-blur-xl transition-all"
+      className="relative overflow-hidden bg-gradient-to-r from-brand-600 via-indigo-600 to-violetAccent rounded-3xl p-5 sm:p-7 text-white shadow-soft border border-white/20 backdrop-blur-md transition-all"
     >
-      {/* Decorative ambient light-blue background blur lights */}
-      <div className="absolute -top-12 -left-12 w-48 h-48 bg-sky-500/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-12 -right-12 w-56 h-56 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
+      {/* Decorative ambient background blur lights */}
+      <div className="absolute -top-12 -left-12 w-48 h-48 bg-white/20 rounded-full blur-2xl pointer-events-none" />
+      <div className="absolute -bottom-12 -right-12 w-56 h-56 bg-brand-400/25 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
         
         {/* Left Information */}
         <div className="space-y-1.5 max-w-lg">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/15 text-sky-200 text-xs font-semibold border border-sky-400/25 backdrop-blur-md">
-            <Calendar className="w-3.5 h-3.5 text-sky-400" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-semibold border border-white/25 backdrop-blur-md">
+            <Calendar className="w-3.5 h-3.5 text-white/90" />
             SSC বোর্ড পরীক্ষা কাউন্টডাউন
           </div>
           <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white drop-shadow-xs">
             লক্ষ্য যখন জিপিএ-৫, প্রতিটি সেকেন্ড অমূল্য!
           </h3>
-          <p className="text-xs text-sky-200/90 font-medium">
+          <p className="text-xs text-white/90 font-medium">
             নিয়মিত রিভিশন ও অধ্যায়ভিত্তিক মডেল টেস্টই তোমাকে পৌঁছে দেবে তোমার কাঙ্ক্ষিত ফলাফলে।
           </p>
         </div>
 
-        {/* Right Countdown Blocks with subtle light-blue glassmorphism blur matching site colors */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Right Countdown Blocks with subtle blur matching Explore Subjects button */}
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
           {/* Days */}
-          <div className="bg-sky-950/40 backdrop-blur-md px-3.5 sm:px-4 py-2.5 rounded-2xl border border-sky-400/20 text-center min-w-[62px] sm:min-w-[70px] shadow-[0_4px_16px_rgba(56,189,248,0.08)] hover:border-sky-400/40 transition-all">
+          <div className="bg-white/15 backdrop-blur-md px-3.5 sm:px-4 py-2.5 rounded-2xl border border-white/25 text-center min-w-[62px] sm:min-w-[70px] shadow-sm hover:bg-white/20 transition-all">
             <div className="text-xl sm:text-2xl font-black text-amber-300 font-mono">
               {timeLeft.days}
             </div>
-            <div className="text-[10px] text-sky-200/80 font-semibold uppercase">দিন</div>
+            <div className="text-[10px] text-white/80 font-semibold uppercase">দিন</div>
           </div>
 
-          <span className="text-lg font-bold text-sky-400/50 select-none">:</span>
+          <span className="text-lg font-bold text-white/60 select-none">:</span>
 
           {/* Hours */}
-          <div className="bg-sky-950/40 backdrop-blur-md px-3.5 sm:px-4 py-2.5 rounded-2xl border border-sky-400/20 text-center min-w-[62px] sm:min-w-[70px] shadow-[0_4px_16px_rgba(56,189,248,0.08)] hover:border-sky-400/40 transition-all">
+          <div className="bg-white/15 backdrop-blur-md px-3.5 sm:px-4 py-2.5 rounded-2xl border border-white/25 text-center min-w-[62px] sm:min-w-[70px] shadow-sm hover:bg-white/20 transition-all">
             <div className="text-xl sm:text-2xl font-black text-emerald-300 font-mono">
               {String(timeLeft.hours).padStart(2, '0')}
             </div>
-            <div className="text-[10px] text-sky-200/80 font-semibold uppercase">ঘণ্টা</div>
+            <div className="text-[10px] text-white/80 font-semibold uppercase">ঘণ্টা</div>
           </div>
 
-          <span className="text-lg font-bold text-sky-400/50 select-none">:</span>
+          <span className="text-lg font-bold text-white/60 select-none">:</span>
 
           {/* Minutes */}
-          <div className="bg-sky-950/40 backdrop-blur-md px-3.5 sm:px-4 py-2.5 rounded-2xl border border-sky-400/20 text-center min-w-[62px] sm:min-w-[70px] shadow-[0_4px_16px_rgba(56,189,248,0.08)] hover:border-sky-400/40 transition-all">
-            <div className="text-xl sm:text-2xl font-black text-sky-300 font-mono">
+          <div className="bg-white/15 backdrop-blur-md px-3.5 sm:px-4 py-2.5 rounded-2xl border border-white/25 text-center min-w-[62px] sm:min-w-[70px] shadow-sm hover:bg-white/20 transition-all">
+            <div className="text-xl sm:text-2xl font-black text-cyan-200 font-mono">
               {String(timeLeft.minutes).padStart(2, '0')}
             </div>
-            <div className="text-[10px] text-sky-200/80 font-semibold uppercase">মিনিট</div>
+            <div className="text-[10px] text-white/80 font-semibold uppercase">মিনিট</div>
           </div>
 
-          <span className="text-lg font-bold text-sky-400/50 select-none">:</span>
+          <span className="text-lg font-bold text-white/60 select-none">:</span>
 
           {/* Seconds */}
-          <div className="bg-sky-950/40 backdrop-blur-md px-3.5 sm:px-4 py-2.5 rounded-2xl border border-sky-400/20 text-center min-w-[62px] sm:min-w-[70px] shadow-[0_4px_16px_rgba(56,189,248,0.08)] hover:border-sky-400/40 transition-all">
-            <div className="text-xl sm:text-2xl font-black text-rose-300 font-mono">
+          <div className="bg-white/15 backdrop-blur-md px-3.5 sm:px-4 py-2.5 rounded-2xl border border-white/25 text-center min-w-[62px] sm:min-w-[70px] shadow-sm hover:bg-white/20 transition-all">
+            <div className="text-xl sm:text-2xl font-black text-rose-200 font-mono">
               {String(timeLeft.seconds).padStart(2, '0')}
             </div>
-            <div className="text-[10px] text-sky-200/80 font-semibold uppercase">সেকেন্ড</div>
+            <div className="text-[10px] text-white/80 font-semibold uppercase">সেকেন্ড</div>
           </div>
         </div>
 
