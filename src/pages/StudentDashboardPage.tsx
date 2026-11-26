@@ -20,11 +20,16 @@ import {
 } from 'lucide-react';
 import { ExamAttempt, AchievementBadge, Exam } from '../types';
 import { getExamAttempts, getExams } from '../services/examService';
+import { studentService } from '../services/studentService';
+import { Edit2, Save, X as CloseIcon } from 'lucide-react';
 
 export const StudentDashboardPage: React.FC = () => {
   const [attempts, setAttempts] = useState<ExamAttempt[]>([]);
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
+  const [studentName, setStudentName] = useState<string>(studentService.getStudentName() || 'প্রিয় শিক্ষার্থী');
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState('');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -119,9 +124,61 @@ export const StudentDashboardPage: React.FC = () => {
                 <Sparkles className="w-3.5 h-3.5 text-white" />
                 ব্যক্তিগত অগ্রগতি ড্যাশবোর্ড
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black">
-                স্বাগতম, প্রিয় শিক্ষার্থী! 👋
-              </h1>
+              <div className="flex items-center gap-2">
+                {isEditingName ? (
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      if (tempName.trim()) {
+                        await studentService.updateStudentName(tempName.trim());
+                        setStudentName(tempName.trim());
+                        setIsEditingName(false);
+                      }
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <input
+                      type="text"
+                      value={tempName}
+                      onChange={(e) => setTempName(e.target.value)}
+                      placeholder="আপনার নাম"
+                      className="px-3 py-1.5 text-sm rounded-xl text-slate-800 bg-white border border-brand-300 focus:outline-none focus:ring-2 focus:ring-white"
+                      autoFocus
+                    />
+                    <button
+                      type="submit"
+                      className="p-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 shadow-xs"
+                      title="সংরক্ষণ করুন"
+                    >
+                      <Save className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingName(false)}
+                      className="p-1.5 rounded-xl bg-white/20 text-white hover:bg-white/30"
+                      title="বাতিল"
+                    >
+                      <CloseIcon className="w-4 h-4" />
+                    </button>
+                  </form>
+                ) : (
+                  <>
+                    <h1 className="text-2xl sm:text-3xl font-black">
+                      স্বাগতম, {studentName}! 👋
+                    </h1>
+                    <button
+                      onClick={() => {
+                        setTempName(studentName);
+                        setIsEditingName(true);
+                      }}
+                      className="p-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white/90 hover:text-white transition-colors"
+                      title="নাম পরিবর্তন করুন"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </div>
               <p className="text-white/90 text-xs sm:text-sm max-w-xl">
                 তোমার পরীক্ষার ফলাফল, দুর্বলতা ও শক্তির বিষয়সমূহ এবং দৈনন্দিন অধ্যায়নের ধারাবাহিকতা এখানে একনজরে পর্যালোচনা করো।
               </p>

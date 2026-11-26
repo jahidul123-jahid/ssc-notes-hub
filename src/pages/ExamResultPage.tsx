@@ -146,7 +146,9 @@ export const ExamResultPage: React.FC = () => {
                 {attempt.passed ? '🎉 অভিনন্দন! আপনি উত্তীর্ণ হয়েছেন' : 'পরবর্তীবারের জন্য আরও প্রস্তুতি প্রয়োজন'}
               </span>
               <h1 className="text-2xl sm:text-3xl font-black">{exam.title}</h1>
-              <p className="text-white/80 text-xs sm:text-sm">{exam.subject} • {exam.chapter || 'পূর্ণাঙ্গ পরীক্ষা'}</p>
+              <p className="text-white/90 text-xs sm:text-sm">
+                পরীক্ষার্থী: <span className="font-bold text-white underline decoration-white/40">{attempt.studentName || 'শিক্ষার্থী'}</span> • {exam.subject} • {exam.chapter || 'পূর্ণাঙ্গ পরীক্ষা'}
+              </p>
             </div>
 
             <div className="flex items-baseline gap-2 bg-white/10 px-6 py-4 rounded-3xl border border-white/20 backdrop-blur-md self-start md:self-auto">

@@ -2,6 +2,7 @@ import { Exam, Question, ExamAttempt, ExamType } from '../types';
 import { INITIAL_EXAMS, INITIAL_QUESTIONS } from '../data/initialExamData';
 import { getChapterExamData, generate30ChapterQuestions } from '../data/chapterExamBank';
 import { getCloudflareApiUrl, isCloudflareConfigured } from './cloudflareService';
+import { studentService } from './studentService';
 
 const STORAGE_KEYS = {
   EXAMS: 'ssc_hub_exams_v1',
@@ -150,13 +151,17 @@ export const examService = {
     examId: string,
     answers: Record<string, number>,
     timeTakenSeconds: number,
-    studentName = 'SSC Student',
-    studentRoll = ''
+    studentName = '',
+    studentRoll = '',
+    studentId = ''
   ): Promise<{
     attempt: ExamAttempt;
     reviewQuestions: (Question & { selectedOption?: number; isCorrect: boolean })[];
   }> {
     initStorage();
+
+    const resolvedName = (studentName || studentService.getStudentName() || 'SSC Student').trim();
+    const resolvedStudentId = studentId || studentService.getStudentId();
 
     // 1. Try Cloudflare backend for secure server-side grading
     if (isCloudflareConfigured()) {
@@ -166,7 +171,8 @@ export const examService = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            student_name: studentName,
+            student_id: resolvedStudentId,
+            student_name: resolvedName,
             student_roll: studentRoll,
             answers,
             time_taken_seconds: timeTakenSeconds
@@ -183,7 +189,7 @@ export const examService = {
               examId: data.examId,
               examTitle: data.examTitle,
               subjectId: data.subjectId || '',
-              studentName,
+              studentName: resolvedName,
               studentRoll,
               score: data.score,
               totalMarks: data.totalMarks,
@@ -279,7 +285,7 @@ export const examService = {
       examId,
       examTitle: exam.title,
       subjectId: exam.subjectId,
-      studentName,
+      studentName: resolvedName,
       studentRoll,
       score: finalScore,
       totalMarks,
@@ -310,6 +316,10 @@ export const examService = {
     try {
       const raw = localStorage.getItem(STORAGE_KEYS.ATTEMPTS);
       const attempts: ExamAttempt[] = raw ? JSON.parse(raw) : [];
+      // Deduplicate: prevent duplicate submissions
+      if (attempts.some(a => (a.attemptId && a.attemptId === attempt.attemptId) || (a.id && a.id === attempt.attemptId))) {
+        return;
+      }
       attempts.unshift(attempt);
       localStorage.setItem(STORAGE_KEYS.ATTEMPTS, JSON.stringify(attempts.slice(0, 100)));
     } catch (err) {
@@ -328,6 +338,65 @@ export const examService = {
 
   getExamAttempts(): ExamAttempt[] {
     return this.getStudentAttempts();
+  },
+
+  // -------------------------------------------------------------
+  // VERIFIED LEADERBOARD DATA (NO DUMMY STUDENTS)
+  // -------------------------------------------------------------
+  async getLeaderboard(): Promise<{ rank: number; studentName: string; completedExams: number }[]> {
+    // 1. Try Cloudflare backend when configured
+    if (isCloudflareConfigured()) {
+      try {
+        const baseUrl = getCloudflareApiUrl();
+        const res = await fetch(`${baseUrl}/api/leaderboard`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data)) {
+            return json.data;
+          }
+        }
+      } catch (err) {
+        console.warn('Cloudflare leaderboard fetch fallback:', err);
+      }
+    }
+
+    // 2. Local verified calculation from student attempts
+    const attempts = this.getStudentAttempts();
+    if (!attempts || attempts.length === 0) {
+      return [];
+    }
+
+    const map = new Map<string, { studentName: string; completedExams: number; lastCompleted: number }>();
+
+    for (const a of attempts) {
+      const name = (a.studentName || '').trim();
+      if (!name || name === 'Anonymous Student' || name === 'SSC Student') continue;
+      const key = name.toLowerCase();
+
+      const existing = map.get(key);
+      const attemptTime = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+      if (existing) {
+        existing.completedExams += 1;
+        if (attemptTime > existing.lastCompleted) {
+          existing.studentName = name;
+          existing.lastCompleted = attemptTime;
+        }
+      } else {
+        map.set(key, {
+          studentName: name,
+          completedExams: 1,
+          lastCompleted: attemptTime
+        });
+      }
+    }
+
+    return Array.from(map.values())
+      .sort((a, b) => b.completedExams - a.completedExams || b.lastCompleted - a.lastCompleted)
+      .map((item, index) => ({
+        rank: index + 1,
+        studentName: item.studentName,
+        completedExams: item.completedExams
+      }));
   },
 
   // -------------------------------------------------------------
@@ -380,5 +449,6 @@ export const getExamById = examService.getExamById.bind(examService);
 export const submitExam = examService.submitExam.bind(examService);
 export const getStudentAttempts = examService.getStudentAttempts.bind(examService);
 export const getExamAttempts = examService.getStudentAttempts.bind(examService);
+export const getLeaderboard = examService.getLeaderboard.bind(examService);
 export const createExam = examService.saveExam.bind(examService);
 

@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { Exam, Question } from '../types';
 import { examService } from '../services/examService';
+import { studentService } from '../services/studentService';
+import { StudentNameModal } from '../components/StudentNameModal';
 
 export const ExamTakingPage: React.FC = () => {
   const { examId } = useParams<{ examId: string }>();
@@ -28,9 +30,22 @@ export const ExamTakingPage: React.FC = () => {
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
   const [mobilePaletteOpen, setMobilePaletteOpen] = useState(false);
+  const [showNameModal, setShowNameModal] = useState<boolean>(!studentService.hasRegisteredName());
 
   const startTimeRef = useRef<number>(Date.now());
   const sessionKey = examId ? `ssc_active_exam_session_${examId}` : '';
+
+  // Academic Integrity: Mark active exam in session to lock AI assistant
+  useEffect(() => {
+    if (examId) {
+      sessionStorage.setItem('ssc_active_exam_in_progress', 'true');
+      localStorage.setItem('ssc_active_exam_id', examId);
+    }
+    return () => {
+      sessionStorage.removeItem('ssc_active_exam_in_progress');
+      localStorage.removeItem('ssc_active_exam_id');
+    };
+  }, [examId]);
 
   // 1. Load Exam & Restore Session if active
   useEffect(() => {
@@ -111,15 +126,21 @@ export const ExamTakingPage: React.FC = () => {
     setShowSubmitModal(false);
 
     const timeSpentSeconds = Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000));
+    const studentName = studentService.getStudentName() || 'শিক্ষার্থী';
+    const studentId = studentService.getStudentId();
 
     try {
       const res = await examService.submitExam(
         exam.id || exam.examId,
         answers,
         timeSpentSeconds,
-        'শিক্ষার্থী'
+        studentName,
+        '',
+        studentId
       );
       // Clean up session storage after successful submission
+      sessionStorage.removeItem('ssc_active_exam_in_progress');
+      localStorage.removeItem('ssc_active_exam_id');
       if (sessionKey) {
         localStorage.removeItem(sessionKey);
       }
@@ -602,6 +623,8 @@ export const ExamTakingPage: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setShowExitModal(false);
+                  sessionStorage.removeItem('ssc_active_exam_in_progress');
+                  localStorage.removeItem('ssc_active_exam_id');
                   navigate(-1);
                 }}
                 className="flex-1 py-3 rounded-xl border border-rose-200 text-rose-600 font-bold text-xs hover:bg-rose-50 transition-colors"
@@ -612,6 +635,17 @@ export const ExamTakingPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* ================= ONE-TIME FIRST EXAM STUDENT NAME REGISTRATION ================= */}
+      <StudentNameModal
+        isOpen={showNameModal}
+        onSuccess={() => setShowNameModal(false)}
+        onCancel={() => {
+          sessionStorage.removeItem('ssc_active_exam_in_progress');
+          localStorage.removeItem('ssc_active_exam_id');
+          navigate(-1);
+        }}
+      />
 
     </div>
   );

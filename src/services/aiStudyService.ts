@@ -42,7 +42,24 @@ export const SSC_AI_PROMPTS: AISubjectPrompt[] = [
   }
 ];
 
+export function isExamActive(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const inSession = Boolean(sessionStorage.getItem('ssc_active_exam_in_progress'));
+    const inPath = window.location.pathname.startsWith('/exams/') && !window.location.pathname.includes('/result');
+    const activeExamId = localStorage.getItem('ssc_active_exam_id');
+    return Boolean(inSession || inPath || activeExamId);
+  } catch {
+    return false;
+  }
+}
+
 export async function sendChatMessage(messages: ChatMessage[], subjectContext?: string): Promise<string> {
+  // Academic Integrity: Block AI during active exam
+  if (isExamActive()) {
+    return '⚠️ পরীক্ষা চলাকালীন সময়ে এআই স্টাডি অ্যাসিস্ট্যান্ট ব্যবহার সম্পূর্ণ নিষিদ্ধ। সততা বজায় রেখে পরীক্ষা শেষ করার পর এআই সহায়তা গ্রহণ করুন।';
+  }
+
   const lastMsg = messages[messages.length - 1];
   if (!lastMsg) return 'অনুগ্রহ করে প্রশ্ন লিখুন।';
 
@@ -70,6 +87,7 @@ export async function sendChatMessage(messages: ChatMessage[], subjectContext?: 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-Exam-Active': isExamActive() ? 'true' : 'false',
       },
       body: JSON.stringify({
         messages: conversationHistory,

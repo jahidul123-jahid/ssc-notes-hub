@@ -1,10 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Bot, X, Send, Sparkles } from 'lucide-react';
 import { ChatMessage } from '../types';
-import { sendChatMessage } from '../services/aiStudyService';
+import { sendChatMessage, isExamActive } from '../services/aiStudyService';
 
 export const AIAssistantWidget: React.FC = () => {
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const [activeExam, setActiveExam] = useState(false);
+
+  useEffect(() => {
+    const checkExamState = () => {
+      const inExamPath = location.pathname.startsWith('/exams/') && !location.pathname.includes('/result');
+      const active = inExamPath || isExamActive();
+      setActiveExam(active);
+      if (active && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    checkExamState();
+    window.addEventListener('storage', checkExamState);
+    return () => window.removeEventListener('storage', checkExamState);
+  }, [location.pathname, isOpen]);
+
+  // Strictly hide AI assistant during active exam
+  if (activeExam) {
+    return null;
+  }
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'greet',

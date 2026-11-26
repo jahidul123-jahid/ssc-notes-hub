@@ -608,11 +608,88 @@ app.post('/api/community/posts', async (c) => {
 });
 
 // -------------------------------------------------------------
+// STUDENT REGISTRATION (PERSISTENT DISPLAY NAME)
+// -------------------------------------------------------------
+app.post('/api/students/register', async (c) => {
+  try {
+    const body = await c.req.json();
+    const studentId = body.student_id;
+    const name = (body.name || '').trim();
+    if (!studentId || !name) {
+      return c.json({ success: false, error: 'Student ID and Name are required' }, 400);
+    }
+    const now = new Date().toISOString();
+
+    // Create table if not exists
+    await c.env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS students (
+        student_id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        roll_number TEXT DEFAULT '',
+        school_name TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )
+    `).run().catch(() => {});
+
+    await c.env.DB.prepare(`
+      INSERT INTO students (student_id, name, roll_number, school_name, updated_at)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(student_id) DO UPDATE SET
+        name = excluded.name,
+        roll_number = excluded.roll_number,
+        school_name = excluded.school_name,
+        updated_at = excluded.updated_at
+    `).bind(studentId, name, body.roll_number || '', body.school_name || '', now).run();
+
+    return c.json({ success: true, student: { studentId, name } });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// -------------------------------------------------------------
+// LEADERBOARD ENDPOINT (RANK, STUDENT NAME, COMPLETED EXAMS)
+// -------------------------------------------------------------
+app.get('/api/leaderboard', async (c) => {
+  try {
+    const { results } = await c.env.DB.prepare(`
+      SELECT 
+        student_name,
+        COUNT(*) as completed_exams
+      FROM exam_attempts
+      WHERE student_name != '' AND student_name IS NOT NULL AND student_name != 'Anonymous Student'
+      GROUP BY LOWER(TRIM(student_name))
+      ORDER BY completed_exams DESC
+      LIMIT 100
+    `).all();
+
+    const leaderboard = (results || []).map((row: any, idx: number) => ({
+      rank: idx + 1,
+      studentName: row.student_name,
+      completedExams: Number(row.completed_exams) || 0
+    }));
+
+    return c.json({ success: true, data: leaderboard });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// -------------------------------------------------------------
 // SECURE AI STUDY ASSISTANT (GEMINI PRO / FLASH INTEGRATION)
 // -------------------------------------------------------------
 app.post('/api/ai/chat', async (c) => {
   try {
+    // Academic Integrity: Strictly block AI during active examination
+    const isExamActive = c.req.header('X-Exam-Active') === 'true';
     const body = await c.req.json();
+    if (isExamActive || body.is_exam_active) {
+      return c.json({
+        success: false,
+        error: 'AI assistance is strictly disabled during active examinations for academic integrity.'
+      }, 403);
+    }
     const prompt = body.prompt || body.message;
     const history = body.history || [];
     const apiKey = c.env.GEMINI_API_KEY;

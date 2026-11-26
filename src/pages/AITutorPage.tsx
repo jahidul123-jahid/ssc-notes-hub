@@ -12,7 +12,8 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { ChatMessage } from '../types';
-import { sendChatMessage, SSC_AI_PROMPTS } from '../services/aiStudyService';
+import { sendChatMessage, SSC_AI_PROMPTS, isExamActive } from '../services/aiStudyService';
+import { ShieldAlert } from 'lucide-react';
 
 export const AITutorPage: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -27,6 +28,11 @@ export const AITutorPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<string>('সকল বিষয়');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [examLocked, setExamLocked] = useState(false);
+
+  useEffect(() => {
+    setExamLocked(isExamActive());
+  }, []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -35,6 +41,10 @@ export const AITutorPage: React.FC = () => {
   }, [messages, loading]);
 
   const handleSend = async (textToSend?: string) => {
+    if (examLocked || isExamActive()) {
+      alert('পরীক্ষা চলাকালীন সময়ে এআই সহায়তা বন্ধ রয়েছে।');
+      return;
+    }
     const text = textToSend || inputText;
     if (!text.trim() || loading) return;
 
@@ -200,6 +210,14 @@ export const AITutorPage: React.FC = () => {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Exam Active Lockdown Alert */}
+        {(examLocked || isExamActive()) && (
+          <div className="mx-4 my-2 p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3 text-xs text-amber-800 font-semibold">
+            <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0" />
+            <span>⚠️ আপনার একটি পরীক্ষা চলমান রয়েছে। সততা ও একাডেমিক শৃঙ্খলার স্বার্থে পরীক্ষা শেষ না হওয়া পর্যন্ত এআই স্টাডি অ্যাসিস্ট্যান্ট সাময়িক বন্ধ থাকবে।</span>
+          </div>
+        )}
+
         {/* Bottom Input Field */}
         <div className="p-4 bg-white border-t border-slate-200">
           <form
@@ -213,13 +231,13 @@ export const AITutorPage: React.FC = () => {
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="তোমার প্রশ্নটি এখানে বাংলায় লিখো (যেমন: গতিশক্তি নির্ণয়ের সূত্রটি বুঝিয়ে দাও)..."
-              disabled={loading}
-              className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white text-slate-800"
+              placeholder={(examLocked || isExamActive()) ? "পরীক্ষা চলমান অবস্থায় প্রশ্ন করা যাবে না..." : "তোমার প্রশ্নটি এখানে বাংলায় লিখো (যেমন: গতিশক্তি নির্ণয়ের সূত্রটি বুঝিয়ে দাও)..."}
+              disabled={loading || examLocked || isExamActive()}
+              className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white text-slate-800 disabled:opacity-60"
             />
             <button
               type="submit"
-              disabled={!inputText.trim() || loading}
+              disabled={!inputText.trim() || loading || examLocked || isExamActive()}
               className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold rounded-2xl disabled:opacity-40 shadow-xs transition-all flex items-center gap-1.5 shrink-0"
             >
               <Send className="w-4 h-4" />
