@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Subject, Chapter, Note } from '../types';
+import { Link } from 'react-router-dom';
+import { Subject, Chapter, Note, ResourceType } from '../types';
 import { dataService } from '../services/dataService';
 import { dataEvents } from '../services/dataEvents';
 import { NoteCard } from '../components/NoteCard';
@@ -8,7 +9,10 @@ import {
   Search,
   Filter,
   BookOpen,
-  RefreshCw
+  RefreshCw,
+  Award,
+  ChevronRight,
+  Sparkles
 } from 'lucide-react';
 
 interface SearchNotesPageProps {
@@ -33,6 +37,7 @@ export const SearchNotesPage: React.FC<SearchNotesPageProps> = ({
   const [selectedSubject, setSelectedSubject] = useState('all');
   const [selectedChapter, setSelectedChapter] = useState('all');
   const [selectedFileType, setSelectedFileType] = useState('all');
+  const [selectedResourceType, setSelectedResourceType] = useState<string>('all');
 
   useEffect(() => {
     let isMounted = true;
@@ -98,15 +103,20 @@ export const SearchNotesPage: React.FC<SearchNotesPageProps> = ({
         return false;
       }
 
+      if (selectedResourceType !== 'all' && (n.resourceType || 'note') !== selectedResourceType) {
+        return false;
+      }
+
       return true;
     }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [notes, query, selectedSubject, selectedChapter, selectedFileType]);
+  }, [notes, query, selectedSubject, selectedChapter, selectedFileType, selectedResourceType]);
 
   const handleResetFilters = () => {
     setQuery('');
     setSelectedSubject('all');
     setSelectedChapter('all');
     setSelectedFileType('all');
+    setSelectedResourceType('all');
   };
 
   return (
@@ -146,7 +156,7 @@ export const SearchNotesPage: React.FC<SearchNotesPageProps> = ({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
           {/* Subject Filter */}
           <div>
             <select
@@ -183,6 +193,23 @@ export const SearchNotesPage: React.FC<SearchNotesPageProps> = ({
             </select>
           </div>
 
+          {/* Resource Category Filter */}
+          <div>
+            <select
+              value={selectedResourceType}
+              onChange={(e) => setSelectedResourceType(e.target.value)}
+              className="w-full bg-slate-50 border border-cardBorder rounded-xl p-2.5 font-medium text-primaryText focus:outline-none focus:border-brand-500 text-base sm:text-xs min-h-[44px]"
+            >
+              <option value="all">সকল রিসোর্স ধরন</option>
+              <option value="note">হ্যান্ড নোট ও লেকচার</option>
+              <option value="board_question">বোর্ড প্রশ্ন ও উত্তর</option>
+              <option value="cq">সৃজনশীল প্রশ্ন (CQ)</option>
+              <option value="mcq_sheet">MCQ প্রস্তুতি শিট</option>
+              <option value="suggestion">অধ্যায়ভিত্তিক সাজেশন</option>
+              <option value="model_test">মডেল টেস্ট</option>
+            </select>
+          </div>
+
           {/* File Type Filter */}
           <div>
             <select
@@ -195,6 +222,29 @@ export const SearchNotesPage: React.FC<SearchNotesPageProps> = ({
               <option value="jpg">{isBn ? 'ছবি (JPG/PNG)' : 'Images (JPG/PNG)'}</option>
               <option value="docx">DOCX</option>
             </select>
+          </div>
+        </div>
+
+        {/* Quick Resource & Exam Jump Banner */}
+        <div className="pt-2 flex flex-wrap items-center justify-between gap-3 text-xs bg-slate-50 p-3 rounded-xl border border-slate-200/70">
+          <div className="flex items-center gap-1.5 text-slate-700">
+            <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>বোর্ড প্রশ্নপত্র, CQ শিট ও স্পেশাল সাজেশন খুঁজছেন?</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/resources"
+              className="font-bold text-emerald-700 hover:text-emerald-800 underline flex items-center gap-0.5"
+            >
+              রিসোর্স সেন্টারে যান <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+            <span className="text-slate-300">|</span>
+            <Link
+              to="/exams"
+              className="font-bold text-brand-600 hover:text-brand-800 underline flex items-center gap-0.5"
+            >
+              লাইভ পরীক্ষা দিন <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
       </div>
