@@ -21,6 +21,7 @@ import { ResourceCenterPage } from './pages/ResourceCenterPage';
 import { ExamListPage } from './pages/ExamListPage';
 import { ExamTakingPage } from './pages/ExamTakingPage';
 import { ExamResultPage } from './pages/ExamResultPage';
+import { LeaderboardPage } from './pages/LeaderboardPage';
 import { StudentDashboardPage } from './pages/StudentDashboardPage';
 import { CommunityPage } from './pages/CommunityPage';
 import { AITutorPage } from './pages/AITutorPage';
@@ -219,6 +220,9 @@ const AppContent: React.FC = () => {
             <Route path="/exams" element={<ExamListPage />} />
             <Route path="/exams/:examId" element={<ExamTakingPage />} />
             <Route path="/exams/:examId/result" element={<ExamResultPage />} />
+
+            {/* Global Student Leaderboard */}
+            <Route path="/leaderboard" element={<LeaderboardPage />} />
 
             {/* Student Dashboard */}
             <Route path="/dashboard" element={<StudentDashboardPage />} />

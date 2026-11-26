@@ -1,5 +1,6 @@
 import { Exam, Question, ExamAttempt, ExamType } from '../types';
 import { INITIAL_EXAMS, INITIAL_QUESTIONS } from '../data/initialExamData';
+import { getChapterExamData, generate30ChapterQuestions } from '../data/chapterExamBank';
 import { getCloudflareApiUrl, isCloudflareConfigured } from './cloudflareService';
 
 const STORAGE_KEYS = {
@@ -87,23 +88,59 @@ export const examService = {
     try {
       const rawExams = localStorage.getItem(STORAGE_KEYS.EXAMS);
       const exams: Exam[] = rawExams ? JSON.parse(rawExams) : INITIAL_EXAMS;
-      const exam = exams.find(e => e.examId === examId);
-      if (!exam) return null;
+      let exam = exams.find(e => e.examId === examId);
 
       const rawQuestions = localStorage.getItem(STORAGE_KEYS.QUESTIONS);
       const allQuestions: Question[] = rawQuestions ? JSON.parse(rawQuestions) : INITIAL_QUESTIONS;
-      const questions = allQuestions
-        .filter(q => q.examId === examId)
-        .map(q => ({
-          ...q,
-          correctOption: includeAnswers ? q.correctOption : 0, // hide answer while taking test
-          explanation: includeAnswers ? q.explanation : ''
-        }));
+      let questions = allQuestions.filter(q => q.examId === examId);
 
-      return { exam, questions };
+      // If exam not found in static list or has fewer than 30 questions, support dynamic chapter exam
+      if (!exam || questions.length < 30) {
+        if (examId.startsWith('exam-')) {
+          const match = examId.match(/^exam-([a-zA-Z0-9_-]+?)-(phy-.*|chm-.*|bio-.*|b1-.*|b2-.*|e1-.*|e2-.*|gm-.*|hm-.*|bgs-.*|ict-.*|is-.*|his-.*|civ-.*|geo-.*|acc-.*|be-.*|fin-.*|ag-.*|hs-.*|custom-.*|[a-zA-Z0-9_-]+)$/);
+          if (match) {
+            const subId = match[1];
+            const chapId = match[2];
+            const autoData = getChapterExamData(subId, chapId);
+            exam = autoData.exam;
+            questions = autoData.questions;
+          }
+        }
+      }
+
+      if (!exam) return null;
+
+      const preparedQuestions = questions.map(q => ({
+        ...q,
+        questionText: q.questionText || q.question || '',
+        question: q.questionText || q.question || '',
+        correctOption: includeAnswers ? q.correctOption : 0, // hide answer while taking test
+        correctAnswer: includeAnswers ? q.correctOption : 0,
+        explanation: includeAnswers ? q.explanation : ''
+      }));
+
+      return { exam, questions: preparedQuestions };
     } catch {
       return null;
     }
+  },
+
+  // -------------------------------------------------------------
+  // GET DEDICATED CHAPTER 30-MCQ EXAM
+  // -------------------------------------------------------------
+  getExamForChapter(subjectId: string, chapterId: string, includeAnswers = false): { exam: Exam; questions: Question[] } {
+    const data = getChapterExamData(subjectId, chapterId);
+    return {
+      exam: data.exam,
+      questions: data.questions.map(q => ({
+        ...q,
+        questionText: q.questionText || q.question || '',
+        question: q.questionText || q.question || '',
+        correctOption: includeAnswers ? q.correctOption : 0,
+        correctAnswer: includeAnswers ? q.correctOption : 0,
+        explanation: includeAnswers ? q.explanation : ''
+      }))
+    };
   },
 
   // -------------------------------------------------------------
@@ -177,11 +214,26 @@ export const examService = {
     // 2. Deterministic Client-Side Grading Fallback
     const rawExams = localStorage.getItem(STORAGE_KEYS.EXAMS);
     const exams: Exam[] = rawExams ? JSON.parse(rawExams) : INITIAL_EXAMS;
-    const exam = exams.find(e => e.examId === examId) || INITIAL_EXAMS[0];
+    let exam = exams.find(e => e.examId === examId);
 
     const rawQuestions = localStorage.getItem(STORAGE_KEYS.QUESTIONS);
     const allQuestions: Question[] = rawQuestions ? JSON.parse(rawQuestions) : INITIAL_QUESTIONS;
-    const questions = allQuestions.filter(q => q.examId === examId);
+    let questions = allQuestions.filter(q => q.examId === examId);
+
+    // If chapter exam, ensure 30 questions
+    if (!exam || questions.length === 0) {
+      if (examId.startsWith('exam-')) {
+        const match = examId.match(/^exam-([a-zA-Z0-9_-]+?)-(phy-.*|chm-.*|bio-.*|b1-.*|b2-.*|e1-.*|e2-.*|gm-.*|hm-.*|bgs-.*|ict-.*|is-.*|his-.*|civ-.*|geo-.*|acc-.*|be-.*|fin-.*|ag-.*|hs-.*|custom-.*|[a-zA-Z0-9_-]+)$/);
+        if (match) {
+          const autoData = getChapterExamData(match[1], match[2]);
+          exam = autoData.exam;
+          questions = autoData.questions;
+        }
+      }
+    }
+
+    if (!exam) exam = INITIAL_EXAMS[0];
+    if (questions.length === 0) questions = generate30ChapterQuestions(exam.subjectId, exam.chapterId || 'ch-01');
 
     let correctCount = 0;
     let incorrectCount = 0;
@@ -190,7 +242,8 @@ export const examService = {
     const negativeMark = exam.negativeMark || 0.25;
 
     const reviewQuestions = questions.map(q => {
-      const selected = answers[q.questionId];
+      const qKey = q.id || q.questionId || '';
+      const selected = answers[qKey] !== undefined ? answers[qKey] : answers[q.questionId];
       const isAnswered = selected !== undefined && selected !== null;
       let isCorrect = false;
 
@@ -207,6 +260,8 @@ export const examService = {
 
       return {
         ...q,
+        questionText: q.questionText || q.question || '',
+        question: q.questionText || q.question || '',
         selectedOption: selected,
         isCorrect
       };
@@ -269,6 +324,10 @@ export const examService = {
     } catch {
       return [];
     }
+  },
+
+  getExamAttempts(): ExamAttempt[] {
+    return this.getStudentAttempts();
   },
 
   // -------------------------------------------------------------

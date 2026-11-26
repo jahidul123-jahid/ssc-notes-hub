@@ -13,7 +13,11 @@ import {
   Search,
   Filter,
   Volume2,
-  Pause
+  Pause,
+  Sparkles,
+  Clock,
+  CheckCircle2,
+  Award
 } from 'lucide-react';
 
 interface ChapterDetailsPageProps {
@@ -182,6 +186,53 @@ export const ChapterDetailsPage: React.FC<ChapterDetailsPageProps> = ({
             <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>{t('hero_share_note')}</span>
           </button>
+        </div>
+      </div>
+
+      {/* ================= 30-MCQ ONLINE EXAMINATION CARD ================= */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-brand-600 via-indigo-600 to-violetAccent rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-white shadow-soft border border-white/20 backdrop-blur-md">
+        <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-3 max-w-xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-bold border border-white/25 backdrop-blur-md">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              অধ্যায়ভিত্তিক অনলাইন বহুনির্বাচনী পরীক্ষা
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-white">
+              {chapter.chapterName} — ৩০ নম্বরের পূর্ণাঙ্গ মডেল টেস্ট
+            </h2>
+            <p className="text-xs sm:text-sm text-white/90">
+              NCTB কারিকুলাম ও বোর্ড পরীক্ষার স্ট্যান্ডার্ড অনুযায়ী রচিত অধ্যায়ভিত্তিক প্রশ্নমালা।
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1 text-xs">
+              <div className="bg-white/15 backdrop-blur-md p-2.5 rounded-xl border border-white/20 text-center">
+                <span className="text-white/75 block text-[11px]">মোট প্রশ্ন</span>
+                <span className="text-base font-black text-white">৩০ টি</span>
+              </div>
+              <div className="bg-white/15 backdrop-blur-md p-2.5 rounded-xl border border-white/20 text-center">
+                <span className="text-white/75 block text-[11px]">পূর্ণমান</span>
+                <span className="text-base font-black text-white">৩০ নম্বর</span>
+              </div>
+              <div className="bg-white/15 backdrop-blur-md p-2.5 rounded-xl border border-white/20 text-center">
+                <span className="text-white/75 block text-[11px]">সময়সীমা</span>
+                <span className="text-base font-black text-white">৩০ মিনিট</span>
+              </div>
+              <div className="bg-white/15 backdrop-blur-md p-2.5 rounded-xl border border-white/20 text-center">
+                <span className="text-white/75 block text-[11px]">প্রশ্ন পদ্ধতি</span>
+                <span className="text-base font-black text-white">MCQ</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="shrink-0 flex flex-col sm:flex-row gap-3">
+            <Link
+              to={`/exams/exam-${subject.subjectId}-${chapter.chapterId}`}
+              className="inline-flex items-center justify-center gap-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black px-7 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all text-sm sm:text-base min-h-[52px] active:scale-95"
+            >
+              <CheckCircle2 className="w-5 h-5 text-slate-950" />
+              <span>Start Exam (পরীক্ষা শুরু করুন)</span>
+            </Link>
+          </div>
         </div>
       </div>
 

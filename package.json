@@ -17,6 +17,7 @@
     "firebase": "^13.4.0",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.76.0",
+    "pdf-lib": "^1.17.1",
     "postcss": "^8.5.33",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

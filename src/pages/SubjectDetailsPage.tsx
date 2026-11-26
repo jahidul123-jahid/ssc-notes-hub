@@ -288,6 +288,15 @@ export const SubjectDetailsPage: React.FC<SubjectDetailsPageProps> = ({
               </Link>
 
               <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <Link
+                  to={`/exams/exam-${subject.subjectId}-${chap.chapterId}`}
+                  className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-400 text-amber-900 hover:text-slate-950 text-xs font-bold transition-all border border-amber-200/80 shadow-xs"
+                  title="৩০টি বহুনির্বাচনী প্রশ্ন — পরীক্ষা শুরু করুন"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  <span>MCQ পরীক্ষা (৩০)</span>
+                </Link>
+
                 <button
                   onClick={(e) => {
                     e.preventDefault();

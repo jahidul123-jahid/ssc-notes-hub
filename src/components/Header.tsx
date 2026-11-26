@@ -89,6 +89,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenUpload }) => {
     { name: t('nav_home'), path: '/' },
     { name: 'রিসোর্স সেন্টার', path: '/resources' },
     { name: 'পরীক্ষা', path: '/exams' },
+    { name: 'লিডারবোর্ড', path: '/leaderboard' },
     { name: 'কমিউনিটি', path: '/community' },
     { name: 'AI টিউটর', path: '/ai-tutor' },
     { name: 'ড্যাশবোর্ড', path: '/dashboard' },

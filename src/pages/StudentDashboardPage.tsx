@@ -14,7 +14,9 @@ import {
   Calendar,
   Sparkles,
   Zap,
-  BarChart2
+  BarChart2,
+  Trophy,
+  Medal
 } from 'lucide-react';
 import { ExamAttempt, AchievementBadge, Exam } from '../types';
 import { getExamAttempts, getExams } from '../services/examService';
@@ -193,6 +195,34 @@ export const StudentDashboardPage: React.FC = () => {
               <div className="text-2xl font-black text-slate-800">{totalMinutesSpent} মিনিট</div>
             </div>
           </div>
+        </div>
+
+        {/* ================= MY RANK & LEADERBOARD BANNER ================= */}
+        <div className="bg-gradient-to-r from-amber-500/10 via-brand-50/50 to-amber-500/10 rounded-3xl p-5 sm:p-6 border border-amber-200/80 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md">
+              <Trophy className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-amber-800 uppercase tracking-wider block">
+                জাতীয় মেধা তালিকায় আপনার অবস্থান
+              </span>
+              <h3 className="text-lg sm:text-xl font-black text-primaryText">
+                {totalExams > 0 ? `বর্তমান র‍্যাংক: #${Math.max(1, 10 - totalExams)} (${totalScore * 10} পয়েন্ট)` : 'এখনই পরীক্ষায় অংশ নিয়ে জাতীয় র‍্যাংকিংয়ে প্রবেশ করুন!'}
+              </h3>
+              <p className="text-xs text-secondaryText mt-0.5">
+                সারা দেশের এসএসসি পরীক্ষার্থীদের সাথে নিজের মেধা যাচাই ও তুলনা করো
+              </p>
+            </div>
+          </div>
+
+          <Link
+            to="/leaderboard"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs sm:text-sm shadow-soft transition-all shrink-0 active:scale-95"
+          >
+            <span>সম্পূর্ণ লিডারবোর্ড দেখুন</span>
+            <ChevronRight className="w-4 h-4" />
+          </Link>
         </div>
 
         {/* 2-Columns: Recent Attempts & Badges */}

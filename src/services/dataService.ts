@@ -23,7 +23,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 const STORAGE_KEYS = {
   SUBJECTS: 'ssc_hub_subjects_nctb_2027_v3',
   CHAPTERS: 'ssc_hub_chapters_nctb_2027_v3',
-  NOTES: 'ssc_hub_notes_nctb_2027_v2',
+  NOTES: 'ssc_hub_notes_nctb_2027_v5',
   REPORTS: 'ssc_hub_reports_nctb_2027_v2'
 };
 
@@ -42,15 +42,34 @@ function initializeLocalStorage() {
 
     const existing = localStorage.getItem(STORAGE_KEYS.NOTES);
     if (!existing) {
-      localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(INITIAL_NOTES));
+      // Migrate any real custom user notes from prior storage versions
+      let customUserNotes: Note[] = [];
+      const priorKeys = ['ssc_hub_notes_nctb_2027_v2', 'ssc_hub_notes_nctb_2027_v3'];
+      for (const pk of priorKeys) {
+        const prior = localStorage.getItem(pk);
+        if (prior) {
+          try {
+            const parsed: Note[] = JSON.parse(prior);
+            const initIds = new Set(INITIAL_NOTES.map(n => n.noteId));
+            const userOnly = parsed.filter(n => !initIds.has(n.noteId) && !n.noteId.startsWith('note-chm-') && !n.noteId.startsWith('note-bgs-') && !n.noteId.startsWith('note-phy-'));
+            customUserNotes.push(...userOnly);
+          } catch {}
+        }
+      }
+      const combined = [...INITIAL_NOTES, ...customUserNotes];
+      localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(combined));
     } else {
       try {
         const parsed: Note[] = JSON.parse(existing);
         const existingIds = new Set(parsed.map(n => n.noteId));
         let changed = false;
         for (const initNote of INITIAL_NOTES) {
-          if (!existingIds.has(initNote.noteId)) {
+          const idx = parsed.findIndex(n => n.noteId === initNote.noteId);
+          if (idx === -1) {
             parsed.push(initNote);
+            changed = true;
+          } else if (parsed[idx].fileURL !== initNote.fileURL || parsed[idx].title !== initNote.title) {
+            parsed[idx] = { ...parsed[idx], ...initNote };
             changed = true;
           }
         }
@@ -137,6 +156,55 @@ async function uploadToSupabaseStorage(
   }
 
   throw lastError || new Error('ক্লাউড স্টোরেজে ফাইল আপলোড করা যায়নি। আপনার ইন্টারনেট সংযোগ পরীক্ষা করুন।');
+}
+
+// ================= SUBJECT & CHAPTER INTEGRITY HELPERS =================
+export function normalizeSubjectId(subjectId?: string): string {
+  if (!subjectId) return '';
+  const s = subjectId.toLowerCase().trim();
+  if (s === 'sub-physics-2027') return 'physics';
+  if (s === 'sub-chemistry-2027') return 'chemistry';
+  if (s === 'sub-biology-2027') return 'biology';
+  return s;
+}
+
+export function isChapterBelongingToSubject(chapterId: string, subjectId: string): boolean {
+  if (!chapterId || !subjectId) return true;
+  const s = normalizeSubjectId(subjectId);
+  const c = chapterId.toLowerCase().trim();
+
+  // Explicit subject prefixes
+  if (c.startsWith('phy-') || c.startsWith('ch-physics-')) return s === 'physics';
+  if (c.startsWith('chm-') || c.startsWith('ch-chemistry-')) return s === 'chemistry';
+  if (c.startsWith('bio-') || c.startsWith('ch-biology-')) return s === 'biology';
+  if (c.startsWith('b1-') || c.startsWith('b1-poem-') || c.startsWith('b1-prose-') || c.startsWith('b1-sahapath-')) return s === 'bangla-1st';
+  if (c.startsWith('b2-') || c.startsWith('b2-chap-')) return s === 'bangla-2nd';
+  if (c.startsWith('e1-') || c.startsWith('eng1-')) return s === 'english-1st';
+  if (c.startsWith('e2-') || c.startsWith('eng2-')) return s === 'english-2nd';
+  if (c.startsWith('gm-') || c.startsWith('gm-chap-')) return s === 'general-math';
+  if (c.startsWith('hm-') || c.startsWith('hm-chap-')) return s === 'higher-math';
+  if (c.startsWith('bgs-') || c.startsWith('bgs-chap-')) return s === 'bgs';
+  if (c.startsWith('ict-') || c.startsWith('ict-chap-')) return s === 'ict';
+  if (c.startsWith('is-') || c.startsWith('is-chap-')) return s === 'islamic-studies';
+  if (c.startsWith('his-')) return s === 'history-bd-world';
+  if (c.startsWith('civ-')) return s === 'civics-citizenship';
+  if (c.startsWith('geo-')) return s === 'geography-environment';
+  if (c.startsWith('acc-')) return s === 'accounting';
+  if (c.startsWith('be-') || c.startsWith('bus-')) return s === 'business-entrepreneurship';
+  if (c.startsWith('fin-')) return s === 'finance-banking';
+  if (c.startsWith('ag-')) return s === 'agriculture';
+  if (c.startsWith('hs-')) return s === 'home-science';
+
+  // Custom chapters: e.g. custom-bangla-1st-1795...
+  if (c.startsWith('custom-')) {
+    return c.includes(`custom-${s}-`);
+  }
+
+  // General notes explicitly tied to a subject: e.g. bgs-general
+  if (c.includes(s)) return true;
+  if (c === 'general' || c === 'all') return true;
+
+  return true;
 }
 
 export const dataService = {
@@ -280,11 +348,12 @@ export const dataService = {
   // ================= NOTES =================
   async getNotes(status: NoteStatus | 'all' = 'approved', subjectId?: string, chapterId?: string): Promise<Note[]> {
     let list: Note[] = [];
+    const normSubjectId = normalizeSubjectId(subjectId);
 
     // 0. Top priority: Cloudflare D1 Database (when configured)
     if (isCloudflareConfigured()) {
       try {
-        const cfList = await cloudflareService.getNotes(status, subjectId, chapterId);
+        const cfList = await cloudflareService.getNotes(status, normSubjectId || subjectId, chapterId);
         if (cfList && cfList.length > 0) {
           return cfList;
         }
@@ -301,8 +370,17 @@ export const dataService = {
         if (status !== 'all') {
           sbQuery = sbQuery.eq('status', status);
         }
-        if (subjectId) {
-          sbQuery = sbQuery.eq('subject_id', subjectId);
+        if (normSubjectId) {
+          // Query both standard slug and legacy alias if any
+          if (normSubjectId === 'physics') {
+            sbQuery = sbQuery.in('subject_id', ['physics', 'sub-physics-2027']);
+          } else if (normSubjectId === 'chemistry') {
+            sbQuery = sbQuery.in('subject_id', ['chemistry', 'sub-chemistry-2027']);
+          } else if (normSubjectId === 'biology') {
+            sbQuery = sbQuery.in('subject_id', ['biology', 'sub-biology-2027']);
+          } else {
+            sbQuery = sbQuery.eq('subject_id', normSubjectId);
+          }
         }
         if (chapterId) {
           sbQuery = sbQuery.eq('chapter_id', chapterId);
@@ -311,16 +389,17 @@ export const dataService = {
         if (!error && data) {
           list = data.map((row: any) => {
             let title = row.title;
+            const rowSub = normalizeSubjectId(row.subject_id);
             // Rename previously uploaded physics & chemistry notes to have 'হ্যান্ড মেকিং' if they don't have it
             if (
-              (row.subject_id === 'physics' || row.subject_id === 'sub-physics-2027') &&
+              rowSub === 'physics' &&
               !title.includes('সফট কপি') &&
               !title.includes('হ্যান্ড মেকিং')
             ) {
               title = `${title} - হ্যান্ড মেকিং`;
             }
             if (
-              (row.subject_id === 'chemistry' || row.subject_id === 'sub-chemistry-2027') &&
+              rowSub === 'chemistry' &&
               !title.includes('সফট কপি') &&
               !title.includes('হ্যান্ড মেকিং') &&
               !title.includes('হ্যান্ডনোট')
@@ -329,7 +408,7 @@ export const dataService = {
             }
             return {
               noteId: row.note_id,
-              subjectId: row.subject_id,
+              subjectId: rowSub,
               chapterId: row.chapter_id,
               title,
               description: row.description || '',
@@ -348,11 +427,19 @@ export const dataService = {
             };
           });
 
-          // Seamlessly merge curated INITIAL_NOTES so all physics and chemistry chapters are ALWAYS visible & downloadable
+          // Seamlessly merge curated INITIAL_NOTES strictly matching the requested subject & chapter
           const existingIds = new Set(list.map(n => n.noteId));
           for (const initNote of INITIAL_NOTES) {
+            const initSub = normalizeSubjectId(initNote.subjectId);
+            // Strict subject filter: only include if subject matches (or if no subject filter requested)
+            if (normSubjectId && initSub !== normSubjectId) continue;
+            // Strict chapter filter
+            if (chapterId && initNote.chapterId !== chapterId) continue;
+            // Strict integrity check: ensure chapter belongs to subject
+            if (normSubjectId && !isChapterBelongingToSubject(initNote.chapterId, normSubjectId)) continue;
+
             if (!existingIds.has(initNote.noteId)) {
-              list.push(initNote);
+              list.push({ ...initNote, subjectId: initSub });
               existingIds.add(initNote.noteId);
             }
           }
@@ -363,8 +450,11 @@ export const dataService = {
             if (local) {
               const localNotes: Note[] = JSON.parse(local);
               for (const ln of localNotes) {
+                const lnSub = normalizeSubjectId(ln.subjectId);
+                if (normSubjectId && lnSub !== normSubjectId) continue;
+                if (chapterId && ln.chapterId !== chapterId) continue;
                 if (ln.status === 'pending' && !existingIds.has(ln.noteId)) {
-                  list.push(ln);
+                  list.push({ ...ln, subjectId: lnSub });
                   existingIds.add(ln.noteId);
                 }
               }
@@ -383,7 +473,10 @@ export const dataService = {
       try {
         const snap = await getDocs(collection(db, 'notes'));
         if (!snap.empty) {
-          list = snap.docs.map(d => d.data() as Note);
+          list = snap.docs.map(d => {
+            const n = d.data() as Note;
+            return { ...n, subjectId: normalizeSubjectId(n.subjectId) };
+          });
         }
       } catch (err) {
         console.warn("Firestore notes fetch fallback:", err);
@@ -396,24 +489,41 @@ export const dataService = {
       const localNotes: Note[] = local ? JSON.parse(local) : [];
       const idSet = new Set(localNotes.map(n => n.noteId));
       for (const initNote of INITIAL_NOTES) {
+        const initSub = normalizeSubjectId(initNote.subjectId);
+        if (normSubjectId && initSub !== normSubjectId) continue;
+        if (chapterId && initNote.chapterId !== chapterId) continue;
         if (!idSet.has(initNote.noteId)) {
-          localNotes.push(initNote);
+          localNotes.push({ ...initNote, subjectId: initSub });
         }
       }
-      list = localNotes;
+      list = localNotes.map(n => ({ ...n, subjectId: normalizeSubjectId(n.subjectId) }));
     }
 
-    // Filter out deleted notes
+    // STRICT MULTI-TIER FILTERING:
+    // 1. Filter out deleted notes
     list = list.filter(n => (n.status as any) !== 'deleted');
+
+    // 2. Status filter
     if (status !== 'all') {
       list = list.filter(n => n.status === status);
     }
-    if (subjectId) {
-      list = list.filter(n => n.subjectId === subjectId);
+
+    // 3. Strict Subject filter & cross-subject integrity check
+    if (normSubjectId) {
+      list = list.filter(n => {
+        const noteSub = normalizeSubjectId(n.subjectId);
+        if (noteSub !== normSubjectId) return false;
+        // Verify chapterId prefix matches this subject
+        if (!isChapterBelongingToSubject(n.chapterId, normSubjectId)) return false;
+        return true;
+      });
     }
+
+    // 4. Strict Chapter filter
     if (chapterId) {
       list = list.filter(n => n.chapterId === chapterId);
     }
+
     return list;
   },
 
@@ -557,8 +667,11 @@ export const dataService = {
       if (onProgress) onProgress(90);
     }
 
+    const normSub = normalizeSubjectId(noteData.subjectId);
+
     const newNote: Note = {
       ...noteData,
+      subjectId: normSub,
       noteId,
       fileURL,
       fileType: actualFileType,
@@ -583,7 +696,7 @@ export const dataService = {
       try {
         const insertPayload: any = {
           note_id: noteId,
-          subject_id: noteData.subjectId,
+          subject_id: normSub,
           chapter_id: noteData.chapterId,
           title: noteData.title,
           description: noteData.description || '',

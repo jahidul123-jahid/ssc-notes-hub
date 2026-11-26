@@ -3,8 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { dataService } from '../services/dataService';
 import { dataEvents } from '../services/dataEvents';
-import { Subject, Chapter, Note, Report, WebsiteStats, Exam, CommunityPost } from '../types';
+import { Subject, Chapter, Note, Report, WebsiteStats, Exam, CommunityPost, Question } from '../types';
 import { getExams, createExam } from '../services/examService';
+import { INITIAL_QUESTIONS } from '../data/initialExamData';
 import { getCommunityPosts } from '../services/communityService';
 import { isFirebaseConfigured, OWNER_CONFIG } from '../firebase/config';
 import { FIRESTORE_RULES, STORAGE_RULES } from '../firebase/securityRules';
@@ -115,6 +116,29 @@ export const OwnerControlPage: React.FC = () => {
   const [reports, setReports] = useState<Report[]>([]);
   const [adminExams, setAdminExams] = useState<Exam[]>([]);
   const [adminPosts, setAdminPosts] = useState<CommunityPost[]>([]);
+  const [adminQuestions, setAdminQuestions] = useState<Question[]>(() => {
+    try {
+      const raw = localStorage.getItem('ssc_hub_questions_v1');
+      return raw ? JSON.parse(raw) : INITIAL_QUESTIONS;
+    } catch {
+      return INITIAL_QUESTIONS;
+    }
+  });
+  const [showAddQuestionModal, setShowAddQuestionModal] = useState(false);
+  const [showBulkImportModal, setShowBulkImportModal] = useState(false);
+  const [bulkImportText, setBulkImportText] = useState('');
+  const [questionSearch, setQuestionSearch] = useState('');
+  const [newQuestionForm, setNewQuestionForm] = useState({
+    subjectId: 'physics',
+    chapterId: 'phy-01',
+    questionText: '',
+    optionA: '',
+    optionB: '',
+    optionC: '',
+    optionD: '',
+    correctOption: 0,
+    explanation: ''
+  });
   const [loading, setLoading] = useState(false);
 
   // Modals & form states
@@ -2151,19 +2175,33 @@ export const OwnerControlPage: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-cardBorder">
             <div>
               <h2 className="text-lg font-bold text-primaryText">অনলাইন পরীক্ষা ও প্রশ্ন ব্যাংক ব্যবস্থাপনা</h2>
-              <p className="text-xs text-secondaryText">শিক্ষার্থীদের জন্য অধ্যায়ভিত্তিক ও পূর্ণাঙ্গ মডেল টেস্ট পরিচালনা করুন</p>
+              <p className="text-xs text-secondaryText">শিক্ষার্থীদের জন্য অধ্যায়ভিত্তিক পরীক্ষা, প্রশ্ন তৈরি, বাল্ক ইমপোর্ট ও পরিচালনা করুন</p>
             </div>
-            <div className="text-xs font-bold text-brand-600 bg-brand-50 px-3 py-1.5 rounded-xl border border-brand-200">
-              মোট পরীক্ষা: {adminExams.length} টি
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => setShowAddQuestionModal(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-600 text-white font-bold text-xs shadow-soft hover:bg-brand-700 transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                <span>নতুন প্রশ্ন যোগ</span>
+              </button>
+              <button
+                onClick={() => setShowBulkImportModal(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs transition-all"
+              >
+                <FileText className="w-4 h-4 text-brand-600" />
+                <span>বাল্ক ইমপোর্ট</span>
+              </button>
             </div>
           </div>
 
+          {/* Exam Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {adminExams.map((exam) => (
-              <div key={exam.id} className="bg-white p-5 rounded-2xl border border-cardBorder shadow-soft space-y-3">
+              <div key={exam.id || exam.examId} className="bg-white p-5 rounded-2xl border border-cardBorder shadow-soft space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100">
-                    {exam.subject}
+                    {exam.subject || exam.subjectId}
                   </span>
                   <span className="text-[11px] font-semibold text-secondaryText">
                     {exam.durationMinutes} মিনিট
@@ -2176,10 +2214,10 @@ export const OwnerControlPage: React.FC = () => {
                 )}
 
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-cardBorder text-xs text-secondaryText">
-                  <div>প্রশ্ন সংখ্যা: <span className="font-bold text-primaryText">{exam.totalQuestions} টি</span></div>
-                  <div>পূর্ণমান: <span className="font-bold text-primaryText">{exam.totalMarks}</span></div>
-                  <div>ভুল উত্তর কর্তন: <span className="font-bold text-rose-600">-{exam.negativeMarking}</span></div>
-                  <div>পাস নম্বর: <span className="font-bold text-emerald-600">{exam.passMarks}</span></div>
+                  <div>প্রশ্ন সংখ্যা: <span className="font-bold text-primaryText">{exam.totalQuestions || 30} টি</span></div>
+                  <div>পূর্ণমান: <span className="font-bold text-primaryText">{exam.totalMarks || 30}</span></div>
+                  <div>ভুল উত্তর কর্তন: <span className="font-bold text-rose-600">-{exam.negativeMark || exam.negativeMarking || 0.25}</span></div>
+                  <div>পাস নম্বর: <span className="font-bold text-emerald-600">{exam.passMarks || 12}</span></div>
                 </div>
 
                 <div className="pt-2 flex items-center justify-between">
@@ -2188,17 +2226,336 @@ export const OwnerControlPage: React.FC = () => {
                     প্রকাশিত
                   </span>
                   <a
-                    href={`/exams/${exam.id}`}
+                    href={`/exams/${exam.id || exam.examId}`}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-1 text-xs font-bold text-brand-600 hover:text-brand-800"
                   >
-                    লাইভ দেখুন
+                    লাইভ পরীক্ষা দেখুন
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* ================= QUESTION BANK TABLE ================= */}
+          <div className="bg-white rounded-2xl border border-cardBorder p-5 shadow-soft space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-base text-primaryText">সংরক্ষিত প্রশ্ন ব্যাংক (Question Bank Repository)</h3>
+                <p className="text-xs text-secondaryText">মোট প্রশ্ন: {adminQuestions.length} টি</p>
+              </div>
+              <div className="relative w-full sm:w-64">
+                <Search className="w-4 h-4 text-secondaryText absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={questionSearch}
+                  onChange={(e) => setQuestionSearch(e.target.value)}
+                  placeholder="প্রশ্ন খুঁজুন..."
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-cardBorder rounded-xl focus:outline-none focus:border-brand-500"
+                />
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-cardBorder font-bold text-secondaryText">
+                    <th className="py-3 px-3">ক্রমিক</th>
+                    <th className="py-3 px-4">প্রশ্ন ও অপশনসমূহ</th>
+                    <th className="py-3 px-3">বিষয় / অধ্যায়</th>
+                    <th className="py-3 px-3 text-center">সঠিক অপশন</th>
+                    <th className="py-3 px-3 text-right">অ্যাকশন</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {adminQuestions
+                    .filter(q => (q.questionText || q.question || '').toLowerCase().includes(questionSearch.toLowerCase()))
+                    .slice(0, 50)
+                    .map((q, idx) => {
+                      const correctIdx = q.correctOption !== undefined ? q.correctOption : (q.correctAnswer ?? 0);
+                      return (
+                        <tr key={q.questionId || idx} className="hover:bg-slate-50/60">
+                          <td className="py-3 px-3 font-bold text-slate-500">{idx + 1}</td>
+                          <td className="py-3 px-4 space-y-1.5">
+                            <div className="font-bold text-primaryText text-xs sm:text-sm">{q.questionText || q.question}</div>
+                            <div className="grid grid-cols-2 gap-1 text-[11px] text-secondaryText">
+                              {q.options.map((opt, oIdx) => (
+                                <div key={oIdx} className={oIdx === correctIdx ? 'font-bold text-emerald-600' : ''}>
+                                  {['ক', 'খ', 'গ', 'ঘ'][oIdx]}: {opt} {oIdx === correctIdx && '✓'}
+                                </div>
+                              ))}
+                            </div>
+                            {q.explanation && (
+                              <p className="text-[11px] text-amber-900 bg-amber-50/60 p-1.5 rounded">
+                                ব্যাখ্যা: {q.explanation}
+                              </p>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 font-semibold text-slate-700">
+                            <span className="block">{q.subjectId}</span>
+                            <span className="text-[10px] text-slate-400">{q.chapterId || ''}</span>
+                          </td>
+                          <td className="py-3 px-3 text-center font-black text-emerald-600">
+                            {['ক', 'খ', 'গ', 'ঘ'][correctIdx]}
+                          </td>
+                          <td className="py-3 px-3 text-right">
+                            <button
+                              onClick={() => {
+                                if (window.confirm('আপনি কি এই প্রশ্নটি মুছে ফেলতে চান?')) {
+                                  const updated = adminQuestions.filter(item => (item.questionId || item.id) !== (q.questionId || q.id));
+                                  setAdminQuestions(updated);
+                                  localStorage.setItem('ssc_hub_questions_v1', JSON.stringify(updated));
+                                  setSystemMessage('প্রশ্ন সফলভাবে মুছে ফেলা হয়েছে।');
+                                  setTimeout(() => setSystemMessage(''), 3000);
+                                }
+                              }}
+                              className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                              title="প্রশ্ন মুছুন"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= ADD NEW QUESTION MODAL ================= */}
+      {showAddQuestionModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-cardBorder space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-bold text-base text-primaryText">নতুন MCQ প্রশ্ন তৈরি করুন</h3>
+              <button
+                onClick={() => setShowAddQuestionModal(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-full"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">বিষয় নির্বাচন করুন</label>
+                <select
+                  value={newQuestionForm.subjectId}
+                  onChange={(e) => setNewQuestionForm({ ...newQuestionForm, subjectId: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border border-cardBorder rounded-xl font-bold"
+                >
+                  <option value="physics">পদার্থবিজ্ঞান (Physics)</option>
+                  <option value="chemistry">রসায়ন বিজ্ঞান (Chemistry)</option>
+                  <option value="biology">জীববিজ্ঞান (Biology)</option>
+                  <option value="general-math">সাধারণ গণিত (General Math)</option>
+                  <option value="higher-math">উচ্চতর গণিত (Higher Math)</option>
+                  <option value="ict">তথ্য ও যোগাযোগ প্রযুক্তি (ICT)</option>
+                  <option value="bgs">বাংলাদেশ ও বিশ্বপরিচয় (BGS)</option>
+                  <option value="bangla-1st">বাংলা ১ম পত্র</option>
+                  <option value="bangla-2nd">বাংলা ২য় পত্র</option>
+                  <option value="english-1st">English 1st Paper</option>
+                  <option value="english-2nd">English 2nd Paper</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">প্রশ্ন (Question Text)</label>
+                <textarea
+                  rows={2}
+                  value={newQuestionForm.questionText}
+                  onChange={(e) => setNewQuestionForm({ ...newQuestionForm, questionText: e.target.value })}
+                  placeholder="যেমন: বলের এসআই একক কোনটি?"
+                  className="w-full p-2.5 bg-slate-50 border border-cardBorder rounded-xl"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">অপশন ক (Option A)</label>
+                  <input
+                    type="text"
+                    value={newQuestionForm.optionA}
+                    onChange={(e) => setNewQuestionForm({ ...newQuestionForm, optionA: e.target.value })}
+                    className="w-full p-2 bg-slate-50 border border-cardBorder rounded-lg"
+                    placeholder="অপশন ক"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">অপশন খ (Option B)</label>
+                  <input
+                    type="text"
+                    value={newQuestionForm.optionB}
+                    onChange={(e) => setNewQuestionForm({ ...newQuestionForm, optionB: e.target.value })}
+                    className="w-full p-2 bg-slate-50 border border-cardBorder rounded-lg"
+                    placeholder="অপশন খ"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">অপশন গ (Option C)</label>
+                  <input
+                    type="text"
+                    value={newQuestionForm.optionC}
+                    onChange={(e) => setNewQuestionForm({ ...newQuestionForm, optionC: e.target.value })}
+                    className="w-full p-2 bg-slate-50 border border-cardBorder rounded-lg"
+                    placeholder="অপশন গ"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">অপশন ঘ (Option D)</label>
+                  <input
+                    type="text"
+                    value={newQuestionForm.optionD}
+                    onChange={(e) => setNewQuestionForm({ ...newQuestionForm, optionD: e.target.value })}
+                    className="w-full p-2 bg-slate-50 border border-cardBorder rounded-lg"
+                    placeholder="অপশন ঘ"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">সঠিক উত্তর কোনটি?</label>
+                <select
+                  value={newQuestionForm.correctOption}
+                  onChange={(e) => setNewQuestionForm({ ...newQuestionForm, correctOption: parseInt(e.target.value, 10) })}
+                  className="w-full p-2 bg-slate-50 border border-cardBorder rounded-lg font-bold text-emerald-700"
+                >
+                  <option value={0}>অপশন ক (A)</option>
+                  <option value={1}>অপশন খ (B)</option>
+                  <option value={2}>অপশন গ (C)</option>
+                  <option value={3}>অপশন ঘ (D)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">ব্যাখ্যা (Explanation in Bengali)</label>
+                <input
+                  type="text"
+                  value={newQuestionForm.explanation}
+                  onChange={(e) => setNewQuestionForm({ ...newQuestionForm, explanation: e.target.value })}
+                  placeholder="পাঠ্যবইয়ের সূত্র বা নিয়মাবলী"
+                  className="w-full p-2 bg-slate-50 border border-cardBorder rounded-lg"
+                />
+              </div>
+
+              <button
+                onClick={() => {
+                  if (!newQuestionForm.questionText || !newQuestionForm.optionA || !newQuestionForm.optionB) {
+                    alert('অনুগ্রহ করে প্রশ্ন ও অপশনগুলো পূরণ করুন।');
+                    return;
+                  }
+                  const newQ: Question = {
+                    questionId: `q-${Date.now()}`,
+                    examId: `exam-${newQuestionForm.subjectId}-${newQuestionForm.chapterId}`,
+                    subjectId: newQuestionForm.subjectId,
+                    chapterId: newQuestionForm.chapterId,
+                    questionText: newQuestionForm.questionText,
+                    options: [
+                      newQuestionForm.optionA,
+                      newQuestionForm.optionB,
+                      newQuestionForm.optionC || 'অন্যান্য',
+                      newQuestionForm.optionD || 'কোনটিই নয়'
+                    ],
+                    correctOption: newQuestionForm.correctOption,
+                    explanation: newQuestionForm.explanation,
+                    marks: 1
+                  };
+                  const updated = [newQ, ...adminQuestions];
+                  setAdminQuestions(updated);
+                  localStorage.setItem('ssc_hub_questions_v1', JSON.stringify(updated));
+                  setShowAddQuestionModal(false);
+                  setNewQuestionForm({
+                    subjectId: 'physics',
+                    chapterId: 'phy-01',
+                    questionText: '',
+                    optionA: '',
+                    optionB: '',
+                    optionC: '',
+                    optionD: '',
+                    correctOption: 0,
+                    explanation: ''
+                  });
+                  setSystemMessage('নতুন MCQ প্রশ্ন সফলভাবে প্রশ্ন ব্যাংকে যুক্ত হয়েছে!');
+                  setTimeout(() => setSystemMessage(''), 3000);
+                }}
+                className="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-soft transition-all"
+              >
+                সংরক্ষণ করুন
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= BULK IMPORT MODAL ================= */}
+      {showBulkImportModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-cardBorder space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-bold text-base text-primaryText">বাল্ক প্রশ্ন ইমপোর্ট (JSON / Text Format)</h3>
+              <button
+                onClick={() => setShowBulkImportModal(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-full"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-secondaryText">
+              নিচে JSON ফরম্যাটে একাধিক প্রশ্ন পেস্ট করুন অথবা লাইভ ডাটাবেজ থেকে স্বয়ংক্রিয়ভাবে লোড করুন।
+            </p>
+
+            <textarea
+              rows={8}
+              value={bulkImportText}
+              onChange={(e) => setBulkImportText(e.target.value)}
+              placeholder={`[
+  {
+    "questionText": "ভৌত রাশি কয় প্রকার?",
+    "options": ["২", "৩", "৪", "৭"],
+    "correctOption": 0,
+    "explanation": "ভৌত রাশি মূলত ২ প্রকার: মৌলিক রাশি ও লব্ধ রাশি।"
+  }
+]`}
+              className="w-full p-3 font-mono text-xs bg-slate-50 border border-cardBorder rounded-xl focus:outline-none focus:border-brand-500"
+            />
+
+            <button
+              onClick={() => {
+                try {
+                  const parsed = JSON.parse(bulkImportText);
+                  if (Array.isArray(parsed)) {
+                    const mapped: Question[] = parsed.map((item, idx) => ({
+                      questionId: `bulk-q-${Date.now()}-${idx}`,
+                      examId: item.examId || 'exam-physics-phy-01',
+                      subjectId: item.subjectId || 'physics',
+                      chapterId: item.chapterId || 'phy-01',
+                      questionText: item.questionText || item.question || 'প্রশ্ন',
+                      options: item.options || ['ক', 'খ', 'গ', 'ঘ'],
+                      correctOption: item.correctOption ?? 0,
+                      explanation: item.explanation || '',
+                      marks: item.marks || 1
+                    }));
+                    const updated = [...mapped, ...adminQuestions];
+                    setAdminQuestions(updated);
+                    localStorage.setItem('ssc_hub_questions_v1', JSON.stringify(updated));
+                    setShowBulkImportModal(false);
+                    setBulkImportText('');
+                    setSystemMessage(`${mapped.length}টি প্রশ্ন সফলভাবে ইমপোর্ট করা হয়েছে!`);
+                    setTimeout(() => setSystemMessage(''), 3000);
+                  }
+                } catch {
+                  alert('ভুল JSON ফরম্যাট! অনুগ্রহ করে সঠিক JSON ফরম্যাট প্রদান করুন।');
+                }
+              }}
+              className="w-full py-2.5 bg-brand-600 text-white font-bold text-xs rounded-xl shadow-soft hover:bg-brand-700"
+            >
+              ইমপোর্ট সম্পন্ন করুন
+            </button>
           </div>
         </div>
       )}

@@ -292,7 +292,7 @@ export const ExamResultPage: React.FC = () => {
                 {/* Question */}
                 <div className="py-3">
                   <h3 className="font-bold text-slate-800 text-base leading-relaxed">
-                    {q.question}
+                    {q.questionText || q.question}
                   </h3>
                   {q.image && (
                     <img src={q.image} alt="Question context" className="max-h-48 rounded-xl border mt-2" />
@@ -302,36 +302,37 @@ export const ExamResultPage: React.FC = () => {
                 {/* Options Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
                   {q.options.map((opt, optIdx) => {
-                    const isRightOption = optIdx === q.correctAnswer;
+                    const targetAns = q.correctOption !== undefined ? q.correctOption : (q.correctAnswer ?? 0);
+                    const isRightOption = optIdx === targetAns;
                     const isUserPick = optIdx === userAns;
 
                     let optStyle = 'border-slate-200 bg-slate-50/60 text-slate-700';
 
                     if (isRightOption) {
-                      optStyle = 'border-emerald-500 bg-emerald-50 text-emerald-900 font-bold ring-1 ring-emerald-500';
+                      optStyle = 'border-emerald-500 bg-emerald-50 text-emerald-900 font-bold ring-2 ring-emerald-500';
                     } else if (isUserPick && !isCorrect) {
-                      optStyle = 'border-rose-400 bg-rose-50 text-rose-900 font-semibold ring-1 ring-rose-400';
+                      optStyle = 'border-rose-400 bg-rose-50 text-rose-900 font-semibold ring-2 ring-rose-400';
                     }
 
                     return (
                       <div
                         key={optIdx}
-                        className={`p-3 rounded-xl border text-xs sm:text-sm flex items-start gap-2.5 ${optStyle}`}
+                        className={`p-3.5 rounded-xl border text-xs sm:text-sm flex items-start gap-2.5 ${optStyle}`}
                       >
                         <span className="w-5 h-5 rounded-md bg-white border border-slate-200 text-xs font-bold flex items-center justify-center shrink-0">
-                          {optionLetters[optIdx]}
+                          {['ক', 'খ', 'গ', 'ঘ'][optIdx] || optionLetters[optIdx]}
                         </span>
                         <div className="flex-1 leading-snug">
                           {opt}
                         </div>
                         {isRightOption && (
                           <span className="text-[10px] bg-emerald-600 text-white font-bold px-1.5 py-0.5 rounded shrink-0">
-                            সঠিক
+                            সঠিক উত্তর
                           </span>
                         )}
                         {isUserPick && !isCorrect && (
                           <span className="text-[10px] bg-rose-600 text-white font-bold px-1.5 py-0.5 rounded shrink-0">
-                            আপনার উত্তর
+                            আপনার ভুল নির্বাচন
                           </span>
                         )}
                       </div>
