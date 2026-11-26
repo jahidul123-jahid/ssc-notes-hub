@@ -106,42 +106,46 @@ export const StudentDashboardPage: React.FC = () => {
       <div className="max-w-6xl mx-auto space-y-8">
 
         {/* Dashboard Hero Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="bg-gradient-to-r from-brand-600 via-indigo-600 to-violetAccent rounded-3xl p-6 sm:p-8 text-white shadow-soft border border-white/20 relative overflow-hidden backdrop-blur-md">
+          {/* Ambient blur lighting */}
+          <div className="absolute -top-12 -left-12 w-48 h-48 bg-white/20 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-12 -right-12 w-56 h-56 bg-brand-400/30 rounded-full blur-3xl pointer-events-none" />
+
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-500/30">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-semibold border border-white/25 backdrop-blur-md">
+                <Sparkles className="w-3.5 h-3.5 text-white" />
                 ব্যক্তিগত অগ্রগতি ড্যাশবোর্ড
               </div>
               <h1 className="text-2xl sm:text-3xl font-black">
                 স্বাগতম, প্রিয় শিক্ষার্থী! 👋
               </h1>
-              <p className="text-slate-300 text-xs sm:text-sm max-w-xl">
+              <p className="text-white/90 text-xs sm:text-sm max-w-xl">
                 তোমার পরীক্ষার ফলাফল, দুর্বলতা ও শক্তির বিষয়সমূহ এবং দৈনন্দিন অধ্যায়নের ধারাবাহিকতা এখানে একনজরে পর্যালোচনা করো।
               </p>
             </div>
 
             {/* Streak & Quick Score Badge */}
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400">
+              <div className="flex items-center gap-3 bg-white/15 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/25 shadow-xs">
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-amber-300">
                   <Flame className="w-6 h-6 animate-bounce" />
                 </div>
                 <div>
-                  <div className="text-xs text-slate-300 font-medium">দৈনিক স্ট্রিক</div>
+                  <div className="text-xs text-white/80 font-medium">দৈনিক স্ট্রিক</div>
                   <div className="text-xl font-black text-amber-300">
                     {totalExams > 0 ? '৩ দিন 🔥' : '১ দিন'}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <div className="flex items-center gap-3 bg-white/15 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/25 shadow-xs">
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-emerald-300">
                   <Zap className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="text-xs text-slate-300 font-medium">গড় নম্বর</div>
-                  <div className="text-xl font-black text-emerald-300">{avgPercentage}%</div>
+                  <div className="text-xs text-white/80 font-medium">গড় নম্বর</div>
+                  <div className="text-xl font-black text-white">{avgPercentage}%</div>
                 </div>
               </div>
             </div>

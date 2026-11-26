@@ -124,17 +124,20 @@ export const HomePage: React.FC<HomePageProps> = ({
           <div className="lg:col-span-2">
             <StudyPlannerWidget />
           </div>
-          <div className="bg-gradient-to-br from-emerald-600 to-teal-800 rounded-3xl p-6 text-white shadow-soft flex flex-col justify-between space-y-4">
-            <div className="space-y-2">
-              <span className="text-xs bg-white/20 px-2.5 py-1 rounded-full font-bold">24/7 লাইভ অ্যাসিস্ট্যান্ট</span>
+          <div className="bg-gradient-to-br from-brand-600 via-indigo-600 to-violetAccent rounded-3xl p-6 text-white shadow-soft border border-white/20 backdrop-blur-md flex flex-col justify-between space-y-4 relative overflow-hidden">
+            {/* Ambient blur lighting */}
+            <div className="absolute -top-10 -right-10 w-36 h-36 bg-white/20 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="space-y-2 relative z-10">
+              <span className="text-xs bg-white/20 px-2.5 py-1 rounded-full font-bold backdrop-blur-md border border-white/25">24/7 লাইভ অ্যাসিস্ট্যান্ট</span>
               <h3 className="text-xl font-black">SSC AI স্টাডি টিউটর</h3>
-              <p className="text-xs text-emerald-100 leading-relaxed">
+              <p className="text-xs text-white/90 leading-relaxed font-medium">
                 গণিত, বিজ্ঞান ও ইংরেজির যেকোনো কঠিন টপিক বা অংক বুঝতে তাৎক্ষণিক সহায়তা নাও এআই টিউটরের কাছে।
               </p>
             </div>
             <Link
               to="/ai-tutor"
-              className="w-full py-3 bg-white text-emerald-800 hover:bg-emerald-50 text-center rounded-xl font-bold text-xs shadow-md transition-all"
+              className="w-full py-3 bg-white text-brand-700 hover:bg-brand-50 text-center rounded-xl font-bold text-xs shadow-md transition-all relative z-10"
             >
               এআই টিউটরের সাথে কথা বলুন →
             </Link>

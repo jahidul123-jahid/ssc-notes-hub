@@ -62,29 +62,33 @@ export const ExamListPage: React.FC = () => {
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Hero Banner */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 rounded-3xl p-6 sm:p-10 text-white shadow-xl">
+        <div className="relative overflow-hidden bg-gradient-to-r from-brand-600 via-indigo-600 to-violetAccent rounded-3xl p-6 sm:p-10 text-white shadow-soft border border-white/20 backdrop-blur-md">
+          {/* Ambient blur lighting */}
+          <div className="absolute -top-12 -left-12 w-48 h-48 bg-white/20 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-12 -right-12 w-56 h-56 bg-brand-400/30 rounded-full blur-3xl pointer-events-none" />
+
           <div className="relative z-10 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-semibold uppercase tracking-wider mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-semibold uppercase tracking-wider mb-4 border border-white/25">
               <Flame className="w-4 h-4 text-amber-300 animate-pulse" />
               SSC লাইভ এক্সাম প্ল্যাটফর্ম
             </div>
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight mb-3">
               অনলাইন পরীক্ষা ও সেলফ এসেসমেন্ট
             </h1>
-            <p className="text-emerald-100 text-sm sm:text-base leading-relaxed">
+            <p className="text-white/90 text-sm sm:text-base leading-relaxed">
               অধ্যায়ভিত্তিক MCQ, পূর্ণাঙ্গ মডেল টেস্ট এবং বিষয়ভিত্তিক প্রশ্নপত্রের মাধ্যমে তোমার প্রস্তুতিকে আরও নির্ভুল ও আত্মবিশ্বাসী করে তোলো।
             </p>
 
             <div className="mt-6 flex flex-wrap items-center gap-4 text-xs sm:text-sm font-medium">
-              <div className="flex items-center gap-1.5 bg-black/20 px-3 py-1.5 rounded-lg backdrop-blur-sm">
+              <div className="flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-xl backdrop-blur-md border border-white/25">
                 <Clock className="w-4 h-4 text-amber-300" />
                 রিয়েল-টাইম টাইমার
               </div>
-              <div className="flex items-center gap-1.5 bg-black/20 px-3 py-1.5 rounded-lg backdrop-blur-sm">
+              <div className="flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-xl backdrop-blur-md border border-white/25">
                 <AlertCircle className="w-4 h-4 text-rose-300" />
                 নেগেটিভ মার্কিং সাপোর্ট
               </div>
-              <div className="flex items-center gap-1.5 bg-black/20 px-3 py-1.5 rounded-lg backdrop-blur-sm">
+              <div className="flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-xl backdrop-blur-md border border-white/25">
                 <Award className="w-4 h-4 text-emerald-300" />
                 তাৎক্ষণিক ফলাফল ও ব্যাখ্যা
               </div>

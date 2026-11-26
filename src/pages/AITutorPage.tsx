@@ -88,19 +88,19 @@ export const AITutorPage: React.FC = () => {
       <div className="max-w-4xl mx-auto h-[85vh] flex flex-col bg-white rounded-3xl border border-slate-200 shadow-lg overflow-hidden">
         
         {/* Tutor Top Bar */}
-        <div className="bg-gradient-to-r from-emerald-600 to-teal-700 px-6 py-4 text-white flex items-center justify-between shadow-xs">
+        <div className="bg-gradient-to-r from-brand-600 via-indigo-600 to-violetAccent px-6 py-4 text-white flex items-center justify-between shadow-soft border-b border-white/20 backdrop-blur-md">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md">
-              <Bot className="w-6 h-6 text-emerald-200" />
+            <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md border border-white/25">
+              <Bot className="w-6 h-6 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="font-bold text-base sm:text-lg">SSC AI স্টাডি অ্যাসিস্ট্যান্ট</h1>
-                <span className="text-[10px] bg-emerald-400 text-emerald-950 font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                <span className="text-[10px] bg-white/25 text-white font-black px-2 py-0.5 rounded-full uppercase tracking-wider backdrop-blur-md border border-white/30">
                   NCTB 24/7
                 </span>
               </div>
-              <p className="text-xs text-emerald-100">গণিত, বিজ্ঞান ও ইংরেজির ব্যক্তিগত ডিজিটাল শিক্ষক</p>
+              <p className="text-xs text-white/90">গণিত, বিজ্ঞান ও ইংরেজির ব্যক্তিগত ডিজিটাল শিক্ষক</p>
             </div>
           </div>
 

@@ -102,26 +102,30 @@ export const CommunityPage: React.FC = () => {
       <div className="max-w-5xl mx-auto space-y-6">
 
         {/* Community Hero Header */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-teal-700 via-emerald-700 to-cyan-800 rounded-3xl p-6 sm:p-8 text-white shadow-xl">
+        <div className="relative overflow-hidden bg-gradient-to-r from-brand-600 via-indigo-600 to-violetAccent rounded-3xl p-6 sm:p-8 text-white shadow-soft border border-white/20 backdrop-blur-md">
+          {/* Ambient blur lighting */}
+          <div className="absolute -top-12 -left-12 w-48 h-48 bg-white/20 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-12 -right-12 w-56 h-56 bg-brand-400/30 rounded-full blur-3xl pointer-events-none" />
+
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-xs font-semibold backdrop-blur-md">
-                <Users className="w-4 h-4 text-emerald-300" />
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-xs font-semibold backdrop-blur-md border border-white/25">
+                <Users className="w-4 h-4 text-white" />
                 SSC স্টুডেন্ট ফোরাম
               </div>
               <h1 className="text-2xl sm:text-3xl font-black">
                 প্রশ্নোত্তর ও একাডেমিক ডিসকাশন
               </h1>
-              <p className="text-teal-100 text-xs sm:text-sm max-w-xl">
+              <p className="text-white/90 text-xs sm:text-sm max-w-xl">
                 কোনো অংক বা ধারণায় আটকে গেছো? সহপাঠীদের সাথে আলোচনা করো, প্রশ্ন করো এবং সঠিক উত্তর খুঁজে নাও।
               </p>
             </div>
 
             <button
               onClick={() => setShowAskModal(true)}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-white text-teal-800 hover:bg-emerald-50 active:scale-95 text-xs sm:text-sm font-bold shadow-lg transition-all self-start md:self-auto shrink-0"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-white text-brand-700 hover:bg-brand-50 active:scale-95 text-xs sm:text-sm font-bold shadow-lg transition-all self-start md:self-auto shrink-0"
             >
-              <Plus className="w-4 h-4 text-teal-700" />
+              <Plus className="w-4 h-4 text-brand-600" />
               প্রশ্ন পোস্ট করুন
             </button>
           </div>

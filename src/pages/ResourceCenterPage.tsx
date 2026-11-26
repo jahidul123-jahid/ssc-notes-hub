@@ -134,16 +134,20 @@ export const ResourceCenterPage: React.FC<ResourceCenterPageProps> = ({
       </nav>
 
       {/* Hero Banner */}
-      <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 p-6 sm:p-10 text-white shadow-soft overflow-hidden flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+      <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-r from-brand-600 via-indigo-600 to-violetAccent p-6 sm:p-10 text-white shadow-soft border border-white/20 backdrop-blur-md overflow-hidden flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        {/* Ambient blur lighting */}
+        <div className="absolute -top-12 -left-12 w-48 h-48 bg-white/20 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-12 -right-12 w-56 h-56 bg-brand-400/30 rounded-full blur-3xl pointer-events-none" />
+
         <div className="relative z-10 space-y-2 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-bold">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-white border border-white/25 text-xs font-bold backdrop-blur-md">
             <Sparkles className="w-3.5 h-3.5" />
             <span>NCTB এসএসসি সমৃদ্ধ রিসোর্স ভান্ডার</span>
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black text-amber-300 leading-tight">
+          <h1 className="text-2xl sm:text-4xl font-black text-white leading-tight drop-shadow-xs">
             এসএসসি স্টাডি রিসোর্স সেন্টার
           </h1>
-          <p className="text-white/80 text-xs sm:text-sm leading-relaxed">
+          <p className="text-white/90 text-xs sm:text-sm leading-relaxed font-medium">
             সকল বোর্ডের বিগত বছরের প্রশ্ন, সৃজনশীল (CQ), বহুনির্বাচনী (MCQ), অধ্যায়ভিত্তিক শর্টকাট সাজেশন ও মডেল টেস্ট এক ক্লিকে ডাউনলোড করুন।
           </p>
         </div>
@@ -151,9 +155,9 @@ export const ResourceCenterPage: React.FC<ResourceCenterPageProps> = ({
         <div className="relative z-10 shrink-0">
           <button
             onClick={() => onOpenUpload()}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 px-6 py-3.5 rounded-xl font-black text-sm sm:text-base shadow-soft transition-all cursor-pointer active:scale-95"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-brand-50 text-brand-700 px-6 py-3.5 rounded-xl font-black text-sm sm:text-base shadow-soft transition-all cursor-pointer active:scale-95 border border-white/40"
           >
-            <Share2 className="w-5 h-5" />
+            <Share2 className="w-5 h-5 text-brand-600" />
             <span>আপনার রিসোর্স শেয়ার করুন</span>
           </button>
         </div>

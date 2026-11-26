@@ -52,10 +52,10 @@ export const AIAssistantWidget: React.FC = () => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="group relative flex items-center gap-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-3 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all"
+          className="group relative flex items-center gap-2.5 bg-gradient-to-r from-brand-600 via-indigo-600 to-violetAccent text-white px-4 py-3 rounded-full shadow-soft-hover hover:shadow-2xl hover:scale-105 active:scale-95 transition-all border border-white/20 backdrop-blur-md"
         >
           <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-            <Bot className="w-5 h-5 text-emerald-100 group-hover:rotate-12 transition-transform" />
+            <Bot className="w-5 h-5 text-white group-hover:rotate-12 transition-transform" />
           </div>
           <span className="text-xs sm:text-sm font-bold pr-1">AI টিউটর</span>
           <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-400 rounded-full border-2 border-white animate-pulse" />
@@ -67,7 +67,7 @@ export const AIAssistantWidget: React.FC = () => {
         <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-80 sm:w-96 h-[480px] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
           
           {/* Header */}
-          <div className="bg-gradient-to-r from-emerald-600 to-teal-700 px-4 py-3.5 text-white flex items-center justify-between">
+          <div className="bg-gradient-to-r from-brand-600 via-indigo-600 to-violetAccent px-4 py-3.5 text-white flex items-center justify-between shadow-soft border-b border-white/20 backdrop-blur-md">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-emerald-200" />
